@@ -1,5 +1,5 @@
 #!/bin/bash
-SOURCE_GIT_DIR="/public/home/201810101923/code/gitee/PKU-Open-Sora-Gitee"
+SOURCE_GIT_DIR="/public/home/201810101923/code/gitee/pku-open-sora-gitee"
 TARGET_PROJECT_DIR="/public/home/201810101923/code/PKU-Open-Sora-Forked"
 BRANCH_NAME="yg_deployment"
 
