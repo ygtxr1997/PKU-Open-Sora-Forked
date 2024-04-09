@@ -73,7 +73,7 @@ def load_model(target_name: str,
         else:
             # 2. Check loading offline
             target_model = getae_wrapper("CausalVAEModel_4x8x8")(
-                model_path=cache_dir,
+                model_path=hf_repo_name,
                 cache_dir=cache_dir,
                 subfolder=sub_dir,
             )
