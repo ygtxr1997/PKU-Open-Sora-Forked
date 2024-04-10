@@ -23,7 +23,7 @@ if download:
 
     from huggingface_hub import hf_hub_download
 
-    hf_hub_download(repo_id=hf_repo_name, filename="mixkit.tar.gz", cache_dir=cache_dir)
+    hf_hub_download(repo_id=hf_repo_name, repo_type="dataset", filename="mixkit.tar.gz", cache_dir=cache_dir)
 
     # 1. Download, error: 8,9,10,12,13,15,18
     # data_files = ["pixabay.tar.gz.%02d" % x for x in [18]]
