@@ -25,6 +25,7 @@ if download:
         path=hf_repo_name,
         cache_dir=cache_dir,
         num_proc=None,
+        token="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"
     )
     print(f"[Check Datasets] Dataset loaded to cache={cache_dir}.")
     # 2. Reorder
