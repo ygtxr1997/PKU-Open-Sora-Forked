@@ -24,7 +24,7 @@ if download:
     target_dataset = load_dataset(
         path=hf_repo_name,
         cache_dir=cache_dir,
-        num_proc=20
+        num_proc=None,
     )
     print(f"[Check Datasets] Dataset loaded to cache={cache_dir}.")
     # 2. Reorder
