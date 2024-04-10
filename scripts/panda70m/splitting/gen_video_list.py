@@ -23,4 +23,4 @@ if __name__ == "__main__":
     with open(args.output_txt, "w") as f:
         f.writelines(file_names)
 
-    print(f"[GenVideoList] video-list file saved to: {args.output_txt}")
+    print(f"[GenVideoList] video-list file saved to: {args.output_txt} ; len={len(file_names)}")
