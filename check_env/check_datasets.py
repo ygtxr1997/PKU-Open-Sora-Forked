@@ -26,16 +26,19 @@ if download:
         cache_dir=cache_dir,
         num_proc=20
     )
+    print(f"[Check Datasets] Dataset loaded to cache={cache_dir}.")
     # 2. Reorder
     target_dataset.save_to_disk(
         dataset_dict_path=save_dir,
         max_shard_size="40GB"
     )
+    print(f"[Check Datasets] Dataset saved to {save_dir}.")
 else:
     # 3. Check loading offline
     target_dataset = load_from_disk(
         dataset_path=save_dir
     )
+    print(f"[Check Datasets] Dataset loaded from {save_dir}.")
 
 suffix = "online" if download else "offline"
 print(f"Dataset ({target}) loaded! mode={suffix}")
