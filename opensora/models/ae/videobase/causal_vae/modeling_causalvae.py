@@ -324,7 +324,7 @@ class CausalVAEModel(VideoBaseAE_PL):
         self.learning_rate = lr
         self.lr_g_factor = 1.0
 
-        print("[TODO] is_training:", is_training)
+        print(f"[CausalVAEModel] is_training:{is_training}")
         if is_training:
             self.loss = resolve_str_to_obj(loss_type, append=False)(
                 **loss_params

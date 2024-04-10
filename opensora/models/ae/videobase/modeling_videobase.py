@@ -70,7 +70,6 @@ class VideoBaseAE_PL(pl.LightningModule, ModelMixin, ConfigMixin):
                         is_training: bool = True,
                         **kwargs):
         ckpt_files = glob.glob(os.path.join(pretrained_model_name_or_path, '*.ckpt'))
-        print("[TODO]", ckpt_files, is_training)
         if ckpt_files:
             # Adapt to PyTorch Lightning
             last_ckpt_file = ckpt_files[-1]
