@@ -2,7 +2,7 @@ import os
 from datasets import load_dataset, load_from_disk, Dataset
 
 
-target = "imdb"  # in ["opensora", "imdb"]
+target = "opensora"  # in ["opensora", "imdb"]
 download = True  # in [True, False]
 
 if target == "opensora":
