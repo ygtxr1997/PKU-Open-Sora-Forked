@@ -99,20 +99,20 @@ def load_model(target_name: str,
         if need_download:
             tokenizer = T5Tokenizer.from_pretrained(
                 hf_repo_name,
-                cache_dir="cache_dir"
+                cache_dir=cache_dir
             )
             text_encoder = T5EncoderModel.from_pretrained(
                 hf_repo_name,
-                cache_dir="cache_dir",
+                cache_dir=cache_dir
             )
         else:
             tokenizer = T5Tokenizer.from_pretrained(
                 hf_repo_name,
-                cache_dir="cache_dir"
+                cache_dir=cache_dir
             )
             text_encoder = T5EncoderModel.from_pretrained(
                 hf_repo_name,
-                cache_dir="cache_dir",
+                cache_dir=cache_dir
             )
 
     suffix = "online" if need_download else "offline"
