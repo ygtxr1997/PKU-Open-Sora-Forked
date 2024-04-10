@@ -85,6 +85,7 @@ def load_model(target_name: str,
                 model_path=hf_repo_name,
                 cache_dir=cache_dir,
                 subfolder=sub_dir,
+                is_training=False,
             )
         else:
             # 2. Check loading offline
@@ -92,6 +93,7 @@ def load_model(target_name: str,
                 model_path=hf_repo_name,
                 cache_dir=cache_dir,
                 subfolder=sub_dir,
+                is_training=False,
             )
     elif "t5" in target_name:
         if need_download:

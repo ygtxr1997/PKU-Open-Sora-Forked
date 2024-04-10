@@ -311,6 +311,7 @@ class CausalVAEModel(VideoBaseAE_PL):
         ),
         decoder_temporal_upsample: Tuple[Module] = ("", "", "TimeUpsample2x", "TimeUpsample2x"),
         decoder_mid_resnet: Module = "ResnetBlock3D",
+        is_training: bool = True,
     ) -> None:
         super().__init__()
         self.tile_sample_min_size = 256
@@ -323,9 +324,12 @@ class CausalVAEModel(VideoBaseAE_PL):
         self.learning_rate = lr
         self.lr_g_factor = 1.0
 
-        self.loss = resolve_str_to_obj(loss_type, append=False)(
-            **loss_params
-        )
+        if is_training:
+            self.loss = resolve_str_to_obj(loss_type, append=False)(
+                **loss_params
+            )
+        else:
+            self.loss = None
 
         self.encoder = Encoder(
             z_channels=z_channels,
