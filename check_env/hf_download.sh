@@ -5,4 +5,5 @@ export HF_ENDPOINT=https://hf-mirror.com
 #python check_datasets.py
 
 # 2. Download models
-python check_models.py --download
+python check_models.py --download  \
+  --targets "t5"
