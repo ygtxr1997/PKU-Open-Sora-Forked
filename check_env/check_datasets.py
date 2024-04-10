@@ -20,14 +20,17 @@ os.makedirs(cache_dir, exist_ok=True)
 os.makedirs(save_dir, exist_ok=True)
 
 if download:
-    # 1. Download
+    # 1. Download, error: 8,9,10,12,13,15,18
+    data_files = ["pixabay.tar.gz.%02d" % x for x in [8, 9, 10, 12, 13, 15, 18]]
     target_dataset = load_dataset(
         path=hf_repo_name,
         cache_dir=cache_dir,
-        num_proc=None,
-        token="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"
+        num_proc=8,
+        token="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",
+        data_files=data_files,
     )
     print(f"[Check Datasets] Dataset loaded to cache={cache_dir}.")
+    exit()
     # 2. Reorder
     target_dataset.save_to_disk(
         dataset_dict_path=save_dir,
