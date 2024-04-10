@@ -28,6 +28,7 @@ if download:
         num_proc=8,
         token="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",
         data_files=data_files,
+        download_mode="force_redownload",
     )
     print(f"[Check Datasets] Dataset loaded to cache={cache_dir}.")
     exit()
