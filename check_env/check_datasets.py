@@ -26,7 +26,7 @@ if download:
     target_dataset = load_dataset(
         path=hf_repo_name,
         cache_dir=cache_dir,
-        num_proc=None,
+        num_proc=8,
         token="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",
         data_files=data_files,
         download_mode="force_redownload",
