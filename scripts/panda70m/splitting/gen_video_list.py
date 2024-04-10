@@ -18,8 +18,9 @@ if __name__ == "__main__":
     file_names = []
     for root, dirs, files in os.walk(args.dataset_dir, topdown=False):
         for name in files:
-            print(root, name)
-            file_names.append(os.path.join(root[len(args.dataset_dir):], name) + "\n")
+            file_names.append(os.path.join(root[len(args.dataset_dir) + 1:], name) + "\n")
 
     with open(args.output_txt, "w") as f:
         f.writelines(file_names)
+
+    print(f"[GenVideoList] video-list file saved to: {args.output_txt}")
