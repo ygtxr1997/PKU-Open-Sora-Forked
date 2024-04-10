@@ -2,7 +2,7 @@ import os
 from datasets import load_dataset, load_from_disk, Dataset
 
 
-target = "opensora"  # in ["opensora", "imdb"]
+target = "imdb"  # in ["opensora", "imdb"]
 download = True  # in [True, False]
 
 if target == "opensora":
@@ -23,22 +23,32 @@ if download:
 
     from huggingface_hub import hf_hub_download
 
-    hf_hub_download(repo_id=hf_repo_name, repo_type="dataset", filename="mixkit.tar.gz", cache_dir=cache_dir)
+    hf_hub_download(
+        repo_id=hf_repo_name,
+        repo_type="dataset",
+        # filename="mixkit.tar.gz",
+        cache_dir=cache_dir
+    )
+    target_dataset = load_dataset(
+        path=hf_repo_name,
+        cache_dir=cache_dir,
+    )
 
     # 1. Download, error: 8,9,10,12,13,15,18
     # data_files = ["pixabay.tar.gz.%02d" % x for x in [18]]
     # data_files = ["pexels.tar.gz.%02d" % x for x in range(6)]
-    target_dataset = load_dataset(
-        path=hf_repo_name,
-        cache_dir=cache_dir,
-        # num_proc=8,
-        # token="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",
-        # data_files=data_files,
-        # download_mode="force_redownload",
-        # verification_mode="all_checks"
-    )
-    print(f"[Check Datasets] Dataset loaded to cache={cache_dir}.")
-    exit()
+    # target_dataset = load_dataset(
+    #     path=hf_repo_name,
+    #     cache_dir=cache_dir,
+    #     # num_proc=8,
+    #     # token="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",
+    #     # data_files=data_files,
+    #     # download_mode="force_redownload",
+    #     # verification_mode="all_checks"
+    # )
+    # print(f"[Check Datasets] Dataset loaded to cache={cache_dir}.")
+    # exit()
+
     # 2. Reorder
     target_dataset.save_to_disk(
         dataset_dict_path=save_dir,
