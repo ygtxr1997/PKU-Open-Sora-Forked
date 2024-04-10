@@ -21,7 +21,8 @@ os.makedirs(save_dir, exist_ok=True)
 
 if download:
     # 1. Download, error: 8,9,10,12,13,15,18
-    data_files = ["pixabay.tar.gz.%02d" % x for x in [8, 9, 10, 12, 13, 15, 18]]
+    # data_files = ["pixabay.tar.gz.%02d" % x for x in [8, 9, 10, 12, 13, 15, 18]]
+    data_files = ["pexels.tar.gz.%02d" % x for x in range(6)]
     target_dataset = load_dataset(
         path=hf_repo_name,
         cache_dir=cache_dir,
