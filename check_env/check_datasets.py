@@ -21,9 +21,9 @@ os.makedirs(save_dir, exist_ok=True)
 
 if download:
 
-    from huggingface_hub import hf_hub_download
+    from huggingface_hub import snapshot_download
 
-    hf_hub_download(
+    snapshot_download(
         repo_id=hf_repo_name,
         repo_type="dataset",
         # filename="mixkit.tar.gz",
