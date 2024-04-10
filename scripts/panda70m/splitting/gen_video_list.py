@@ -17,7 +17,9 @@ if __name__ == "__main__":
 
     file_names = []
     for root, dirs, files in os.walk(args.dataset_dir, topdown=False):
-        file_names.extend(file_names)
+        for name in files:
+            print(root, name)
+            file_names.append(name)
 
     with open(args.output_txt, "w") as f:
         f.writelines(file_names)
