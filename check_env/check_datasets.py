@@ -27,6 +27,9 @@ if download:
         repo_id=hf_repo_name,
         repo_type="dataset",
         # filename="mixkit.tar.gz",
+        resume_download=True,
+        max_workers=20,
+        etag_timeout=500,
         cache_dir=cache_dir
     )
     target_dataset = load_dataset(
