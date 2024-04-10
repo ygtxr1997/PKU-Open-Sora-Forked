@@ -2,8 +2,8 @@ import os
 from datasets import load_dataset, load_from_disk, Dataset
 
 
-target = "imdb"  # in ["opensora", "imdb"]
-download = False  # in [True, False]
+target = "opensora"  # in ["opensora", "imdb"]
+download = True  # in [True, False]
 
 if target == "opensora":
     hf_repo_name = "LanguageBind/Open-Sora-Plan-v1.0.0"
