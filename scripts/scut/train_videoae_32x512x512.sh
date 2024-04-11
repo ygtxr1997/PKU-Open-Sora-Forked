@@ -99,7 +99,6 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --use_deepspeed \
   --model_max_length 300 \
   --use_image_num 0 \
-  --use_img_from_vid \
   --enable_tiling \
   --tracker_project_name scut_opensora \
   --tracker_run_name opensora512  \
