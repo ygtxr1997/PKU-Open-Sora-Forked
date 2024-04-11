@@ -49,7 +49,7 @@ if [ ! -d "outputs" ]; then
 fi
 
 # Copy code from gitee to project directory
-if [ `whoami` == "201810101923xxxx" ]; then
+if [ `whoami` == "201810101923" ]; then
   bash check_env/cp_code.sh
 fi
 
