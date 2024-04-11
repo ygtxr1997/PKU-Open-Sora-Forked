@@ -98,7 +98,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --pretrained ${PRETRAINED_MODEL_PT} \
   --use_deepspeed \
   --model_max_length 300 \
-  --use_image_num 16 \
+  --use_image_num 0 \
   --use_img_from_vid \
   --enable_tiling \
   --tracker_project_name scut_opensora \
