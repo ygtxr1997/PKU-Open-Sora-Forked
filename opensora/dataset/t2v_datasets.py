@@ -20,6 +20,7 @@ class T2V_dataset(Dataset):
 
         # with open(args.data_path, 'r') as csvfile:
         #     self.samples = list(csv.DictReader(csvfile))
+        self.cache_dir = args.cache_dir
         self.video_folder = args.video_folder
         self.num_frames = args.num_frames
         self.transform = transform
@@ -30,6 +31,12 @@ class T2V_dataset(Dataset):
 
         with open(args.data_path, 'r') as f:
             self.samples = json.load(f)
+        ori_root = "/remote-home1/dataset/data_split_tt"
+        replace_root = args.replace_root
+        if replace_root is not None:
+            for i in range(len(self.samples)):
+                self.samples[i]["path"] = self.samples[i]["path"].replace(
+                    ori_root, replace_root)
         self.use_image_num = args.use_image_num
         self.use_img_from_vid = args.use_img_from_vid
         if self.use_image_num != 0 and not self.use_img_from_vid:
@@ -99,6 +106,7 @@ class T2V_dataset(Dataset):
         total_frames = len(decord_vr)
         # Sampling video frames
         start_frame_ind, end_frame_ind = self.temporal_sample(total_frames)
+
         # assert end_frame_ind - start_frame_ind >= self.num_frames
         frame_indice = np.linspace(start_frame_ind, end_frame_ind - 1, self.num_frames, dtype=int)
 

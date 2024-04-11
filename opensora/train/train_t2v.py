@@ -11,6 +11,7 @@ import argparse
 import logging
 import math
 import os
+import datetime
 import shutil
 from pathlib import Path
 from typing import Optional
@@ -101,6 +102,7 @@ def generate_timestep_weights(args, num_timesteps):
 #################################################################################
 
 def main(args):
+    now = datetime.datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
     logging_dir = Path(args.output_dir, args.logging_dir)
 
     accelerator_project_config = ProjectConfiguration(project_dir=args.output_dir, logging_dir=logging_dir)
@@ -349,7 +351,17 @@ def main(args):
     # We need to initialize the trackers we use, and also store our configuration.
     # The trackers initializes automatically on the main process.
     if accelerator.is_main_process:
-        accelerator.init_trackers(args.output_dir, config=vars(args))
+        project_name = args.output_dir if args.tracker_project_name is None else args.tracker_project_name
+        project_name = f"({now}){project_name}"
+        accelerator.init_trackers(
+            project_name,
+            config=vars(args),
+            init_kwargs={
+                "wandb":
+                    {"entity": args.tracker_entity,
+                     "name": args.tracker_run_name}
+            },
+        )
 
     # Train!
     total_batch_size = args.train_batch_size * accelerator.num_processes * args.gradient_accumulation_steps
@@ -562,10 +574,11 @@ def main(args):
     accelerator.end_training()
 
 
-if __name__ == "__main__":
+def parser_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", type=str, required=True)
     parser.add_argument("--data_path", type=str, required=True)
+    parser.add_argument("--replace_root", type=str, default=None)
     parser.add_argument("--model", type=str, choices=list(Diffusion_models.keys()), default="DiT-XL/122")
     parser.add_argument("--num_classes", type=int, default=1000)
     parser.add_argument("--ae", type=str, default="stabilityai/sd-vae-ft-mse")
@@ -799,5 +812,38 @@ if __name__ == "__main__":
     parser.add_argument("--local_rank", type=int, default=-1, help="For distributed training: local_rank")
     parser.add_argument("--noise_offset", type=float, default=0, help="The scale of noise offset.")
 
+    parser.add_argument("--cache_dir", type=str, default=None,
+                        help="HuggingFace cache dir. Default is ~/.cache/huggingface/hub/")
+    parser.add_argument(
+        "--tracker_project_name",
+        type=str,
+        default=None,
+        help=(
+            "The `project_name` argument passed to Accelerator.init_trackers"
+        ),
+    )
+    parser.add_argument(
+        "--tracker_entity",
+        type=str,
+        default=None,
+        help=(
+            "The `entity` argument passed to Accelerator.init_trackers Wandb."
+            "E.g. `Text-to-Video-hg` "
+        ),
+    )
+    parser.add_argument(
+        "--tracker_run_name",
+        type=str,
+        default=None,
+        help=(
+            "The `name` argument passed to Accelerator.init_trackers Wandb"
+        ),
+    )
+
     args = parser.parse_args()
+    return args
+
+
+if __name__ == "__main__":
+    args = parser_args()
     main(args)
