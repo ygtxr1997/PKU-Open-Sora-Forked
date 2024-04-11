@@ -79,7 +79,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --replace_root ${REPLACE_ROOT}  \
   --video_folder ${VIDEO_FOLDER} \
   --sample_rate 8 \
-  --num_frames 32 \
+  --num_frames 33 \
   --max_image_size 512 \
   --gradient_checkpointing \
   --attention_mode xformers \
