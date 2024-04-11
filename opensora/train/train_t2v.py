@@ -321,6 +321,7 @@ def main(args):
         # collate_fn=Collate(args),  # TODO: do not enable dynamic mask in this point
         batch_size=args.train_batch_size,
         num_workers=args.dataloader_num_workers,
+        pin_memory=True,
     )
 
     # Scheduler and math around the number of training steps.

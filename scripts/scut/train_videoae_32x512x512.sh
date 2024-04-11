@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=opensora_train
 #SBATCH --partition=gpuA800
-#SBATCH --nodes=2
+#SBATCH --nodes=4
 #SBATCH --ntasks-per-node=1          # crucial - only 1 task per dist per node!
 #SBATCH --cpus-per-task=64           # number of cores per tasks
 #SBATCH --gres=gpu:8               # number of gpus
@@ -79,12 +79,12 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --replace_root ${REPLACE_ROOT}  \
   --video_folder ${VIDEO_FOLDER} \
   --sample_rate 8 \
-  --num_frames 33 \
+  --num_frames 65 \
   --max_image_size 512 \
   --gradient_checkpointing \
   --attention_mode xformers \
   --train_batch_size=2 \
-  --dataloader_num_workers 10 \
+  --dataloader_num_workers 16 \
   --gradient_accumulation_steps=1 \
   --max_train_steps=1000000 \
   --learning_rate=2e-05 \

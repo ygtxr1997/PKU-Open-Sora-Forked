@@ -91,6 +91,8 @@ class InternVidDataset(Dataset):
         self.transform = transform
 
         self.mem_bad_indices = []
+        self.fail_cnt = 0
+        self.success_cnt = 0
 
         if self.logger is not None:
             self.logger.info(f"[InterVidDataset] loaded cnt={len(self.samples)}")
@@ -131,6 +133,7 @@ class InternVidDataset(Dataset):
             input_ids = text_tokens_and_mask['input_ids'].squeeze(0)
             cond_mask = text_tokens_and_mask['attention_mask'].squeeze(0)
 
+            self.success_cnt += 1
             return video, input_ids, cond_mask
 
             fps_ori = video_reader.get_avg_fps()
@@ -156,7 +159,9 @@ class InternVidDataset(Dataset):
             return self.process_error(index, e)
 
     def process_error(self, index, error=None):
-        self.logger.warning(f'Catch {error}, {self.samples[index]}, get random item once again.')
+        self.fail_cnt += 1
+        self.logger.warning(f'Catch {error}, {self.samples[index]}, get random item once again, '
+                            f'fail_rate={self.fail_cnt / self.success_cnt}')
         return self.__getitem__(random.randint(0, self.__len__() - 1))
 
     def decord_read(self, path):
