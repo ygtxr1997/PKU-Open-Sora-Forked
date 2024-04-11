@@ -7,6 +7,7 @@ from torchvision.transforms import Lambda
 
 from .landscope import Landscope
 from .t2v_datasets import T2V_dataset
+from .internvid_datasets import InternVidDataset
 from .transform import ToTensorVideo, TemporalRandomCrop, RandomHorizontalFlipVideo, CenterCropResizeVideo
 from .ucf101 import UCF101
 from .sky_datasets import Sky
@@ -45,7 +46,7 @@ ae_denorm = {
     'vqgan_gumbel_f8': lambda x: (x + 1.) / 2.,
 }
 
-def getdataset(args):
+def getdataset(args, logger=None):
     temporal_sample = TemporalRandomCrop(args.num_frames * args.sample_rate)  # 16 x
     norm_fun = ae_norm[args.ae]
     if args.dataset == 'ucf101':
@@ -86,6 +87,24 @@ def getdataset(args):
         tokenizer = AutoTokenizer.from_pretrained(
             args.text_encoder_name, cache_dir=args.cache_dir)
         return T2V_dataset(args, transform=transform, temporal_sample=temporal_sample, tokenizer=tokenizer)
+    elif args.dataset == 'internvid':
+        transform = transforms.Compose([
+            ToTensorVideo(),
+            CenterCropResizeVideo(args.max_image_size),
+            RandomHorizontalFlipVideo(p=0.5),
+            norm_fun
+        ])
+        tokenizer = AutoTokenizer.from_pretrained(
+            args.text_encoder_name, cache_dir=args.cache_dir)
+        return InternVidDataset(
+            args.internvid_meta,
+            args.intervid_dir,
+            logger=logger,
+            tokenizer=tokenizer,
+            norm_fun=norm_fun,
+            num_frames=args.num_frames,
+            max_frame_stride=args.sample_rate,
+        )
     elif args.dataset == 't2v_feature':
         return T2V_Feature_dataset(args, temporal_sample)
     elif args.dataset == 't2v_t5_feature':

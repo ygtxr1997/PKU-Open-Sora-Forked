@@ -150,7 +150,8 @@ def main(args):
     # Create model:
 
     diffusion = create_diffusion(timestep_respacing="")  # default: 1000 steps, linear noise schedule
-    ae = getae_wrapper(args.ae)(args.ae_path).eval()
+    # ae = getae_wrapper(args.ae)(args.ae_path).eval()
+    ae = getae_wrapper(args.ae)("LanguageBind/Open-Sora-Plan-v1.0.0", subfolder="vae", cache_dir=args.cache_dir, is_training=False)
     if args.enable_tiling:
         ae.vae.enable_tiling()
         ae.vae.tile_overlap_factor = args.tile_overlap_factor
@@ -200,7 +201,7 @@ def main(args):
 
     # # use pretrained model?
     if args.pretrained:
-        checkpoint = torch.load(args.pretrained, map_location='cpu')['model']
+        checkpoint = torch.load(args.pretrained, map_location='cpu')
         model_state_dict = model.state_dict()
         missing_keys, unexpected_keys = model.load_state_dict(checkpoint, strict=False)
         logger.info(f'missing_keys {len(missing_keys)}, unexpected_keys {len(unexpected_keys)}')
@@ -313,7 +314,7 @@ def main(args):
     )
 
     # Setup data:
-    train_dataset = getdataset(args)
+    train_dataset = getdataset(args, logger=logger)
     train_dataloader = torch.utils.data.DataLoader(
         train_dataset,
         shuffle=True,
@@ -519,7 +520,7 @@ def main(args):
                             # text_enc_ = get_text_enc(args).to(accelerator.device).eval()
                             model_ = LatteT2V.from_pretrained(save_path, subfolder="model").to(accelerator.device).eval()
                             diffusion_ = create_diffusion(str(250))
-                            tokenizer_ = AutoTokenizer.from_pretrained(args.text_encoder_name, cache_dir='./cache_dir')
+                            tokenizer_ = AutoTokenizer.from_pretrained(args.text_encoder_name, cache_dir=args.cache_dir)
                             videos = []
                             for idx in range(args.num_validation_videos):
                                 with torch.autocast(device_type='cuda', dtype=weight_dtype):
@@ -814,6 +815,10 @@ def parser_args():
 
     parser.add_argument("--cache_dir", type=str, default=None,
                         help="HuggingFace cache dir. Default is ~/.cache/huggingface/hub/")
+    parser.add_argument("--internvid_dir", type=str, default=None,
+                        help="InternVid video root folder")
+    parser.add_argument("--internvid_meta", type=str, default=None,
+                        help="InternVid .jsonl file")
     parser.add_argument(
         "--tracker_project_name",
         type=str,

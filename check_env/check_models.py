@@ -1,6 +1,7 @@
 import os
 import argparse
 
+import torch
 from transformers import T5Tokenizer, T5EncoderModel
 
 from opensora.models.diffusion.latte.modeling_latte import LatteT2V
@@ -26,7 +27,7 @@ def main():
     download = opts.download
     # If True, download to local
     # Else, load from local
-    print(f"[Check Models] ready to check models, download={download}")
+    print(f"[Check Models] ready to check models={targets}, download={download}")
     for target in targets:
         load_model(target, need_download=download)
 
@@ -78,6 +79,9 @@ def load_model(target_name: str,
                 cache_dir=cache_dir,
                 subfolder=sub_dir,
             )
+            pt_save_path = os.path.join(save_dir, f"{target_name}_{sub_dir}_bf16.pt")
+            torch.save(target_model.to(torch.bfloat16).state_dict(), pt_save_path)
+            print(f"Model saved to: {pt_save_path}")
     elif "casual_vae" in target_name:
         if need_download:
             # 1. Download

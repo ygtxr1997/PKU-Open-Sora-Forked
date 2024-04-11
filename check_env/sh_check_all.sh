@@ -1,6 +1,7 @@
 export DATA_PATH="/public/home/201810101923/datasets/opensora/dataset_v1.0.0_tmptest_sorted/sharegpt4v_path_cap_64x512x512.json"
 export REPLACE_ROOT="/public/home/201810101923/datasets/opensora/dataset_v1.0.0_tmptest_sorted"
 export MODEL_CACHE_DIR="/public/home/201810101923/models/opensora/v1.0.0"
+export PRETRAINED_MODEL_PT="/public/home/201810101923/models/opensora/v1.0.0_sorted/opensora_stage3_65x512x512_bf16.pt"
 export VIDEO_FOLDER="/remote-home1/dataset/data_split_tt"  # not used
 python check_env/check_datasets.py \
   --model LatteT2V-XL/122 \

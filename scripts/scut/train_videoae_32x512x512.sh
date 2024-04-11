@@ -1,10 +1,10 @@
 #!/bin/bash
-#SBATCH --job-name=opensora_sample
+#SBATCH --job-name=opensora_train
 #SBATCH --partition=gpuA800
-#SBATCH --nodes=1
+#SBATCH --nodes=2
 #SBATCH --ntasks-per-node=1          # crucial - only 1 task per dist per node!
 #SBATCH --cpus-per-task=64           # number of cores per tasks
-#SBATCH --gres=gpu:1               # number of gpus
+#SBATCH --gres=gpu:8               # number of gpus
 #SBATCH --mem=500000MB                # memory
 #SBATCH --output=outputs/%x-%j.out   # output file name
 #SBATCH --time=30-00:00:00          # max time
@@ -12,7 +12,7 @@
 set -x -e
 
 # Set to equal gres=gpu:#
-export NUM_GPUS=1
+export NUM_GPUS=8
 
 export OMP_NUM_THREADS=4
 
@@ -49,7 +49,7 @@ if [ ! -d "outputs" ]; then
 fi
 
 # Copy code from gitee to project directory
-if [ `whoami` == "201810101923" ]; then
+if [ `whoami` == "201810101923xxxx" ]; then
   bash check_env/cp_code.sh
 fi
 
@@ -57,23 +57,54 @@ fi
 # please copy (or make a soft link by 'ln -s') the pretrained pipline to the current dir for more stable pipeline loading
 # also remember to set "wandb offline" before training, and use syncwandb.sh to upload to wandb
 export PYTHONPATH=${PWD}
-export MODEL_DIR="pretrained_pipeline_fp16"
-export OUTPUT_DIR="./sample_videos/prompt_list_0"
+export DATA_PATH="/public/home/201810101923/datasets/opensora/dataset_v1.0.0_tmptest_sorted/sharegpt4v_path_cap_64x512x512.json"
+export REPLACE_ROOT="/public/home/201810101923/datasets/opensora/dataset_v1.0.0_tmptest_sorted"
+export MODEL_CACHE_DIR="/public/home/201810101923/models/opensora/v1.0.0"
+export PRETRAINED_MODEL_PT="/public/home/201810101923/models/opensora/v1.0.0_sorted/opensora_stage3_65x512x512_bf16.pt"
+export INTERNVID_DIR="/exthome/future-technology-college-data/Internvid_dataset/InternVid-10M-FLT-clip"
+export INTERNVID_META="/exthome/future-technology-college-data/Internvid_dataset/InternVid-10M-flt-clips1.jsonl"
+export VIDEO_FOLDER="/remote-home1/dataset/data_split_tt"  # not used
 srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --config_file check_env/check_deepspeed_config.yaml \
   --num_processes $(($NUM_GPUS * $SLURM_NNODES)) --num_machines $SLURM_NNODES --machine_rank $SLURM_PROCID \
   --main_process_ip $MASTER_ADDR --main_process_port $MASTER_PORT \
-  opensora/sample/sample_t2v.py \
-  --model_path LanguageBind/Open-Sora-Plan-v1.0.0 \
-  --cache_dir "/public/home/201810101923/models/opensora/v1.0.0" \
+  opensora/train/train_t2v.py \
+  --model LatteT2V-XL/122 \
   --text_encoder_name DeepFloyd/t5-v1_1-xxl \
-  --text_prompt examples/prompt_list_0.txt \
+  --cache_dir ${MODEL_CACHE_DIR}  \
+  --dataset internvid \
   --ae CausalVAEModel_4x8x8 \
-  --version 65x512x512 \
-  --save_img_path ${OUTPUT_DIR} \
-  --fps 24 \
-  --guidance_scale 7.5 \
-  --num_sampling_steps 250 \
-  --enable_tiling'
+  --ae_path CausalVAEModel_4x8x8 \
+  --data_path ${DATA_PATH} \
+  --replace_root ${REPLACE_ROOT}  \
+  --video_folder ${VIDEO_FOLDER} \
+  --sample_rate 8 \
+  --num_frames 32 \
+  --max_image_size 512 \
+  --gradient_checkpointing \
+  --attention_mode xformers \
+  --train_batch_size=2 \
+  --dataloader_num_workers 10 \
+  --gradient_accumulation_steps=1 \
+  --max_train_steps=1000000 \
+  --learning_rate=2e-05 \
+  --lr_scheduler="constant" \
+  --lr_warmup_steps=0 \
+  --mixed_precision="bf16" \
+  --report_to="wandb" \
+  --checkpointing_steps=500 \
+  --output_dir="t2v-f65-512-img16-videovae488-bf16-ckpt-xformers-bs4-lr2e-5-t5" \
+  --allow_tf32 \
+  --pretrained ${PRETRAINED_MODEL_PT} \
+  --use_deepspeed \
+  --model_max_length 300 \
+  --use_image_num 16 \
+  --use_img_from_vid \
+  --enable_tiling \
+  --tracker_project_name scut_opensora \
+  --tracker_run_name opensora512  \
+  --internvid_meta ${INTERNVID_META}  \
+  --internvid_dir ${INTERNVID_DIR}
+  '
 
 echo "DONE"
