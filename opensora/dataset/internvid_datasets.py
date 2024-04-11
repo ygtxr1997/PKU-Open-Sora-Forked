@@ -161,7 +161,7 @@ class InternVidDataset(Dataset):
     def process_error(self, index, error=None):
         self.fail_cnt += 1
         self.logger.warning(f'Catch {error}, {self.samples[index]}, get random item once again, '
-                            f'fail_rate={self.fail_cnt / self.success_cnt}')
+                            f'fail_rate={(self.fail_cnt / (self.success_cnt + self.fail_cnt) * 100):.2f}%')
         return self.__getitem__(random.randint(0, self.__len__() - 1))
 
     def decord_read(self, path):
