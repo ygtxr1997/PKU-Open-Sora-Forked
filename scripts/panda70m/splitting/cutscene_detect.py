@@ -39,6 +39,7 @@ def write_json_file(data, output_file):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Cutscene Detection")
+    parser.add_argument("--root", type=str, default="")
     parser.add_argument("--video-list", type=str, required=True)
     parser.add_argument("--output-json-file", type=str, default="cutscene_frame_idx.json")
     args = parser.parse_args()
@@ -48,7 +49,8 @@ if __name__ == "__main__":
     
     video_cutscenes = {}
     for video_path in tqdm(video_paths):
-        cutscenes_raw = cutscene_detection(video_path, cutscene_threshold=25, max_cutscene_len=5)
-        video_cutscenes[video_path.split("/")[-1]] = cutscenes_raw
+        video_abs_path = os.path.join(args.root, video_path)
+        cutscenes_raw = cutscene_detection(video_abs_path, cutscene_threshold=25, max_cutscene_len=5)
+        video_cutscenes[video_abs_path.split("/")[-1]] = cutscenes_raw
         
     write_json_file(video_cutscenes, args.output_json_file)

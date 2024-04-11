@@ -6,6 +6,7 @@ from tqdm import tqdm
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Event Stitching")
+    parser.add_argument("--root", type=str, default="")
     parser.add_argument("--video-list", type=str, required=True)
     parser.add_argument("--event-timecode", type=str, required=True)
     parser.add_argument("--output-folder", type=str, default="outputs")
@@ -19,6 +20,7 @@ if __name__ == "__main__":
     os.makedirs(args.output_folder, exist_ok=True)
 
     for video_path in tqdm(video_paths):
+        video_path = os.path.join(args.root, video_path)
         video_name = video_path.split("/")[-1].split('.')[0]
         timecodes = video_timecodes[video_path.split("/")[-1]]
 

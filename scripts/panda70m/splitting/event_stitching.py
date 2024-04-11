@@ -10,9 +10,9 @@ from pytz import timezone
 from tqdm import tqdm
 import numpy as np
 
-sys.path.append('ImageBind')
-from models import imagebind_model
-from models.imagebind_model import ModalityType
+# sys.path.append('ImageBind')
+from .ImageBind.models import imagebind_model
+from .ImageBind.models.imagebind_model import ModalityType
 
 
 def read_videoframe(video_path, frame_idx):
@@ -162,6 +162,7 @@ def write_json_file(data, output_file):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Event Stitching")
+    parser.add_argument("--root", type=str, default="")
     parser.add_argument("--video-list", type=str, required=True)
     parser.add_argument("--cutscene-frameidx", type=str, required=True)
     parser.add_argument("--output-json-file", type=str, default="event_timecode.json")
@@ -189,6 +190,7 @@ if __name__ == "__main__":
 
     video_events = {}
     for video_path in tqdm(video_paths):
+        video_path = os.path.join(args.root, video_path)
         cap = cv2.VideoCapture(video_path)
         fps = cap.get(cv2.CAP_PROP_FPS)
         cutscene = video_cutscenes[video_path.split("/")[-1]]
