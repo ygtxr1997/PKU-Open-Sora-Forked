@@ -98,7 +98,7 @@ def getdataset(args, logger=None):
             args.text_encoder_name, cache_dir=args.cache_dir)
         return InternVidDataset(
             args.internvid_meta,
-            args.intervid_dir,
+            args.internvid_dir,
             logger=logger,
             tokenizer=tokenizer,
             norm_fun=norm_fun,
