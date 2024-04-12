@@ -78,7 +78,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --data_path ${DATA_PATH} \
   --replace_root ${REPLACE_ROOT}  \
   --video_folder ${VIDEO_FOLDER} \
-  --sample_rate 8 \
+  --sample_rate 1 \
   --num_frames 65 \
   --max_image_size 512 \
   --gradient_checkpointing \
@@ -93,7 +93,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --mixed_precision="bf16" \
   --report_to="wandb" \
   --checkpointing_steps=500 \
-  --output_dir="t2v-f65-512-img16-videovae488-bf16-ckpt-xformers-bs4-lr2e-5-t5" \
+  --output_dir="t2v_stage2_reproduce" \
   --allow_tf32 \
   --pretrained ${PRETRAINED_MODEL_PT} \
   --use_deepspeed \
