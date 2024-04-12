@@ -1,7 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=opensora_train
 #SBATCH --partition=gpuA800
-#SBATCH --nodes=2
+#SBATCH --nodes=4
+#SBATCH --nodelist=gpu[6-9]
 #SBATCH --ntasks-per-node=1          # crucial - only 1 task per dist per node!
 #SBATCH --cpus-per-task=64           # number of cores per tasks
 #SBATCH --gres=gpu:8               # number of gpus
@@ -72,13 +73,13 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --model LatteT2V-XL/122 \
   --text_encoder_name DeepFloyd/t5-v1_1-xxl \
   --cache_dir ${MODEL_CACHE_DIR}  \
-  --dataset t2v \
+  --dataset internvid \
   --ae CausalVAEModel_4x8x8 \
   --ae_path CausalVAEModel_4x8x8 \
   --data_path ${DATA_PATH} \
   --replace_root ${REPLACE_ROOT}  \
   --video_folder ${VIDEO_FOLDER} \
-  --sample_rate 1 \
+  --sample_rate 8 \
   --num_frames 65 \
   --max_image_size 512 \
   --gradient_checkpointing \
@@ -92,14 +93,13 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --lr_warmup_steps=0 \
   --mixed_precision="bf16" \
   --report_to="wandb" \
-  --checkpointing_steps=500 \
-  --output_dir="t2v_stage2_reproduce" \
+  --checkpointing_steps=1000 \
+  --output_dir="out_internvid_train" \
   --allow_tf32 \
   --pretrained ${PRETRAINED_MODEL_PT} \
   --use_deepspeed \
   --model_max_length 300 \
-  --use_image_num 16 \
-  --use_img_from_vid \
+  --use_image_num 0 \
   --enable_tiling \
   --tracker_project_name scut_opensora \
   --tracker_run_name opensora512  \
