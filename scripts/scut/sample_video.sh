@@ -65,7 +65,6 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --main_process_ip $MASTER_ADDR --main_process_port $MASTER_PORT \
   opensora/sample/sample_t2v.py \
   --model_path LanguageBind/Open-Sora-Plan-v1.0.0 \
-  --ckpt_path /public/home/201810101923/code/PKU-Open-Sora-Forked/t2v-f65-512-img16-videovae488-bf16-ckpt-xformers-bs4-lr2e-5-t5/checkpoint-4500/model/diffusion_pytorch_model.safetensors  \
   --cache_dir "/public/home/201810101923/models/opensora/v1.0.0" \
   --text_encoder_name DeepFloyd/t5-v1_1-xxl \
   --text_prompt examples/prompt_list_0.txt \

@@ -43,12 +43,13 @@ def main(args):
     if args.ckpt_path is None:
         print(f"Load transformer from cache dir: {args.caceh_dir}")
         transformer_model = LatteT2V.from_pretrained(args.model_path, subfolder=args.version, cache_dir=args.cache_dir, torch_dtype=torch.float16).to(device)
-    elif os.path.splitext(args.ckpt_path)[-1] == ".safetensors":
-        print(f"Load transformer from safetensors: {args.model_path}")
-        transformer_model = LatteT2V.from_config(args.model_path, subfolder=args.version, cache_dir=args.cache_dir, torch_dtype=torch.float16).to(device)
-        transformer_model.load_state_dict(load_file(args.ckpt_path, device="cuda"))
     else:
-        raise TypeError(f"Ckpt file type not supported: {args.ckpt_path}")
+        if os.path.splitext(args.ckpt_path)[-1] == ".safetensors":
+            print(f"Load transformer from safetensors: {args.ckpt_path}")
+            transformer_model = LatteT2V.from_config(args.model_path, subfolder=args.version, cache_dir=args.cache_dir, torch_dtype=torch.float16).to(device)
+            transformer_model.load_state_dict(load_file(args.ckpt_path, device="cuda"))
+        else:
+            raise TypeError(f"Ckpt file type not supported: {args.ckpt_path}")
     transformer_model.force_images = args.force_images
     tokenizer = T5Tokenizer.from_pretrained(args.text_encoder_name, cache_dir=args.cache_dir)
     text_encoder = T5EncoderModel.from_pretrained(args.text_encoder_name, cache_dir=args.cache_dir, torch_dtype=torch.float16).to(device)
