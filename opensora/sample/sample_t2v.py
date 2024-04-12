@@ -40,13 +40,15 @@ def main(args):
         vae.vae.tile_overlap_factor = args.tile_overlap_factor
 
     # Load model:
-    if not os.path.exists(args.model_path):
+    if args.ckpt_path is None:
         print(f"Load transformer from cache dir: {args.caceh_dir}")
         transformer_model = LatteT2V.from_pretrained(args.model_path, subfolder=args.version, cache_dir=args.cache_dir, torch_dtype=torch.float16).to(device)
-    elif os.path.splitext(args.model_path)[-1] == "safetensors":
+    elif os.path.splitext(args.ckpt_path)[-1] == "safetensors":
         print(f"Load transformer from safetensors: {args.model_path}")
         transformer_model = LatteT2V.from_config(args.model_path, subfolder=args.version, cache_dir=args.cache_dir, torch_dtype=torch.float16).to(device)
-        transformer_model.load_state_dict(load_file(args.model_path, device="cuda"))
+        transformer_model.load_state_dict(load_file(args.ckpt_path, device="cuda"))
+    else:
+        raise TypeError(f"Ckpt file type not supported: {args.ckpt_path}")
     transformer_model.force_images = args.force_images
     tokenizer = T5Tokenizer.from_pretrained(args.text_encoder_name, cache_dir=args.cache_dir)
     text_encoder = T5EncoderModel.from_pretrained(args.text_encoder_name, cache_dir=args.cache_dir, torch_dtype=torch.float16).to(device)
@@ -150,6 +152,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_path", type=str, default='LanguageBind/Open-Sora-Plan-v1.0.0')
+    parser.add_argument("--ckpt_path", type=str, default=None)
     parser.add_argument("--cache_dir", type=str, default="/public/home/201810101923/models/opensora/v1.0.0")
     parser.add_argument("--version", type=str, default='65x512x512', choices=['65x512x512', '65x256x256', '17x256x256'])
     parser.add_argument("--ae", type=str, default='CausalVAEModel_4x8x8')
