@@ -41,7 +41,7 @@ def main(args):
 
     # Load model:
     if args.ckpt_path is None:
-        print(f"Load transformer from cache dir: {args.caceh_dir}")
+        print(f"Load transformer from cache dir: {args.cache_dir}")
         transformer_model = LatteT2V.from_pretrained(args.model_path, subfolder=args.version, cache_dir=args.cache_dir, torch_dtype=torch.float16).to(device)
     else:
         if os.path.splitext(args.ckpt_path)[-1] == ".safetensors":
