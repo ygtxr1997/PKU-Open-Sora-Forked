@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=opensora_train
 #SBATCH --partition=gpuA800
-#SBATCH --nodes=1
+#SBATCH --nodes=2
 #SBATCH --ntasks-per-node=1          # crucial - only 1 task per dist per node!
 #SBATCH --cpus-per-task=64           # number of cores per tasks
 #SBATCH --gres=gpu:8               # number of gpus
@@ -65,7 +65,7 @@ export INTERNVID_DIR="/exthome/future-technology-college-data/Internvid_dataset/
 export INTERNVID_META="/exthome/future-technology-college-data/Internvid_dataset/InternVid-10M-flt-clips1.jsonl"
 export VIDEO_FOLDER="/remote-home1/dataset/data_split_tt"  # not used
 srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
-  --config_file check_env/check_deepspeed_config.yaml \
+  --config_file scripts/accelerate_configs/deepspeed_zero2_config.yaml \
   --num_processes $(($NUM_GPUS * $SLURM_NNODES)) --num_machines $SLURM_NNODES --machine_rank $SLURM_PROCID \
   --main_process_ip $MASTER_ADDR --main_process_port $MASTER_PORT \
   opensora/train/train_t2v.py \
