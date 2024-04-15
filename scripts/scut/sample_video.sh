@@ -60,7 +60,7 @@ fi
 export PYTHONPATH=${PWD}
 export MODEL_DIR="pretrained_pipeline_fp16"
 export PROMPT_LIST="examples/demo.txt"
-export OUTPUT_DIR="./sample_videos/demo_steps30000"
+export OUTPUT_DIR="./sample_videos/demo_opensora_pretrained"
 srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --config_file check_env/check_deepspeed_config.yaml \
   --num_processes $(($NUM_GPUS * $SLURM_NNODES)) --num_machines $SLURM_NNODES --machine_rank $SLURM_PROCID \
