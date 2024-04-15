@@ -61,7 +61,7 @@ export PYTHONPATH=${PWD}
 export DATA_PATH="/public/home/201810101923/datasets/opensora/dataset_v1.0.0_tmptest_sorted/sharegpt4v_path_cap_64x512x512.json"
 export REPLACE_ROOT="/public/home/201810101923/datasets/opensora/dataset_v1.0.0_tmptest_sorted"
 export MODEL_CACHE_DIR="/public/home/201810101923/models/opensora/v1.0.0"
-export PRETRAINED_MODEL_PT="/public/home/201810101923/models/opensora/v1.0.0_sorted/opensora_stage3_65x512x512_bf16.pt"
+export PRETRAINED_MODEL_PT="/public/home/201810101923/models/opensora/v1.0.0_sorted/latte_t2v.pt"
 export INTERNVID_DIR="/exthome/future-technology-college-data/Internvid_dataset/InternVid-10M-FLT-clip"
 export INTERNVID_META="/exthome/future-technology-college-data/Internvid_dataset/InternVid-10M-flt-clips1.jsonl"
 export OUTPUT_DIR="out_internvid_17x256x256"
@@ -85,7 +85,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --max_image_size 256 \
   --gradient_checkpointing \
   --attention_mode xformers \
-  --train_batch_size=2 \
+  --train_batch_size=4 \
   --dataloader_num_workers 16 \
   --gradient_accumulation_steps=1 \
   --max_train_steps=1000000 \
@@ -95,7 +95,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --mixed_precision="bf16" \
   --report_to="wandb" \
   --checkpointing_steps=2000 \
-  --output_dir={OUTPUT_DIR} \
+  --output_dir=${OUTPUT_DIR} \
   --allow_tf32 \
   --use_deepspeed \
   --model_max_length 300 \
