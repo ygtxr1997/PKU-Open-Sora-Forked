@@ -101,6 +101,7 @@ def getdataset(args, logger=None):
             args.internvid_dir,
             logger=logger,
             tokenizer=tokenizer,
+            transform=transform,
             norm_fun=norm_fun,
             num_frames=args.num_frames,
             max_frame_stride=args.sample_rate,
