@@ -97,6 +97,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --checkpointing_steps=2000 \
   --output_dir=${OUTPUT_DIR} \
   --allow_tf32 \
+  --pretrained ${PRETRAINED_MODEL_PT} \
   --use_deepspeed \
   --model_max_length 300 \
   --use_image_num 0 \
