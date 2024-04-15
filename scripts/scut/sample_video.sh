@@ -59,14 +59,14 @@ fi
 # also remember to set "wandb offline" before training, and use syncwandb.sh to upload to wandb
 export PYTHONPATH=${PWD}
 export MODEL_DIR="pretrained_pipeline_fp16"
-export OUTPUT_DIR="./sample_videos/prompt_list_0_steps5000"
+export OUTPUT_DIR="./sample_videos/prompt_list_0_steps30000"
 srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --config_file check_env/check_deepspeed_config.yaml \
   --num_processes $(($NUM_GPUS * $SLURM_NNODES)) --num_machines $SLURM_NNODES --machine_rank $SLURM_PROCID \
   --main_process_ip $MASTER_ADDR --main_process_port $MASTER_PORT \
   opensora/sample/sample_t2v.py \
   --model_path LanguageBind/Open-Sora-Plan-v1.0.0 \
-  --ckpt_path /public/home/201810101923/code/PKU-Open-Sora-Forked/t2v-f65-512-img16-videovae488-bf16-ckpt-xformers-bs4-lr2e-5-t5/checkpoint-4500/model/diffusion_pytorch_model.safetensors  \
+  --ckpt_path /public/home/201810101923/code/PKU-Open-Sora-Forked/out_internvid_train/checkpoint-30000/model/diffusion_pytorch_model.safetensors  \
   --cache_dir "/public/home/201810101923/models/opensora/v1.0.0" \
   --text_encoder_name DeepFloyd/t5-v1_1-xxl \
   --text_prompt examples/prompt_list_0.txt \
