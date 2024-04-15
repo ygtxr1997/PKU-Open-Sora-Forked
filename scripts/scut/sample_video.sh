@@ -2,7 +2,7 @@
 #SBATCH --job-name=opensora_sample
 #SBATCH --partition=gpuA800
 #SBATCH --nodes=1
-#SBATCH --nodelist=gpu[6]
+#SBATCH --nodelist=gpu[7]
 #SBATCH --ntasks-per-node=1          # crucial - only 1 task per dist per node!
 #SBATCH --cpus-per-task=64           # number of cores per tasks
 #SBATCH --gres=gpu:1               # number of gpus
@@ -59,6 +59,7 @@ fi
 # also remember to set "wandb offline" before training, and use syncwandb.sh to upload to wandb
 export PYTHONPATH=${PWD}
 export MODEL_DIR="pretrained_pipeline_fp16"
+export PROMPT_LIST="examples/demo.txt"
 export OUTPUT_DIR="./sample_videos/prompt_list_0_steps30000"
 srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --config_file check_env/check_deepspeed_config.yaml \
@@ -69,7 +70,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --ckpt_path /public/home/201810101923/code/PKU-Open-Sora-Forked/out_internvid_train/checkpoint-30000/model/diffusion_pytorch_model.safetensors  \
   --cache_dir "/public/home/201810101923/models/opensora/v1.0.0" \
   --text_encoder_name DeepFloyd/t5-v1_1-xxl \
-  --text_prompt examples/prompt_list_0.txt \
+  --text_prompt ${PROMPT_LIST} \
   --ae CausalVAEModel_4x8x8 \
   --version 65x512x512 \
   --save_img_path ${OUTPUT_DIR} \
