@@ -72,7 +72,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --text_encoder_name DeepFloyd/t5-v1_1-xxl \
   --text_prompt ${PROMPT_LIST} \
   --ae CausalVAEModel_4x8x8 \
-  --version 65x512x512 \
+  --version 17x256x256 \
   --save_img_path ${OUTPUT_DIR} \
   --fps 24 \
   --guidance_scale 7.5 \
