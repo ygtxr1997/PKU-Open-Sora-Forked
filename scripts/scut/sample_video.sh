@@ -60,14 +60,15 @@ fi
 export PYTHONPATH=${PWD}
 export MODEL_DIR="pretrained_pipeline_fp16"
 export PROMPT_LIST="examples/demo.txt"
-export OUTPUT_DIR="./sample_videos/demo_17x256x256_steps2000"
+export CKPT_PATH="/public/home/201810101923/models/opensora/v1.0.0_sorted/latte_t2v.pt"
+export OUTPUT_DIR="./sample_videos/demo_latte"
 srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --config_file check_env/check_deepspeed_config.yaml \
   --num_processes $(($NUM_GPUS * $SLURM_NNODES)) --num_machines $SLURM_NNODES --machine_rank $SLURM_PROCID \
   --main_process_ip $MASTER_ADDR --main_process_port $MASTER_PORT \
   opensora/sample/sample_t2v.py \
   --model_path LanguageBind/Open-Sora-Plan-v1.0.0 \
-  --ckpt_path /public/home/201810101923/code/PKU-Open-Sora-Forked/out_internvid_17x256x256/checkpoint-2000/model/diffusion_pytorch_model.safetensors  \
+  --ckpt_path ${CKPT_PATH}  \
   --cache_dir "/public/home/201810101923/models/opensora/v1.0.0" \
   --text_encoder_name DeepFloyd/t5-v1_1-xxl \
   --text_prompt ${PROMPT_LIST} \
