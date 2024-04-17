@@ -1,3 +1,5 @@
+import json
+
 import math
 import os
 import torch
@@ -10,6 +12,7 @@ from diffusers.schedulers import (DDIMScheduler, DDPMScheduler, PNDMScheduler,
                                   DEISMultistepScheduler, KDPM2AncestralDiscreteScheduler)
 from diffusers.schedulers.scheduling_dpmsolver_singlestep import DPMSolverSinglestepScheduler
 from diffusers.models import AutoencoderKL, AutoencoderKLTemporalDecoder
+from diffusers.configuration_utils import ConfigMixin
 from omegaconf import OmegaConf
 from torchvision.utils import save_image
 from transformers import T5EncoderModel, T5Tokenizer, AutoTokenizer
@@ -45,15 +48,22 @@ def main(args):
         transformer_model = LatteT2V.from_pretrained(args.model_path, subfolder=args.version, cache_dir=args.cache_dir, torch_dtype=torch.float16).to(device)
     else:
         if os.path.splitext(args.ckpt_path)[-1] == ".safetensors":
-            print(f"Load transformer from safetensors: {args.ckpt_path}")
-            transformer_model = LatteT2V.from_config(args.model_path, subfolder=args.version, cache_dir=args.cache_dir, torch_dtype=torch.float16).to(device)
+            config_json_path = os.path.join(os.path.dirname(args.ckpt_path), "config.json")
+            print(f"Load transformer from safetensors: {args.ckpt_path}, config_path={config_json_path}")
+            with open(config_json_path, "r") as f:
+                config = json.load(f)
+            transformer_model = LatteT2V.from_config(config, torch_dtype=torch.float16).to(device)
             transformer_model.load_state_dict(load_file(args.ckpt_path, device="cuda"))
             transformer_model = transformer_model.to(torch.float16)
         elif os.path.splitext(args.ckpt_path)[-1] == ".pt":
             print(f"Load transformer from pt: {args.ckpt_path}")
-            transformer_model = LatteT2V.from_config(args.model_path, subfolder=args.version, cache_dir=args.cache_dir,
+            opensora_version = "65x512x512"  # different versions share the same model architecture
+            transformer_model = LatteT2V.from_config(args.model_path, subfolder=opensora_version, cache_dir=args.cache_dir,
                                                      torch_dtype=torch.float16).to(device)
-            transformer_model.load_state_dict(torch.load(args.ckpt_path, map_location='cpu')["model"])
+            weight = torch.load(args.ckpt_path, map_location='cpu')
+            if "model" in weight.keys:
+                weight = weight["model"]
+            transformer_model.load_state_dict(weight)
             transformer_model = transformer_model.to(torch.float16)
         else:
             raise TypeError(f"Ckpt file type not supported: {args.ckpt_path}")
@@ -61,8 +71,9 @@ def main(args):
     tokenizer = T5Tokenizer.from_pretrained(args.text_encoder_name, cache_dir=args.cache_dir)
     text_encoder = T5EncoderModel.from_pretrained(args.text_encoder_name, cache_dir=args.cache_dir, torch_dtype=torch.float16).to(device)
 
-    video_length, image_size = transformer_model.config.video_length, int(args.version.split('x')[1])
-    latent_size = (image_size // ae_stride_config[args.ae][1], image_size // ae_stride_config[args.ae][2])
+    video_length = transformer_model.config.video_length
+    train_frames, image_size_h, image_size_w = [int(x) for x in args.version.split('x')]  # e.g. 65x512x512
+    latent_size = (image_size_h // ae_stride_config[args.ae][1], image_size_w // ae_stride_config[args.ae][2])
     vae.latent_size = latent_size
     if args.force_images:
         video_length = 1
@@ -116,8 +127,8 @@ def main(args):
         print('Processing the ({}) prompt'.format(prompt))
         videos = videogen_pipeline(prompt,
                                    video_length=video_length,
-                                   height=image_size,
-                                   width=image_size,
+                                   height=image_size_h,
+                                   width=image_size_w,
                                    num_inference_steps=args.num_sampling_steps,
                                    guidance_scale=args.guidance_scale,
                                    enable_temporal_attentions=not args.force_images,
@@ -162,7 +173,9 @@ if __name__ == "__main__":
     parser.add_argument("--model_path", type=str, default='LanguageBind/Open-Sora-Plan-v1.0.0')
     parser.add_argument("--ckpt_path", type=str, default=None)
     parser.add_argument("--cache_dir", type=str, default="/public/home/201810101923/models/opensora/v1.0.0")
-    parser.add_argument("--version", type=str, default='65x512x512', choices=['65x512x512', '65x256x256', '17x256x256'])
+    parser.add_argument("--version", type=str, default='65x512x512',
+                        choices=['65x512x512', '65x256x256', '17x256x256',
+                                 '17x288x512'])
     parser.add_argument("--ae", type=str, default='CausalVAEModel_4x8x8')
     parser.add_argument("--text_encoder_name", type=str, default='DeepFloyd/t5-v1_1-xxl')
     parser.add_argument("--save_img_path", type=str, default="./sample_videos/t2v")

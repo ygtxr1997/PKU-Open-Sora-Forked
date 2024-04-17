@@ -88,9 +88,12 @@ def getdataset(args, logger=None):
             args.text_encoder_name, cache_dir=args.cache_dir)
         return T2V_dataset(args, transform=transform, temporal_sample=temporal_sample, tokenizer=tokenizer)
     elif args.dataset == 'internvid':
+        w_ratio, h_ratio = [int(x) for x in args.wh_ratio.split(":")]
+        target_hw = (args.max_image_size // w_ratio * h_ratio, args.max_image_size)
+        assert target_hw[0] / target_hw[1] == h_ratio / w_ratio
         transform = transforms.Compose([
             ToTensorVideo(),
-            CenterCropResizeVideo(args.max_image_size),
+            CenterCropResizeVideo(target_hw, h_ratio=h_ratio, w_ratio=w_ratio),
             RandomHorizontalFlipVideo(p=0.5),
             norm_fun
         ])

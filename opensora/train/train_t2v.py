@@ -202,9 +202,12 @@ def main(args):
     # # use pretrained model?
     if args.pretrained:
         checkpoint = torch.load(args.pretrained, map_location='cpu')
+        if "model" in checkpoint.keys():
+            checkpoint = checkpoint["model"]
         model_state_dict = model.state_dict()
         missing_keys, unexpected_keys = model.load_state_dict(checkpoint, strict=False)
-        logger.info(f'missing_keys {len(missing_keys)}, unexpected_keys {len(unexpected_keys)}')
+        logger.info(f'missing_keys {len(missing_keys)}: {missing_keys}')
+        logger.info(f'unexpected_keys {len(unexpected_keys)}: {unexpected_keys}')
         logger.info(f'Successfully load {len(model.state_dict()) - len(missing_keys)}/{len(model_state_dict)} keys from {args.pretrained}!')
         # load from pixart-alpha
         # pixelart_alpha = torch.load(args.pretrained, map_location='cpu')['state_dict']
@@ -443,7 +446,6 @@ def main(args):
                         # use for loop to avoid OOM, because T5 is too huge...
                         B, _, _ = input_ids.shape  # B T+num_images L  b 1+4, L
                         cond = torch.stack([text_enc(input_ids[i], cond_mask[i]) for i in range(B)])  # B 1+num_images L D
-
                 model_kwargs = dict(encoder_hidden_states=cond, attention_mask=attn_mask,
                                     encoder_attention_mask=cond_mask, use_image_num=args.use_image_num)
                 t = torch.randint(0, diffusion.num_timesteps, (x.shape[0],), device=accelerator.device)
@@ -589,6 +591,7 @@ def parser_args():
     parser.add_argument("--sample_rate", type=int, default=4)
     parser.add_argument("--num_frames", type=int, default=16)
     parser.add_argument("--max_image_size", type=int, default=128)
+    parser.add_argument("--wh_ratio", type=str, default="1:1")
     parser.add_argument("--dynamic_frames", action="store_true")
     parser.add_argument("--compress_kv", action="store_true")
     parser.add_argument("--attention_mode", type=str, choices=['xformers', 'math', 'flash'], default="math")

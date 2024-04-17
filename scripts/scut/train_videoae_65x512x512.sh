@@ -50,7 +50,7 @@ if [ ! -d "outputs" ]; then
 fi
 
 # Copy code from gitee to project directory
-if [ `whoami` == "201810101923xxx" ]; then
+if [ `whoami` == "201810101923" ]; then
   bash check_env/cp_code.sh
 fi
 
@@ -61,10 +61,9 @@ export PYTHONPATH=${PWD}
 export DATA_PATH="/public/home/201810101923/datasets/opensora/dataset_v1.0.0_tmptest_sorted/sharegpt4v_path_cap_64x512x512.json"
 export REPLACE_ROOT="/public/home/201810101923/datasets/opensora/dataset_v1.0.0_tmptest_sorted"
 export MODEL_CACHE_DIR="/public/home/201810101923/models/opensora/v1.0.0"
-export PRETRAINED_MODEL_PT="/public/home/201810101923/models/opensora/v1.0.0_sorted/latte_t2v.pt"
+export PRETRAINED_MODEL_PT="/public/home/201810101923/models/opensora/v1.0.0_sorted/opensora_stage3_65x512x512_bf16.pt"
 export INTERNVID_DIR="/exthome/future-technology-college-data/Internvid_dataset/InternVid-10M-FLT-clip"
 export INTERNVID_META="/exthome/future-technology-college-data/Internvid_dataset/InternVid-10M-flt-clips1.jsonl"
-export OUTPUT_DIR="out_internvid_17x180x320"
 export VIDEO_FOLDER="/remote-home1/dataset/data_split_tt"  # not used
 srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --config_file scripts/accelerate_configs/deepspeed_zero2_config.yaml \
@@ -80,13 +79,12 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --data_path ${DATA_PATH} \
   --replace_root ${REPLACE_ROOT}  \
   --video_folder ${VIDEO_FOLDER} \
-  --sample_rate 1 \
-  --num_frames 17 \
-  --max_image_size 320 \
-  --wh_ratio "16:9" \
+  --sample_rate 8 \
+  --num_frames 65 \
+  --max_image_size 512 \
   --gradient_checkpointing \
   --attention_mode xformers \
-  --train_batch_size=4 \
+  --train_batch_size=2 \
   --dataloader_num_workers 16 \
   --gradient_accumulation_steps=1 \
   --max_train_steps=1000000 \
@@ -96,7 +94,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --mixed_precision="bf16" \
   --report_to="wandb" \
   --checkpointing_steps=1000 \
-  --output_dir=${OUTPUT_DIR} \
+  --output_dir="out_internvid_train" \
   --allow_tf32 \
   --pretrained ${PRETRAINED_MODEL_PT} \
   --use_deepspeed \

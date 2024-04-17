@@ -50,7 +50,7 @@ if [ ! -d "outputs" ]; then
 fi
 
 # Copy code from gitee to project directory
-if [ `whoami` == "201810101923" ]; then
+if [ `whoami` == "201810101923xxx" ]; then
   bash check_env/cp_code.sh
 fi
 
@@ -60,8 +60,10 @@ fi
 export PYTHONPATH=${PWD}
 export MODEL_DIR="pretrained_pipeline_fp16"
 export PROMPT_LIST="examples/demo.txt"
-export CKPT_PATH="/public/home/201810101923/models/opensora/v1.0.0_sorted/latte_t2v.pt"
-export OUTPUT_DIR="./sample_videos/demo_latte"
+export TRAIN_SIZE="17x288x512"
+export TRAIN_STEPS="400"
+export CKPT_PATH="/public/home/201810101923/code/PKU-Open-Sora-Forked/out_internvid_${TRAIN_SIZE}/checkpoint-${TRAIN_STEPS}/model/diffusion_pytorch_model.safetensors"
+export OUTPUT_DIR="./sample_videos/demo_internvid${TRAIN_SIZE}_${TRAIN_STEPS}"
 srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --config_file check_env/check_deepspeed_config.yaml \
   --num_processes $(($NUM_GPUS * $SLURM_NNODES)) --num_machines $SLURM_NNODES --machine_rank $SLURM_PROCID \
@@ -73,7 +75,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --text_encoder_name DeepFloyd/t5-v1_1-xxl \
   --text_prompt ${PROMPT_LIST} \
   --ae CausalVAEModel_4x8x8 \
-  --version 65x512x512 \
+  --version ${TRAIN_SIZE} \
   --save_img_path ${OUTPUT_DIR} \
   --fps 24 \
   --guidance_scale 7.5 \

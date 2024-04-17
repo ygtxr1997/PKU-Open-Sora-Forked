@@ -92,16 +92,16 @@ def center_crop(clip, crop_size):
     return crop(clip, i, j, th, tw)
 
 
-def center_crop_using_short_edge(clip):
+def center_crop_using_short_edge(clip, h_ratio: int = 1, w_ratio: int = 1):
     if not _is_tensor_video_clip(clip):
         raise ValueError("clip should be a 4D torch.tensor")
     h, w = clip.size(-2), clip.size(-1)
-    if h < w:
-        th, tw = h, h
+    if h / h_ratio < w / w_ratio:
+        th, tw = h, int(h / h_ratio * w_ratio)
         i = 0
         j = int(round((w - tw) / 2.0))
     else:
-        th, tw = w, w
+        th, tw = int(w / w_ratio * h_ratio), w
         i = int(round((h - th) / 2.0))
         j = 0
     return crop(clip, i, j, th, tw)
@@ -223,6 +223,8 @@ class CenterCropResizeVideo:
     def __init__(
             self,
             size,
+            h_ratio: int = 1,
+            w_ratio: int = 1,
             interpolation_mode="bilinear",
     ):
         if isinstance(size, tuple):
@@ -232,6 +234,8 @@ class CenterCropResizeVideo:
         else:
             self.size = (size, size)
 
+        self.h_ratio = h_ratio
+        self.w_ratio = w_ratio
         self.interpolation_mode = interpolation_mode
 
     def __call__(self, clip):
@@ -242,13 +246,14 @@ class CenterCropResizeVideo:
             torch.tensor: scale resized / center cropped video clip.
                 size is (T, C, crop_size, crop_size)
         """
-        clip_center_crop = center_crop_using_short_edge(clip)
+        clip_center_crop = center_crop_using_short_edge(clip, h_ratio=self.h_ratio, w_ratio=self.w_ratio)
         clip_center_crop_resize = resize(clip_center_crop, target_size=self.size,
                                          interpolation_mode=self.interpolation_mode)
         return clip_center_crop_resize
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(size={self.size}, interpolation_mode={self.interpolation_mode}"
+        return f"{self.__class__.__name__}(size={self.size}, interpolation_mode={self.interpolation_mode}," \
+               f"h_ratio={self.h_ratio}, w_ratio={self.w_ratio}"
 
 
 class UCFCenterCropVideo:
