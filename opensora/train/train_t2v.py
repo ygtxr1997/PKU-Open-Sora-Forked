@@ -365,7 +365,9 @@ def main(args):
             init_kwargs={
                 "wandb":
                     {"entity": args.tracker_entity,
-                     "name": args.tracker_run_name}
+                     "name": args.tracker_run_name,
+                     "init_timeout": 300,
+                     }
             },
         )
 
