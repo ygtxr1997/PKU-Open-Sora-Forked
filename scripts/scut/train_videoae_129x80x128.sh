@@ -64,7 +64,7 @@ export MODEL_CACHE_DIR="/public/home/201810101923/models/opensora/v1.0.0"
 export PRETRAINED_MODEL_PT="/public/home/201810101923/models/opensora/v1.0.0_sorted/latte_t2v.pt"
 export INTERNVID_DIR="/exthome/future-technology-college-data/Internvid_dataset/InternVid-10M-FLT-clip"
 export INTERNVID_META="/exthome/future-technology-college-data/Internvid_dataset/InternVid-10M-flt-clips1.jsonl"
-export OUTPUT_DIR="out_internvid_17x72x128"
+export OUTPUT_DIR="out_internvid_17x80x128"
 export VIDEO_FOLDER="/remote-home1/dataset/data_split_tt"  # not used
 srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --config_file scripts/accelerate_configs/deepspeed_zero2_config.yaml \
@@ -81,9 +81,9 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --replace_root ${REPLACE_ROOT}  \
   --video_folder ${VIDEO_FOLDER} \
   --sample_rate 1 \
-  --num_frames 17 \
+  --num_frames 65 \
   --max_image_size 128 \
-  --wh_ratio "16:9" \
+  --wh_ratio "16:10" \
   --gradient_checkpointing \
   --attention_mode xformers \
   --train_batch_size=4 \
