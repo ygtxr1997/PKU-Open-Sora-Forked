@@ -43,7 +43,7 @@ export NCCL_NET=IB
 
 # GPU nodes have no network
 wandb offline
-export WANDB_ DISABLE_SERVICE=True
+export WANDB_DISABLE_SERVICE=True
 
 # To save SLURM output logging files
 if [ ! -d "outputs" ]; then
