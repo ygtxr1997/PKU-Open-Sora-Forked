@@ -81,7 +81,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --replace_root ${REPLACE_ROOT}  \
   --video_folder ${VIDEO_FOLDER} \
   --sample_rate 1 \
-  --num_frames 65 \
+  --num_frames 129 \
   --max_image_size 128 \
   --wh_ratio "16:10" \
   --gradient_checkpointing \
@@ -95,7 +95,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --lr_warmup_steps=0 \
   --mixed_precision="bf16" \
   --report_to="wandb" \
-  --checkpointing_steps=2000 \
+  --checkpointing_steps=200 \
   --output_dir=${OUTPUT_DIR} \
   --allow_tf32 \
   --pretrained ${PRETRAINED_MODEL_PT} \
