@@ -669,6 +669,7 @@ class VideoGenPipeline(DiffusionPipeline):
             generator,
             latents,
         )
+        print("latents:", latents.shape)
 
         # 6. Prepare extra step kwargs. TODO: Logic should ideally just be moved out of the pipeline
         extra_step_kwargs = self.prepare_extra_step_kwargs(generator, eta)
@@ -714,6 +715,7 @@ class VideoGenPipeline(DiffusionPipeline):
                     enable_temporal_attentions=enable_temporal_attentions,
                     return_dict=False,
                 )[0]
+                print("noise_pred:", noise_pred.shape)
 
                 # perform guidance
                 if do_classifier_free_guidance:
