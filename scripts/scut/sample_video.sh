@@ -64,7 +64,7 @@ export TRAIN_SIZE="17x288x512"
 export SAMPLE_SIZE="17x80x128"
 export TRAIN_STEPS="90000"
 export CKPT_PATH="/public/home/201810101923/code/PKU-Open-Sora-Forked/out_internvid_${TRAIN_SIZE}/checkpoint-${TRAIN_STEPS}/model/diffusion_pytorch_model.safetensors"
-export OUTPUT_DIR="./sample_videos/demo_internvid${TRAIN_SIZE}_${TRAIN_STEPS}"
+export OUTPUT_DIR="./sample_videos/demo_internvid${TRAIN_SIZE}_${TRAIN_STEPS}_${SAMPLE_SIZE}"
 srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --config_file check_env/check_deepspeed_config.yaml \
   --num_processes $(($NUM_GPUS * $SLURM_NNODES)) --num_machines $SLURM_NNODES --machine_rank $SLURM_PROCID \

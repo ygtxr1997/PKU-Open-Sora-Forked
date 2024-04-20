@@ -136,7 +136,6 @@ def main(args):
                                    num_images_per_prompt=1,
                                    mask_feature=True,
                                    ).video
-        exit()
         try:
             if args.force_images:
                 videos = videos[:, 0].permute(0, 3, 1, 2)  # b t h w c -> b c h w
