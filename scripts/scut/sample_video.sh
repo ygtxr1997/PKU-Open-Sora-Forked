@@ -60,7 +60,7 @@ fi
 export PYTHONPATH=${PWD}
 export MODEL_DIR="pretrained_pipeline_fp16"
 export PROMPT_LIST="examples/demo.txt"
-export TRAIN_SIZE="17x288x512"
+export TRAIN_SIZE="17x144x256"
 export TRAIN_STEPS="90000"
 export CKPT_PATH="/public/home/201810101923/code/PKU-Open-Sora-Forked/out_internvid_${TRAIN_SIZE}/checkpoint-${TRAIN_STEPS}/model/diffusion_pytorch_model.safetensors"
 export OUTPUT_DIR="./sample_videos/demo_internvid${TRAIN_SIZE}_${TRAIN_STEPS}"
