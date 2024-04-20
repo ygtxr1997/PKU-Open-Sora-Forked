@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=opensora_train
 #SBATCH --partition=gpuA800
-#SBATCH --nodes=8
+#SBATCH --nodes=6
 #SBATCH --exclude=gpu[1]
 #SBATCH --ntasks-per-node=1          # crucial - only 1 task per dist per node!
 #SBATCH --cpus-per-task=64           # number of cores per tasks
