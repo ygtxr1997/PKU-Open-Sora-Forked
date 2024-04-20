@@ -14,7 +14,6 @@ from opensora.utils.dataset_utils import DecordInit
 from opensora.utils.utils import text_preprocessing
 
 
-
 class T2V_dataset(Dataset):
     def __init__(self, args, transform, temporal_sample, tokenizer):
 
