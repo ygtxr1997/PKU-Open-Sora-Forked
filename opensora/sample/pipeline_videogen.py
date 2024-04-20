@@ -707,6 +707,11 @@ class VideoGenPipeline(DiffusionPipeline):
                 current_timestep = current_timestep.expand(latent_model_input.shape[0])
 
                 # predict noise model_output
+                print("latent_model_input:", latent_model_input.shape)
+                print("prompt_embeds:", prompt_embeds.shape)
+                print("timestep:", current_timestep.shape)
+                print("added_cond_kwargs:", added_cond_kwargs)
+                print("enable_temporal_attentions:", enable_temporal_attentions)
                 noise_pred = self.transformer(
                     latent_model_input,
                     encoder_hidden_states=prompt_embeds,

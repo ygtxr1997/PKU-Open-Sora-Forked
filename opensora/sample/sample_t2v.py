@@ -72,7 +72,8 @@ def main(args):
     text_encoder = T5EncoderModel.from_pretrained(args.text_encoder_name, cache_dir=args.cache_dir, torch_dtype=torch.float16).to(device)
 
     video_length = transformer_model.config.video_length
-    train_frames, image_size_h, image_size_w = [int(x) for x in args.version.split('x')]  # e.g. 65x512x512
+    sample_size: str = args.version if args.sample_size is None else args.sample_size
+    train_frames, image_size_h, image_size_w = [int(x) for x in sample_size.split('x')]  # e.g. 65x512x512
     latent_size = (image_size_h // ae_stride_config[args.ae][1], image_size_w // ae_stride_config[args.ae][2])
     vae.latent_size = latent_size
     if args.force_images:
@@ -177,6 +178,7 @@ if __name__ == "__main__":
     parser.add_argument("--version", type=str, default='65x512x512',
                         choices=['65x512x512', '65x256x256', '17x256x256',
                                  '17x288x512', '17x144x256', '17x72x128'])
+    parser.add_argument("--sample_size", type=str, default=None)
     parser.add_argument("--ae", type=str, default='CausalVAEModel_4x8x8')
     parser.add_argument("--text_encoder_name", type=str, default='DeepFloyd/t5-v1_1-xxl')
     parser.add_argument("--save_img_path", type=str, default="./sample_videos/t2v")
