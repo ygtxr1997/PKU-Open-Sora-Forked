@@ -669,7 +669,7 @@ class VideoGenPipeline(DiffusionPipeline):
             generator,
             latents,
         )
-        print("latents:", latents.shape)
+        # print("latents:", latents.shape)
 
         # 6. Prepare extra step kwargs. TODO: Logic should ideally just be moved out of the pipeline
         extra_step_kwargs = self.prepare_extra_step_kwargs(generator, eta)
@@ -707,11 +707,11 @@ class VideoGenPipeline(DiffusionPipeline):
                 current_timestep = current_timestep.expand(latent_model_input.shape[0])
 
                 # predict noise model_output
-                print("latent_model_input:", latent_model_input.shape)
-                print("prompt_embeds:", prompt_embeds.shape)
-                print("timestep:", current_timestep.shape)
-                print("added_cond_kwargs:", added_cond_kwargs)
-                print("enable_temporal_attentions:", enable_temporal_attentions)
+                # print("latent_model_input:", latent_model_input.shape)
+                # print("prompt_embeds:", prompt_embeds.shape)
+                # print("timestep:", current_timestep.shape)
+                # print("added_cond_kwargs:", added_cond_kwargs)
+                # print("enable_temporal_attentions:", enable_temporal_attentions)
                 noise_pred = self.transformer(
                     latent_model_input,
                     encoder_hidden_states=prompt_embeds,
@@ -720,7 +720,7 @@ class VideoGenPipeline(DiffusionPipeline):
                     enable_temporal_attentions=enable_temporal_attentions,
                     return_dict=False,
                 )[0]
-                print("noise_pred:", noise_pred.shape)
+                # print("noise_pred:", noise_pred.shape)
 
                 # perform guidance
                 if do_classifier_free_guidance:
