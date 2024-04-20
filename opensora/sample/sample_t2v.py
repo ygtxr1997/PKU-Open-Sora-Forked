@@ -176,7 +176,7 @@ if __name__ == "__main__":
     parser.add_argument("--cache_dir", type=str, default="/public/home/201810101923/models/opensora/v1.0.0")
     parser.add_argument("--version", type=str, default='65x512x512',
                         choices=['65x512x512', '65x256x256', '17x256x256',
-                                 '17x288x512'])
+                                 '17x288x512', '17x144x256', '17x72x128'])
     parser.add_argument("--ae", type=str, default='CausalVAEModel_4x8x8')
     parser.add_argument("--text_encoder_name", type=str, default='DeepFloyd/t5-v1_1-xxl')
     parser.add_argument("--save_img_path", type=str, default="./sample_videos/t2v")
