@@ -157,6 +157,10 @@ class InternVidDataset(Dataset):
             return data
         except Exception as e:
             return self.process_error(index, e)
+        finally:
+            del video
+            del input_ids
+            del cond_mask
 
     def process_error(self, index, error=None):
         self.fail_cnt += 1

@@ -27,6 +27,7 @@ import accelerate
 import torch
 from torch.nn import functional as F
 import transformers
+from safetensors.torch import load_file
 from accelerate import Accelerator
 from accelerate.logging import get_logger
 from accelerate.utils import ProjectConfiguration, set_seed
@@ -202,9 +203,14 @@ def main(args):
 
     # # use pretrained model?
     if args.pretrained:
-        checkpoint = torch.load(args.pretrained, map_location='cpu')
-        if "model" in checkpoint.keys():
-            checkpoint = checkpoint["model"]
+        if os.path.splitext(args.pretrained)[-1] == ".safetensors":
+            checkpoint = load_file(args.pretrained, device="cuda")
+        elif os.path.splitext(args.ckpt_path)[-1] == ".pt":
+            checkpoint = torch.load(args.pretrained, map_location='cpu')
+            if "model" in checkpoint.keys:
+                checkpoint = checkpoint["model"]
+        else:
+            raise TypeError(f"Pretrained type:({args.pretrained}) not supported!")
         model_state_dict = model.state_dict()
         missing_keys, unexpected_keys = model.load_state_dict(checkpoint, strict=False)
         logger.info(f'missing_keys {len(missing_keys)}: {missing_keys}')
