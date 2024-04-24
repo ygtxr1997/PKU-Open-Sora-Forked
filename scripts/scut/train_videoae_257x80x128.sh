@@ -63,9 +63,9 @@ export DATA_PATH="/public/home/201810101923/datasets/opensora/dataset_v1.0.0_tmp
 export REPLACE_ROOT="/public/home/201810101923/datasets/opensora/dataset_v1.0.0_tmptest_sorted"
 export MODEL_CACHE_DIR="/public/home/201810101923/models/opensora/v1.0.0"
 export PRETRAINED_MODEL_PT="/public/home/201810101923/models/opensora/v1.0.0_sorted/internvid_128x80x128/checkpoint-50000/model/diffusion_pytorch_model.safetensors"
+export OUTPUT_DIR="out_internvid_257x80x128"
 export INTERNVID_DIR="/exthome/future-technology-college-data/Internvid_dataset/InternVid-10M-FLT-clip"
 export INTERNVID_META="/exthome/future-technology-college-data/Internvid_dataset/InternVid-10M-flt-clips1.jsonl"
-export OUTPUT_DIR="out_internvid_129x80x128"
 export VIDEO_FOLDER="/remote-home1/dataset/data_split_tt"  # not used
 srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --config_file scripts/accelerate_configs/deepspeed_zero2_config.yaml \
