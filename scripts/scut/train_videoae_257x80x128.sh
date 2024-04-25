@@ -62,7 +62,7 @@ export PYTHONPATH=${PWD}
 export DATA_PATH="/public/home/201810101923/datasets/opensora/dataset_v1.0.0_tmptest_sorted/sharegpt4v_path_cap_64x512x512.json"
 export REPLACE_ROOT="/public/home/201810101923/datasets/opensora/dataset_v1.0.0_tmptest_sorted"
 export MODEL_CACHE_DIR="/public/home/201810101923/models/opensora/v1.0.0"
-export PRETRAINED_MODEL_PT="/public/home/201810101923/models/opensora/v1.0.0_sorted/internvid_128x80x128/checkpoint-50000/model/diffusion_pytorch_model.safetensors"
+export PRETRAINED_MODEL_PT="/public/home/201810101923/models/opensora/v1.0.0_sorted/internvid_257x80x128/checkpoint-6000/model/diffusion_pytorch_model.safetensors"
 export OUTPUT_DIR="out_internvid_257x80x128"
 export INTERNVID_DIR="/exthome/future-technology-college-data/Internvid_dataset/InternVid-10M-FLT-clip"
 export INTERNVID_META="/exthome/future-technology-college-data/Internvid_dataset/InternVid-10M-flt-clips1.jsonl"
@@ -88,7 +88,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --gradient_checkpointing \
   --attention_mode xformers \
   --train_batch_size=2 \
-  --dataloader_num_workers 8 \
+  --dataloader_num_workers 6 \
   --gradient_accumulation_steps=1 \
   --max_train_steps=1000000 \
   --learning_rate=2e-05 \
