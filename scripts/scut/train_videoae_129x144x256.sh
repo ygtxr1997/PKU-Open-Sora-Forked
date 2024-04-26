@@ -1,11 +1,11 @@
 #!/bin/bash
-#SBATCH --job-name=opensora_sample
+#SBATCH --job-name=opensora_train
 #SBATCH --partition=gpuA800
-#SBATCH --nodes=1
+#SBATCH --nodes=8
 #SBATCH --exclude=gpu[1]
 #SBATCH --ntasks-per-node=1          # crucial - only 1 task per dist per node!
 #SBATCH --cpus-per-task=64           # number of cores per tasks
-#SBATCH --gres=gpu:1               # number of gpus
+#SBATCH --gres=gpu:8               # number of gpus
 #SBATCH --mem=500000MB                # memory
 #SBATCH --output=outputs/%x-%j.out   # output file name
 #SBATCH --time=30-00:00:00          # max time
@@ -13,7 +13,7 @@
 set -x -e
 
 # Set to equal gres=gpu:#
-export NUM_GPUS=1
+export NUM_GPUS=8
 
 export OMP_NUM_THREADS=4
 
@@ -43,6 +43,7 @@ export NCCL_NET=IB
 
 # GPU nodes have no network
 wandb offline
+export WANDB_DISABLE_SERVICE=True
 
 # To save SLURM output logging files
 if [ ! -d "outputs" ]; then
@@ -58,31 +59,55 @@ fi
 # please copy (or make a soft link by 'ln -s') the pretrained pipline to the current dir for more stable pipeline loading
 # also remember to set "wandb offline" before training, and use syncwandb.sh to upload to wandb
 export PYTHONPATH=${PWD}
-export MODEL_DIR="pretrained_pipeline_fp16"
-export PROMPT_LIST="examples/demo.txt"
-export TRAIN_SIZE="257x80x128"
-export SAMPLE_SIZE="257x80x128"
-export TRAIN_STEPS="16000"
-export CKPT_PATH="/public/home/201810101923/code/PKU-Open-Sora-Forked/out_internvid_${TRAIN_SIZE}/checkpoint-${TRAIN_STEPS}/model/diffusion_pytorch_model.safetensors"
-export OUTPUT_DIR="./sample_videos/demo_internvid${TRAIN_SIZE}_${TRAIN_STEPS}_${SAMPLE_SIZE}"
+export DATA_PATH="/public/home/201810101923/datasets/opensora/dataset_v1.0.0_tmptest_sorted/sharegpt4v_path_cap_64x512x512.json"
+export REPLACE_ROOT="/public/home/201810101923/datasets/opensora/dataset_v1.0.0_tmptest_sorted"
+export MODEL_CACHE_DIR="/public/home/201810101923/models/opensora/v1.0.0"
+export PRETRAINED_MODEL_PT="/public/home/201810101923/models/opensora/v1.0.0_sorted/internvid_129x80x128/checkpoint-50000/model/diffusion_pytorch_model.safetensors"
+export INTERNVID_DIR="/exthome/future-technology-college-data/Internvid_dataset/InternVid-10M-FLT-clip"
+export INTERNVID_META="/exthome/future-technology-college-data/Internvid_dataset/InternVid-10M-flt-clips1.jsonl"
+export OUTPUT_DIR="out_internvid_129x144x256"
+export VIDEO_FOLDER="/remote-home1/dataset/data_split_tt"  # not used
 srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
-  --config_file check_env/check_deepspeed_config.yaml \
+  --config_file scripts/accelerate_configs/deepspeed_zero2_config.yaml \
   --num_processes $(($NUM_GPUS * $SLURM_NNODES)) --num_machines $SLURM_NNODES --machine_rank $SLURM_PROCID \
   --main_process_ip $MASTER_ADDR --main_process_port $MASTER_PORT \
-  opensora/sample/sample_t2v.py \
-  --model_path LanguageBind/Open-Sora-Plan-v1.0.0 \
-  --ckpt_path ${CKPT_PATH}  \
-  --cache_dir "/public/home/201810101923/models/opensora/v1.0.0" \
+  opensora/train/train_t2v.py \
+  --model LatteT2V-XL/122 \
   --text_encoder_name DeepFloyd/t5-v1_1-xxl \
-  --text_prompt ${PROMPT_LIST} \
+  --cache_dir ${MODEL_CACHE_DIR}  \
+  --dataset internvid \
   --ae CausalVAEModel_4x8x8 \
-  --version ${TRAIN_SIZE} \
-  --sample_size ${SAMPLE_SIZE} \
-  --save_img_path ${OUTPUT_DIR} \
-  --fps 24 \
-  --guidance_scale 7.5 \
-  --num_sampling_steps 250 \
-  --enable_tiling
+  --ae_path CausalVAEModel_4x8x8 \
+  --data_path ${DATA_PATH} \
+  --replace_root ${REPLACE_ROOT}  \
+  --video_folder ${VIDEO_FOLDER} \
+  --sample_rate 1 \
+  --num_frames 129 \
+  --max_image_size 256 \
+  --wh_ratio "16:9" \
+  --gradient_checkpointing \
+  --attention_mode xformers \
+  --train_batch_size=2 \
+  --dataloader_num_workers 6 \
+  --gradient_accumulation_steps=1 \
+  --max_train_steps=1000000 \
+  --learning_rate=2e-05 \
+  --lr_scheduler="constant" \
+  --lr_warmup_steps=0 \
+  --mixed_precision="bf16" \
+  --report_to="wandb" \
+  --checkpointing_steps=2000 \
+  --output_dir=${OUTPUT_DIR} \
+  --allow_tf32 \
+  --pretrained ${PRETRAINED_MODEL_PT} \
+  --use_deepspeed \
+  --model_max_length 300 \
+  --use_image_num 0 \
+  --enable_tiling \
+  --tracker_project_name scut_opensora \
+  --tracker_run_name opensora512  \
+  --internvid_meta ${INTERNVID_META}  \
+  --internvid_dir ${INTERNVID_DIR}
   '
 
 echo "DONE"
