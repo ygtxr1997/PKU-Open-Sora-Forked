@@ -185,6 +185,8 @@ def main(args):
     )
 
     os.makedirs(args.save_folder, exist_ok=True)
+    if args.max_len == -1:
+        args.max_len = len(train_dataloader)
     for idx, batch in enumerate(tqdm(train_dataloader)):
         video_id, clip_id, video, caption = batch
         bs = args.batch_size
