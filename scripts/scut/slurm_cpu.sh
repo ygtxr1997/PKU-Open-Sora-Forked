@@ -6,13 +6,13 @@
 #SBATCH --cpus-per-task=16           # number of cores per tasks
 #SBATCH --mem=50000MB                # memory
 #SBATCH --output=outputs/%x-%j.out   # output file name
-#SBATCH --time=30-00:00:00          # max time
+#SBATCH --time=30-00:00:00           # max time
 
 set -x -e
 
 export PYTHONPATH=${PWD}
 
 # Add task here
-srun --jobid $SLURM_JOBID bash -c 'bash scripts/scut/split_video.sh'
+srun --jobid $SLURM_JOBID bash -c 'bash scripts/scut/litdata_unzip.sh'
 
 echo "DONE"

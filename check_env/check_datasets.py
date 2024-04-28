@@ -2,7 +2,9 @@ import os
 import logging
 from pathlib import Path
 from tqdm import tqdm
+import argparse
 
+import numpy as np
 import torch
 from torch.utils import data
 from datasets import load_dataset, load_from_disk, Dataset
@@ -87,10 +89,14 @@ def download_dataset():
 
 def print_batch(batch):
     def print_k_v(k, v):
-        if isinstance(v, torch.Tensor):
+        if isinstance(v, torch.Tensor) or isinstance(v, np.ndarray):
             print(f"({k}):{type(v)}, {v.shape}")
         elif isinstance(v, list):
             print(f"({k}):{type(v)}, len={len(v)}, [0]type:{type(v[0])}")
+        elif isinstance(v, str) or isinstance(v, np.int64):
+            print(f"({k}):{type(v)}, {v}")
+        elif isinstance(v, bytes):
+            print(f"({k}):{type(v)}, len={len(v)}")
         else:
             print(f"({k}):{type(v)}")
 
@@ -127,33 +133,65 @@ def check_batch():
     # train_dataset = getdataset(args)
 
     # 2. InternVid Dataset
-    from opensora.dataset.internvid_datasets import InternVidDataset
-    from opensora.dataset.split_json import split_jsonl
-    INTERNVID_DIR = "/exthome/future-technology-college-data/Internvid_dataset/InternVid-10M-FLT-clip"
-    INTERNVID_META = "/exthome/future-technology-college-data/Internvid_dataset/InternVid-10M-flt-clips1.jsonl"
+    # from opensora.dataset.internvid_datasets import InternVidDataset
+    # from opensora.dataset.split_json import split_jsonl
+    # INTERNVID_DIR = "/exthome/future-technology-college-data/Internvid_dataset/InternVid-10M-FLT-clip"
+    # INTERNVID_META = "/exthome/future-technology-college-data/Internvid_dataset/InternVid-10M-flt-clips1.jsonl"
+    # tokenizer = AutoTokenizer.from_pretrained(
+    #     args.text_encoder_name, cache_dir=args.cache_dir)
+    # train_dataset = InternVidDataset(
+    #     INTERNVID_META, INTERNVID_DIR, logger=logger,
+    #     tokenizer=tokenizer,
+    #     norm_fun=ae_norm[args.ae],
+    #     num_frames=32,
+    #     max_frame_stride=args.sample_rate,
+    # )
+
+    # 3. Panda70M Dataset
+    from opensora.dataset.panda70m_datasets import Panda70MDataset
+    PANDA70M_DIR = "/mnt/dongxu-fs1/data-ssd/mingyang/datasets/Panda-70M/litdata_0"
+    PANDA70M_META = "/mnt/dongxu-fs1/data-ssd/mingyang/datasets/Panda-70M/panda70m_training_full.csv"
     tokenizer = AutoTokenizer.from_pretrained(
-        args.text_encoder_name, cache_dir=args.cache_dir)
-    train_dataset = InternVidDataset(
-        INTERNVID_META, INTERNVID_DIR, logger=logger,
+            args.text_encoder_name, cache_dir=args.cache_dir)
+    train_dataset = Panda70MDataset(
+        PANDA70M_META, PANDA70M_DIR,
         tokenizer=tokenizer,
         norm_fun=ae_norm[args.ae],
         num_frames=32,
         max_frame_stride=args.sample_rate,
     )
+    total_len = len(train_dataset)
+    print("len=", total_len)
+    print("[0]=")
+    print_batch(train_dataset[0])
+    print("[-1]=")
+    print_batch(train_dataset[total_len - 1])
 
     logger.info("[DEBUG] dataset got")
 
     train_dataloader = torch.utils.data.DataLoader(
         train_dataset,
-        shuffle=True,
-        # collate_fn=Collate(args),  # TODO: do not enable dynamic mask in this point
+        # shuffle=True,
         batch_size=args.train_batch_size,
-        num_workers=16,
+        num_workers=2,
     )
 
     for idx, batch in enumerate(tqdm(train_dataloader)):
-        print_batch(batch)
+        # print_batch(batch)
+        video_ids = batch["video_id"]
+        for video_id in video_ids:
+            if "SX" in video_ids:
+                print(video_id)
+            elif "----" in video_ids:
+                print(video_id)
 
 
 if __name__ == "__main__":
+    """
+    python check_env/check_datasets.py  \
+      --dataset internvid  \
+      --data_path "NONE"  \
+      --output_dir .  \
+      --train_batch_size 1
+    """
     check_batch()

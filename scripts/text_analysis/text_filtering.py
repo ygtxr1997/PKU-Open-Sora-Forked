@@ -47,35 +47,42 @@ def main(args):
         reader = csv.reader(f, delimiter=',')
         data = [x for x in reader]
 
-    good_data = [data[0]]  # save 1st row
+    good_data = [data[0]]  # save 1st row, ['videoID', 'url', 'timestamp', 'caption', 'matching_score']
+    print("Total count (w/o 1st row):", len(data) - 1)
+    print("First row:", data[0])
+    print("Second row:", data[1])
     args.max_len = len(data) if args.max_len == -1 else args.max_len
     for i in tqdm(range(1, min(len(data), args.max_len)), desc="Total"):  # skip 1st row
         row = data[i]
-        if filter_csv_row(row):
-            good_data.append(row)
-        else:
-            pass
+        video_id = row[0]
+        if "1cj9aU" in video_id:
+            print(video_id)
+        # if filter_csv_row(row):
+        #     good_data.append(row)
+        # else:
+        #     pass
     print(f"Filter good data count: {len(good_data)}")
+    exit()
 
     ''' Save and check '''
-    with open(args.save_path, "w") as f:
-        writer = csv.writer(f)
-        writer.writerows(good_data)
-    print(f"Data saved to csv: {args.save_path}")
-    with open(args.save_path, "r") as f:
-        reader = csv.reader(f, delimiter=',')
-        data = [x for x in reader]
-        print(f"[Check saved csv]: {args.save_path}")
-        print("row[0]:", data[0])
-        print("row[1]:", data[1])
-        print("row[-1]:", data[-1])
-        print(f"len={len(data)}")
+    # with open(args.save_path, "w") as f:
+    #     writer = csv.writer(f)
+    #     writer.writerows(good_data)
+    # print(f"Data saved to csv: {args.save_path}")
+    # with open(args.save_path, "r") as f:
+    #     reader = csv.reader(f, delimiter=',')
+    #     data = [x for x in reader]
+    #     print(f"[Check saved csv]: {args.save_path}")
+    #     print("row[0]:", data[0])
+    #     print("row[1]:", data[1])
+    #     print("row[-1]:", data[-1])
+    #     print(f"len={len(data)}")
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--save_path", type=str, required=True)
-    parser.add_argument("--max_len", type=int, default=1000, help="-1 means all;")
+    parser.add_argument("--max_len", type=int, default=-1, help="-1 means all;")
     args = parser.parse_args()
     return args
 
