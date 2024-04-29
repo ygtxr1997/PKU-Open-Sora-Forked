@@ -13,6 +13,6 @@ set -x -e
 export PYTHONPATH=${PWD}
 
 # Add task here
-srun --jobid $SLURM_JOBID bash -c 'bash scripts/scut/litdata_unzip.sh'
+srun --jobid $SLURM_JOBID bash -c 'bash scripts/scut/litdata_gentxt.sh'
 
 echo "DONE"
