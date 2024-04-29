@@ -225,7 +225,7 @@ def task_gen_txt(args):
         else:
             print(f"[Warning] {fn}'s name={name} longer than 15!")
             assert len(name) > 15
-            i = len(name)
+            i = len(name) - 1
             while '0' <= name[i] <= '9':
                 i -= 1
             assert name[i] == "_"
