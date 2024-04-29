@@ -200,22 +200,91 @@ def task_unzip_litdata(args):
 def task_gen_txt(args):
     root = args.input_data_folder
     save_fn = f"{os.path.basename(os.path.abspath(root))}_list.txt"
-    print(f"[TaskGenTxt] Save filename: {save_fn}")
+    print(f"[TaskGenTXT] Save filename: {save_fn}")
 
-    print(f"[TaskGenTxt] Reading directory: {root}")
+    print(f"[TaskGenTXT] Reading directory: {root}")
     file_names = os.listdir(root)
     file_names.sort()
     if args.max_len == -1:
         args.max_len = len(file_names)
     file_names = file_names[:args.max_len]
 
-    print(f"[TaskGenTxt] List will be saved to: {args.save_folder}, len={len(file_names)}")
+    print(f"[TaskGenTXT] List will be saved to: {args.save_folder}, len={len(file_names)}")
     os.makedirs(args.save_folder, exist_ok=True)
     with open(os.path.join(args.save_folder, save_fn), "w") as f:
         file_lines = [f"{fn}\n" for fn in file_names]
         f.writelines(file_lines)
 
-    print("[TaskGenTxt] Finished!")
+    print("[TaskGenTXT] Prepare to filter csv.")
+    video_ids = []
+    for fn in file_names:
+        name, ext = os.path.splitext(fn)
+        assert len(name) == 15
+        video_id = str(name[:11])
+        clip_id = int(name[12:15])
+        video_ids.append(video_id)
+    task_filter_csv(
+        args.input_meta_path,
+        save_folder=args.save_folder,
+        save_fn=f"panda70m_training_{os.path.basename(os.path.abspath(root))}.csv",
+        good_keys=video_ids,
+    )
+
+    print("[TaskGenTXT] Finished!")
+
+
+def task_filter_csv(csv_path: str,
+                    save_folder: str,
+                    save_fn: str,
+                    max_len: int = -1,
+                    good_keys: list = None
+                    ):
+    csv.field_size_limit(9000000)
+    print(f"[TaskFilterCSV] Reading csv file: {csv_path}")
+    with open(csv_path, 'r') as f:
+        reader = csv.reader(f, delimiter=',')
+        data = [x for x in reader]
+
+    if max_len == -1:
+        max_len = len(data)
+    good_data = [data[0]]  # save 1st row, ['videoID', 'url', 'timestamp', 'caption', 'matching_score']
+    print("[TaskFilterCSV] Total count (w/o 1st row):", len(data) - 1)
+    print("[TaskFilterCSV] First row:", data[0])
+    print("[TaskFilterCSV] Second row:", data[1])
+
+    def filter_csv_row(csv_row: list, index: int = 0, filter_keys: list = None) -> bool:
+        val = csv_row[index]
+        val = val
+        if val in good_keys:
+            return True
+        return False
+
+    for i in tqdm(range(1, len(data)), desc="TaskFilterCSV Walk CSV File"):  # skip 1st row
+        if len(good_data) >= max_len:
+            break
+        row = data[i]
+        video_id = row[0]
+        if filter_csv_row(row, filter_keys=good_keys):
+            good_data.append(row)
+        else:
+            pass
+    print(f"[TaskFilterCSV] Filter good data count: {len(good_data)}")
+
+    def save_csv_and_check(save_path: str):
+        with open(save_path, "w") as fid:
+            writer = csv.writer(fid)
+            writer.writerows(good_data)
+        print(f"[TaskFilterCSV] Data saved to csv: {save_path}")
+        with open(save_path, "r") as fid:
+            tmp_reader = csv.reader(fid, delimiter=',')
+            tmp_data = [x for x in tmp_reader]
+            print(f"[TaskFilterCSV] [Check saved csv]: {save_path}")
+            print("row[0]:", tmp_data[0])
+            print("row[1]:", tmp_data[1])
+            print("row[-1]:", tmp_data[-1])
+            print(f"len={len(tmp_data)}")
+
+    save_csv_and_check(os.path.join(save_folder, save_fn))
 
 
 def parse_args():
@@ -253,6 +322,7 @@ if __name__ == "__main__":
     python opensora/dataset/litdata_process.py  \
       -m gen_txt  \
       --input_data_folder /public/home/201810101923/datasets/panda70m/clips_0/  \
+      --input_meta_path /public/home/201810101923/datasets/panda70m/panda70m_training_full.csv  \
       --save_folder /public/home/201810101923/datasets/panda70m/  \
       --max_len 100
     """
