@@ -177,13 +177,7 @@ def check_batch():
     )
 
     for idx, batch in enumerate(tqdm(train_dataloader)):
-        # print_batch(batch)
-        video_ids = batch["video_id"]
-        for video_id in video_ids:
-            if "SX" in video_id:
-                print(video_id)
-            elif "----" in video_id:
-                print(video_id)
+        print_batch(batch)
 
 
 if __name__ == "__main__":
