@@ -28,6 +28,7 @@ class LitDataDataset(StreamingDataset):
                  seed: int = 42,
                  llm_max_length: int = 300,
                  proportion_empty_prompts: float = 0.,
+                 resume: int = None,
                  ):
         super().__init__(input_dir=f"local:{dataset_dir}",
                          drop_last=drop_last, seed=seed,
@@ -35,6 +36,7 @@ class LitDataDataset(StreamingDataset):
 
         self.dataset_meta = dataset_meta
         self.dataset_dir = dataset_dir
+        self.resume = resume
 
         self.meta_id_to_captions = {}
         if dataset_meta is not None:
@@ -72,6 +74,9 @@ class LitDataDataset(StreamingDataset):
         return id_to_captions
 
     def __getitem__(self, index):
+        if self.resume is not None:
+            if index < self.resume:
+                return -1
         all_data = super().__getitem__(index)  # "video_id", "clip_id", "video", "caption"
         return all_data["video_id"], all_data["clip_id"], all_data["video"], all_data["caption"]
 
@@ -178,6 +183,7 @@ def main(args):
         args.input_meta_path, args.input_data_folder,
         tokenizer=None,
         drop_last=False,
+        resume=None if args.resume is None else (args.resume - 1) * args.batch_size,
     )
     train_dataloader = torch.utils.data.DataLoader(
         lit_dataset,
@@ -189,7 +195,7 @@ def main(args):
     if args.max_len == -1:
         args.max_len = len(train_dataloader)
     for idx, batch in enumerate(tqdm(train_dataloader)):
-        if args.resume is not None and idx < args.resume:
+        if args.resume is not None and idx <= args.resume:
             continue
         video_id, clip_id, video, caption = batch
         bs = len(video_id)
