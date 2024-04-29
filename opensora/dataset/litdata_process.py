@@ -255,7 +255,7 @@ def task_filter_csv(csv_path: str,
     def filter_csv_row(csv_row: list, index: int = 0, filter_keys: list = None) -> bool:
         val = csv_row[index]
         val = val
-        if val in good_keys:
+        if val in filter_keys:
             return True
         return False
 
