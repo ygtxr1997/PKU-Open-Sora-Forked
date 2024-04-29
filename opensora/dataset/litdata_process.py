@@ -75,9 +75,8 @@ class LitDataDataset(StreamingDataset):
 
     def __getitem__(self, index):
         if self.resume is not None:
-            print(index)
-            if index < self.resume:
-                return -1
+            if index.index < self.resume:
+                return -1, -1, -1, -1
         all_data = super().__getitem__(index)  # "video_id", "clip_id", "video", "caption"
         return all_data["video_id"], all_data["clip_id"], all_data["video"], all_data["caption"]
 
