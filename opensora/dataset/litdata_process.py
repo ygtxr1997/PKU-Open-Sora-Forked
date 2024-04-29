@@ -265,15 +265,18 @@ def task_filter_csv(csv_path: str,
         val = csv_row[index]
         val = val
         if val in filter_keys:
+            filter_keys.remove(val)
             return True
         return False
 
+    good_keys = set(good_keys)
+    print(f"[TaskFilterCSV] Prepare to filter good data: len={len(good_keys)}")
     for i in tqdm(range(1, len(data)), desc="TaskFilterCSV Walk CSV File"):  # skip 1st row
         if len(good_data) >= max_len:
             break
         row = data[i]
         video_id = row[0]
-        if filter_csv_row(row, filter_keys=set(good_keys)):
+        if filter_csv_row(row, filter_keys=good_keys):
             good_data.append(row)
         else:
             pass
