@@ -160,20 +160,7 @@ def print_batch(batch):
         raise TypeError(f"Batch type not supported: {type(batch)}")
 
 
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--input_data_folder", type=str, required=True)
-    parser.add_argument("--input_meta_path", type=str, default=None)
-    parser.add_argument("--save_folder", type=str, required=True)
-    parser.add_argument("--save_ext", type=str, default="mp4")
-    parser.add_argument("--batch_size", type=int, default=4)
-    parser.add_argument("--max_len", type=int, default=-1, help="-1 means all;")
-    parser.add_argument("--resume", type=int, default=None)
-    args = parser.parse_args()
-    return args
-
-
-def main(args):
+def task_unzip_litdata(args):
     lit_dataset = LitDataDataset(
         args.input_meta_path, args.input_data_folder,
         tokenizer=None,
@@ -210,11 +197,62 @@ def main(args):
             exit()
 
 
+def task_gen_txt(args):
+    root = args.input_data_folder
+    save_fn = f"{os.path.basename(root)}_list.txt"
+
+    print(f"[TaskGenTxt] Reading directory: {root}")
+    file_names = os.listdir(root)
+    file_names.sort()
+    if args.max_len == -1:
+        args.max_len = len(file_names)
+    file_names = file_names[:args.max_len]
+
+    print(f"[TaskGenTxt] List will be saved to: {args.save_folder}, len={len(file_names)}")
+    os.makedirs(args.save_folder, exist_ok=True)
+    with open(os.path.join(args.save_folder, save_fn), "w") as f:
+        file_lines = [f"{fn}\n" for fn in file_names]
+        f.writelines(file_lines)
+
+    print("[TaskGenTxt] Finished!")
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-m", "--mode", type=str, default="unzip_lit", choices=["unzip_lit", "gen_txt"])
+    parser.add_argument("--input_data_folder", type=str, required=True)
+    parser.add_argument("--input_meta_path", type=str, default=None)
+    parser.add_argument("--save_folder", type=str, required=True)
+    parser.add_argument("--save_ext", type=str, default="mp4")
+    parser.add_argument("--batch_size", type=int, default=4)
+    parser.add_argument("--max_len", type=int, default=-1, help="-1 means all;")
+    parser.add_argument("--resume", type=int, default=None)
+    args = parser.parse_args()
+    return args
+
+
+def main(args):
+    if args.mode == "unzip_lit":
+        task_unzip_litdata(args)
+    elif args.mode == "gen_txt":
+        task_gen_txt(args)
+    else:
+        raise NotImplementedError(f"Mode {args.mode} not supported!")
+
+
 if __name__ == "__main__":
     """
+    [Task 1 - Unzip LitData]
     python opensora/dataset/litdata_process.py  \
+      -m unzip_lit  \
       --input_data_folder /mnt/dongxu-fs1/data-ssd/mingyang/datasets/Panda-70M/litdata_0/  \
       --save_folder /home/geyuan/datasets/Panda-70M/clips_0/  \
+      --max_len 100
+    [Task 2 - Generate txt list]
+    python opensora/dataset/litdata_process.py  \
+      -m gen_txt  \
+      --input_data_folder /home/geyuan/datasets/Panda-70M/clips_0/  \
+      --save_folder /home/geyuan/datasets/Panda-70M/  \
       --max_len 100
     """
     opts = parse_args()
