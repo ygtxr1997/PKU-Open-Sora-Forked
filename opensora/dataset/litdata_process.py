@@ -183,7 +183,7 @@ def main(args):
         args.input_meta_path, args.input_data_folder,
         tokenizer=None,
         drop_last=False,
-        resume=None if args.resume is None else (args.resume - 1) * args.batch_size,
+        resume=None,
     )
     train_dataloader = torch.utils.data.DataLoader(
         lit_dataset,
