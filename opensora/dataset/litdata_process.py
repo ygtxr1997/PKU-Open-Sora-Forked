@@ -48,7 +48,7 @@ class LitDataDataset(StreamingDataset):
         self.fail_cnt = 0
         self.success_cnt = 0
 
-        print(f"[InterVidDataset] loaded cnt={len(self)}")
+        print(f"[LitDataDataset] loaded cnt={len(self)}")
 
     def load_meta(self, meta_path: str):
         print("[LitDataDataset] Reading meta file...")
@@ -168,6 +168,7 @@ def parse_args():
     parser.add_argument("--save_ext", type=str, default="mp4")
     parser.add_argument("--batch_size", type=int, default=4)
     parser.add_argument("--max_len", type=int, default=-1, help="-1 means all;")
+    parser.add_argument("--resume", type=int, default=None)
     args = parser.parse_args()
     return args
 
@@ -188,8 +189,10 @@ def main(args):
     if args.max_len == -1:
         args.max_len = len(train_dataloader)
     for idx, batch in enumerate(tqdm(train_dataloader)):
+        if args.resume is not None and idx < args.resume:
+            continue
         video_id, clip_id, video, caption = batch
-        bs = args.batch_size
+        bs = len(video_id)
         for k in range(bs):
             if args.input_meta_path is not None:
                 one_video_id = video_id[k].replace("-", "_")
