@@ -199,7 +199,8 @@ def task_unzip_litdata(args):
 
 def task_gen_txt(args):
     root = args.input_data_folder
-    save_fn = f"{root.split('/')[-1]}_list.txt"
+    save_fn = f"{os.path.basename(os.path.abspath(root))}_list.txt"
+    print(f"[TaskGenTxt] Save filename: {save_fn}")
 
     print(f"[TaskGenTxt] Reading directory: {root}")
     file_names = os.listdir(root)
