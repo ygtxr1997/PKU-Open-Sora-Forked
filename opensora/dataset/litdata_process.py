@@ -219,9 +219,18 @@ def task_gen_txt(args):
     video_ids = []
     for fn in file_names:
         name, ext = os.path.splitext(fn)
-        assert len(name) == 15, f"{fn}'s name={name} longer than 15!"
-        video_id = str(name[:11])
-        clip_id = int(name[12:15])
+        if len(name) == 15:
+            video_id = str(name[:11])
+            clip_id = int(name[12:15])
+        else:
+            print(f"[Warning] {fn}'s name={name} longer than 15!")
+            assert len(name) > 15
+            i = len(name)
+            while '0' <= name[i] <= '9':
+                i -= 1
+            assert name[i] == "_"
+            video_id = str(name[:i])
+            clip_id = int(name[i + 1: len(name)])
         video_ids.append(video_id)
     task_filter_csv(
         args.input_meta_path,
