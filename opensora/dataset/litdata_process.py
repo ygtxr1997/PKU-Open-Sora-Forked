@@ -194,6 +194,9 @@ def main(args):
     os.makedirs(args.save_folder, exist_ok=True)
     if args.max_len == -1:
         args.max_len = len(train_dataloader)
+    if args.resume is not None:
+        for idx in tqdm(range(args.resume), desc="skipping..."):
+            next(iter(train_dataloader))
     for idx, batch in enumerate(tqdm(train_dataloader)):
         if args.resume is not None and idx <= args.resume:
             continue
