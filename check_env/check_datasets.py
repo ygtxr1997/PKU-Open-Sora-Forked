@@ -103,7 +103,7 @@ def print_batch(batch):
     if isinstance(batch, dict):
         for k, v in batch.items():
             print_k_v(k, v)
-    elif isinstance(batch, list):
+    elif isinstance(batch, list) or isinstance(batch, tuple):
         for i in range(len(batch)):
             print_k_v(i, batch[i])
     elif isinstance(batch, torch.Tensor):
