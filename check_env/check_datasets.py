@@ -171,7 +171,7 @@ def check_batch():
 
     train_dataloader = torch.utils.data.DataLoader(
         train_dataset,
-        # shuffle=True,
+        shuffle=False,
         batch_size=args.train_batch_size,
         num_workers=2,
     )
