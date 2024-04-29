@@ -149,12 +149,12 @@ def check_batch():
 
     # 3. Panda70M Dataset
     from opensora.dataset.panda70m_datasets import Panda70MPytorchDataset
-    PANDA70M_DIR = "/public/home/201810101923/datasets/panda70m/clips0"
+    PANDA70M_DIR = "/public/home/201810101923/datasets/panda70m/clips_0"
     PANDA70M_META = "/public/home/201810101923/datasets/panda70m/panda70m_training_clips_0.csv"
     tokenizer = AutoTokenizer.from_pretrained(
             args.text_encoder_name, cache_dir=args.cache_dir)
     train_dataset = Panda70MPytorchDataset(
-        PANDA70M_META, PANDA70M_DIR,
+        PANDA70M_META, PANDA70M_DIR, logger=logger,
         tokenizer=tokenizer,
         norm_fun=ae_norm[args.ae],
         num_frames=32,
@@ -188,10 +188,6 @@ def check_batch():
 
 if __name__ == "__main__":
     """
-    python check_env/check_datasets.py  \
-      --dataset internvid  \
-      --data_path "NONE"  \
-      --output_dir .  \
-      --train_batch_size 2
+    bash check_env/sh_check_all.sh
     """
     check_batch()
