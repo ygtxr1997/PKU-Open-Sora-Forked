@@ -219,7 +219,7 @@ def task_gen_txt(args):
     video_ids = []
     for fn in file_names:
         name, ext = os.path.splitext(fn)
-        assert len(name) == 15
+        assert len(name) == 15, f"{fn}'s name={name} longer than 15!"
         video_id = str(name[:11])
         clip_id = int(name[12:15])
         video_ids.append(video_id)
