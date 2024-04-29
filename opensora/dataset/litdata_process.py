@@ -261,7 +261,7 @@ def task_filter_csv(csv_path: str,
     print("[TaskFilterCSV] First row:", data[0])
     print("[TaskFilterCSV] Second row:", data[1])
 
-    def filter_csv_row(csv_row: list, index: int = 0, filter_keys: list = None) -> bool:
+    def filter_csv_row(csv_row: list, index: int = 0, filter_keys: set = None) -> bool:
         val = csv_row[index]
         val = val
         if val in filter_keys:
@@ -273,7 +273,7 @@ def task_filter_csv(csv_path: str,
             break
         row = data[i]
         video_id = row[0]
-        if filter_csv_row(row, filter_keys=good_keys):
+        if filter_csv_row(row, filter_keys=set(good_keys)):
             good_data.append(row)
         else:
             pass
