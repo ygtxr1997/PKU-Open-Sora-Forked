@@ -148,12 +148,12 @@ def check_batch():
     # )
 
     # 3. Panda70M Dataset
-    from opensora.dataset.panda70m_datasets import Panda70MDataset
-    PANDA70M_DIR = "/mnt/dongxu-fs1/data-ssd/mingyang/datasets/Panda-70M/litdata_0"
-    PANDA70M_META = "/mnt/dongxu-fs1/data-ssd/mingyang/datasets/Panda-70M/panda70m_training_full.csv"
+    from opensora.dataset.panda70m_datasets import Panda70MPytorchDataset
+    PANDA70M_DIR = "/public/home/201810101923/datasets/panda70m/clips0"
+    PANDA70M_META = "/public/home/201810101923/datasets/panda70m/panda70m_training_clips_0.csv"
     tokenizer = AutoTokenizer.from_pretrained(
             args.text_encoder_name, cache_dir=args.cache_dir)
-    train_dataset = Panda70MDataset(
+    train_dataset = Panda70MPytorchDataset(
         PANDA70M_META, PANDA70M_DIR,
         tokenizer=tokenizer,
         norm_fun=ae_norm[args.ae],
@@ -180,9 +180,9 @@ def check_batch():
         # print_batch(batch)
         video_ids = batch["video_id"]
         for video_id in video_ids:
-            if "SX" in video_ids:
+            if "SX" in video_id:
                 print(video_id)
-            elif "----" in video_ids:
+            elif "----" in video_id:
                 print(video_id)
 
 
@@ -192,6 +192,6 @@ if __name__ == "__main__":
       --dataset internvid  \
       --data_path "NONE"  \
       --output_dir .  \
-      --train_batch_size 1
+      --train_batch_size 2
     """
     check_batch()

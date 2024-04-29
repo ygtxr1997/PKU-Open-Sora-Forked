@@ -832,6 +832,10 @@ def parser_args():
                         help="InternVid video root folder")
     parser.add_argument("--internvid_meta", type=str, default=None,
                         help="InternVid .jsonl file")
+    parser.add_argument("--panda70m_dir", type=str, default=None,
+                        help="Panda70M video root folder")
+    parser.add_argument("--panda70m_meta", type=str, default=None,
+                        help="Panda70M .csv file")
     parser.add_argument(
         "--tracker_project_name",
         type=str,
