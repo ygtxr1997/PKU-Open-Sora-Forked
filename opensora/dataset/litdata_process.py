@@ -199,7 +199,7 @@ def task_unzip_litdata(args):
 
 def task_gen_txt(args):
     root = args.input_data_folder
-    save_fn = f"{os.path.basename(root)}_list.txt"
+    save_fn = f"{root.split('/')[-1]}_list.txt"
 
     print(f"[TaskGenTxt] Reading directory: {root}")
     file_names = os.listdir(root)
@@ -251,8 +251,8 @@ if __name__ == "__main__":
     [Task 2 - Generate txt list]
     python opensora/dataset/litdata_process.py  \
       -m gen_txt  \
-      --input_data_folder /home/geyuan/datasets/Panda-70M/clips_0/  \
-      --save_folder /home/geyuan/datasets/Panda-70M/  \
+      --input_data_folder /public/home/201810101923/datasets/panda70m/clips_0/  \
+      --save_folder /public/home/201810101923/datasets/panda70m/  \
       --max_len 100
     """
     opts = parse_args()
