@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=opensora_sample
-#SBATCH --partition=gpuHygonZ100
+#SBATCH --partition=gpuA800
 #SBATCH --nodes=1
 #SBATCH --exclude=gpu[1]
 #SBATCH --ntasks-per-node=1          # crucial - only 1 task per dist per node!
