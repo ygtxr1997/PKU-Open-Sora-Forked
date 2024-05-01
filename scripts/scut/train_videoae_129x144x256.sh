@@ -108,6 +108,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --enable_tiling \
   --tracker_project_name scut_opensora \
   --tracker_run_name opensora512  \
+  --resume_from_checkpoint "latest"  \
   --internvid_meta ${INTERNVID_META}  \
   --internvid_dir ${INTERNVID_DIR}  \
   --panda70m_meta ${PANDA70M_META}  \
