@@ -204,7 +204,7 @@ def main(args):
     # # use pretrained model?
     if args.pretrained:
         if os.path.splitext(args.pretrained)[-1] == ".safetensors":
-            checkpoint = load_file(args.pretrained, device="cuda")
+            checkpoint = load_file(args.pretrained, device="cpu")
         elif os.path.splitext(args.ckpt_path)[-1] == ".pt":
             checkpoint = torch.load(args.pretrained, map_location='cpu')
             if "model" in checkpoint.keys:
