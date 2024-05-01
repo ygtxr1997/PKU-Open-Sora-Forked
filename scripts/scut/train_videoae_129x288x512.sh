@@ -89,9 +89,9 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --wh_ratio "16:9" \
   --gradient_checkpointing \
   --attention_mode xformers \
-  --train_batch_size=2 \
+  --train_batch_size=1 \
   --dataloader_num_workers 6 \
-  --gradient_accumulation_steps=1 \
+  --gradient_accumulation_steps=2 \
   --max_train_steps=1000000 \
   --learning_rate=2e-05 \
   --lr_scheduler="constant" \
