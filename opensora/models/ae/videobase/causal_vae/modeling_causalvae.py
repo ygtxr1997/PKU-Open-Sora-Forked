@@ -314,7 +314,7 @@ class CausalVAEModel(VideoBaseAE_PL):
         is_training: bool = True,
     ) -> None:
         super().__init__()
-        self.tile_sample_min_size = 256
+        self.tile_sample_min_size = 128
         self.tile_sample_min_size_t = 65
         self.tile_latent_min_size = int(self.tile_sample_min_size / (2 ** (len(hidden_size_mult) - 1)))
         # self.tile_latent_min_size_t = int((self.tile_sample_min_size_t-1) / (2 ** self.time_compress)) + 1

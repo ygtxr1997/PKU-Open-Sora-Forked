@@ -761,6 +761,7 @@ class VideoGenPipeline(DiffusionPipeline):
         # latents = latents[:, :, :32, :, :]
         print(latents.shape, latents.dtype)
         # latents = torch.randn((1, 4, 32, 36, 64), dtype=latents.dtype, device=latents.device)
+        self.vae.encoder.to("cpu")
         video = self.vae.decode(latents)
         # video = self.vae.decode(latents / 0.18215)
         # video = rearrange(video, 'b c t h w -> b t c h w').contiguous()
