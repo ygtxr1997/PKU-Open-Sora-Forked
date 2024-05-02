@@ -759,7 +759,7 @@ class VideoGenPipeline(DiffusionPipeline):
 
     def decode_latents(self, latents):
         # latents = latents[:, :, :32, :, :]
-        print(latents.shape, latents.dtype)
+        print("decode_latents", latents.shape, latents.dtype)
         # latents = torch.randn((1, 4, 32, 36, 64), dtype=latents.dtype, device=latents.device)
         self.vae.vae.encoder.to("cpu")
         video = self.vae.decode(latents)
