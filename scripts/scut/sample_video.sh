@@ -2,7 +2,7 @@
 #SBATCH --job-name=opensora_sample
 #SBATCH --partition=gpuA800
 #SBATCH --nodes=1
-#SBATCH --exclude=gpu[1-2]
+#SBATCH --exclude=gpu[1]
 #SBATCH --ntasks-per-node=1          # crucial - only 1 task per dist per node!
 #SBATCH --cpus-per-task=64           # number of cores per tasks
 #SBATCH --gres=gpu:1               # number of gpus
@@ -61,7 +61,7 @@ export PYTHONPATH=${PWD}
 export MODEL_DIR="pretrained_pipeline_fp16"
 export PROMPT_LIST="examples/demo.txt"
 export TRAIN_SIZE="129x288x512"
-export SAMPLE_SIZE="129x288x512"
+export SAMPLE_SIZE="65x288x512"
 export TRAIN_STEPS="4000"
 export CKPT_PATH="/public/home/201810101923/code/PKU-Open-Sora-Forked/out_panda70m_${TRAIN_SIZE}/checkpoint-${TRAIN_STEPS}/model/diffusion_pytorch_model.safetensors"
 export OUTPUT_DIR="./sample_videos/demo_panda70m${TRAIN_SIZE}_${TRAIN_STEPS}_${SAMPLE_SIZE}"
