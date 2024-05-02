@@ -53,7 +53,7 @@ def main(args):
             with open(config_json_path, "r") as f:
                 config = json.load(f)
             transformer_model = LatteT2V.from_config(config, torch_dtype=torch.float16).to(device)
-            transformer_model.load_state_dict(load_file(args.ckpt_path, device="cuda"))
+            transformer_model.load_state_dict(load_file(args.ckpt_path, device="cpu"))
             transformer_model = transformer_model.to(torch.float16)
         elif os.path.splitext(args.ckpt_path)[-1] == ".pt":
             print(f"Load transformer from pt: {args.ckpt_path}")
