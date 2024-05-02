@@ -81,7 +81,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --save_img_path ${OUTPUT_DIR} \
   --fps 24 \
   --guidance_scale 7.5 \
-  --num_sampling_steps 25 \
+  --num_sampling_steps 250 \
   --enable_tiling  \
   --tile_overlap_factor 0.05
   '
