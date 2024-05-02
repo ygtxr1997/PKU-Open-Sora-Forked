@@ -179,6 +179,7 @@ if __name__ == "__main__":
                                  '17x288x512', '17x144x256', '17x72x128',
                                  '129x80x128', '257x80x128',
                                  '129x144x256',
+                                 '129x288x512',
                                  ])
     parser.add_argument("--sample_size", type=str, default=None)
     parser.add_argument("--ae", type=str, default='CausalVAEModel_4x8x8')
