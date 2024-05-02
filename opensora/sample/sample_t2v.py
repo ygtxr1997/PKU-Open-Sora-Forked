@@ -32,6 +32,7 @@ from pipeline_videogen import VideoGenPipeline
 import imageio
 
 
+@torch.no_grad()
 def main(args):
     # torch.manual_seed(args.seed)
     torch.set_grad_enabled(False)
