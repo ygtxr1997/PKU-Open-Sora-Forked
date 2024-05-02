@@ -42,7 +42,6 @@ def main(args):
     if args.enable_tiling:
         vae.vae.enable_tiling()
         vae.vae.tile_overlap_factor = args.tile_overlap_factor
-    vae.vae.requires_grad_(False)
 
     # Load model:
     if args.ckpt_path is None:
