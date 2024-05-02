@@ -2,7 +2,7 @@
 #SBATCH --job-name=opensora_sample
 #SBATCH --partition=gpuA800
 #SBATCH --nodes=1
-#SBATCH --exclude=gpu[1]
+#SBATCH --exclude=gpu[1-2]
 #SBATCH --ntasks-per-node=1          # crucial - only 1 task per dist per node!
 #SBATCH --cpus-per-task=64           # number of cores per tasks
 #SBATCH --gres=gpu:1               # number of gpus
