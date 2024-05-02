@@ -758,6 +758,7 @@ class VideoGenPipeline(DiffusionPipeline):
         return VideoPipelineOutput(video=video)
 
     def decode_latents(self, latents):
+        latents = latents.cpu()
         self.vae = self.vae.to("cpu")
         video = self.vae.decode(latents)
         # video = self.vae.decode(latents / 0.18215)
