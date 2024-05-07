@@ -149,6 +149,7 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
     #     return next(iterator)
 
     def iterate_map(self, sample):
+        print("[DEBUG] iterate_map called.")
         mp4_data = sample["mp4"]
         caption = sample["caption"]
 
