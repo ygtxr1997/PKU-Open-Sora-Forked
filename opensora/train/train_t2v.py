@@ -836,6 +836,8 @@ def parser_args():
                         help="Panda70M video root folder")
     parser.add_argument("--panda70m_meta", type=str, default=None,
                         help="Panda70M .csv file")
+    parser.add_argument("--webvid_dir", type=str, default=None,
+                        help="WebVid video root folder")
     parser.add_argument(
         "--tracker_project_name",
         type=str,
