@@ -193,8 +193,6 @@ def check_batch():
         batch_size=args.train_batch_size,
         num_workers=2,
     )
-    print(list(train_dataloader))
-    exit()
     train_dataloader = accelerator.prepare_data_loader(train_dataloader)
 
     for idx, batch in enumerate(tqdm(train_dataloader)):
