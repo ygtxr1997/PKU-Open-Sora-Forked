@@ -144,7 +144,7 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
 
     def process_error(self, index, sample, iterator: Iterator, error=None):
         self.fail_cnt += 1
-        self.logger.warning(f'Catch {error}, {index}:{sample}, get next item instead, '
+        self.logger.warning(f'Catch {error}, {index}:{sample["caption"]}, get next item instead, '
                             f'fail={self.fail_cnt}, success={self.success_cnt}')
         return next(iterator)
 
