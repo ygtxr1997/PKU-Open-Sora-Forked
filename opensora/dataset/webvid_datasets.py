@@ -179,7 +179,7 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
             "video": video,
             "input_ids": input_ids,
             "cond_mask": cond_mask,
-            "caption": caption
+            "caption_len": sample["caption_len"]
         }
 
     def decord_read(self, byte_data: bytes):
