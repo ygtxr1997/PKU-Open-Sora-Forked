@@ -73,7 +73,7 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
             webvid_map, remove_columns=webvid_columns)  # "mp4", "caption", "dataset"
         webvid_dataset = webvid_dataset.filter(lambda x: x["mp4"] != None)
         webvid_dataset = webvid_dataset.map(
-            self.iterate_map, remove_columns=["mp4", "video", "input_ids", "cond_mask", "caption"]
+            self.iterate_map, remove_columns=["mp4", "video", "input_ids", "cond_mask", "caption", "dataset"]
         )
         if self.logger is not None:
             logger.info(f"[WebVidHFWebDataset] webvid_dataset n_shards : {webvid_dataset.n_shards}")
@@ -152,7 +152,6 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
         print("[DEBUG] iterate_map called. caption is:", sample["caption"])
         mp4_data = sample["mp4"]
         caption = sample["caption"]
-        sample["caption_len"] = torch.from_numpy(np.array([len(caption)]))
 
         video = self.decord_read(mp4_data)  # (T,C,H,W)
         video = self.transform(video)  # T C H W -> T C H W
@@ -175,12 +174,12 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
         cond_mask = text_tokens_and_mask['attention_mask'].squeeze(0)
 
         self.success_cnt += 1
-        return {
-            "video": video,
-            "input_ids": input_ids,
-            "cond_mask": cond_mask,
-            "caption_len": sample["caption_len"]
-        }
+        sample["video"] = video
+        sample["input_ids"] = input_ids
+        sample["cond_mask"] = cond_mask
+        sample["caption"] = caption
+        sample["caption_len"] = torch.from_numpy(np.array([len(caption)]))
+        return sample
 
     def decord_read(self, byte_data: bytes):
         decord_vr = VideoReader(io.BytesIO(byte_data), ctx=decord.cpu(0))
