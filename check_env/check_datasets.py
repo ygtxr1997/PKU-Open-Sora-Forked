@@ -195,6 +195,7 @@ def check_batch():
         num_workers=4,
     )
     print(train_dataloader)
+    exit()
     train_dataloader = accelerator.prepare_data_loader(train_dataloader)
 
     for idx, batch in enumerate(tqdm(train_dataloader)):
