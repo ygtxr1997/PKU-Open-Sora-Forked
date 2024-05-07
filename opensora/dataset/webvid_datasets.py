@@ -111,8 +111,8 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
         webvid_iterator = iter(self.webvid_dataset)
         for idx, sample in enumerate(webvid_iterator):
             print(f"[DEBUG] iterating {idx}: {sample['caption'][:20]}")
-            if idx >= 15:
-                break
+            # if idx >= 15:
+            #     break
             try:
                 mp4_data = sample["mp4"]
                 caption = sample["caption"]
