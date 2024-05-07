@@ -194,7 +194,7 @@ def check_batch():
         batch_size=args.train_batch_size,
         num_workers=4,
     )
-    print(train_dataloader)
+    print(list(train_dataloader))
     exit()
     train_dataloader = accelerator.prepare_data_loader(train_dataloader)
 
