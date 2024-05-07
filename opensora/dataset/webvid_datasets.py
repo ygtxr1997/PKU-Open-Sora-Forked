@@ -101,52 +101,52 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
         self.fail_cnt = 0
         self.success_cnt = 0
 
-    def __iter__(self):
-        return iter(self.webvid_dataset)
-
     # def __iter__(self):
-    #     return self._sample_generator()
-    #
-    # def _sample_generator(self):
-    #     webvid_iterator = iter(self.webvid_dataset)
-    #     for idx, sample in enumerate(webvid_iterator):
-    #         print(idx)
-    #         if idx >= 15:
-    #             break
-    #         try:
-    #             mp4_data = sample["mp4"]
-    #             caption = sample["caption"]
-    #
-    #             video = self.decord_read(mp4_data)  # (T,C,H,W)
-    #             video = self.transform(video)  # T C H W -> T C H W
-    #             video = video.transpose(0, 1)  # T C H W -> C T H W
-    #             assert (video.shape[1] == self.num_frames), f'{len(video.shape[1])} != video_length:{self.num_frames}'
-    #
-    #             # Text
-    #             text = caption
-    #             text = text_preprocessing(text)
-    #             text_tokens_and_mask = self.tokenizer(
-    #                 text,
-    #                 max_length=self.llm_max_length,
-    #                 padding='max_length',
-    #                 truncation=True,
-    #                 return_attention_mask=True,
-    #                 add_special_tokens=True,
-    #                 return_tensors='pt'
-    #             )
-    #             input_ids = text_tokens_and_mask['input_ids'].squeeze(0)
-    #             cond_mask = text_tokens_and_mask['attention_mask'].squeeze(0)
-    #
-    #             self.success_cnt += 1
-    #             yield video, input_ids, cond_mask
-    #         except Exception as e:
-    #             yield self.process_error(idx, sample, webvid_iterator, e)
-    #
-    # def process_error(self, index, sample, iterator: Iterator, error=None):
-    #     self.fail_cnt += 1
-    #     self.logger.warning(f'Catch {error}, {index}:{sample}, get next item instead, '
-    #                         f'fail={self.fail_cnt}, success={self.success_cnt}')
-    #     return next(iterator)
+    #     return iter(self.webvid_dataset)
+
+    def __iter__(self):
+        return self._sample_generator()
+
+    def _sample_generator(self):
+        webvid_iterator = iter(self.webvid_dataset)
+        for idx, sample in enumerate(webvid_iterator):
+            print(idx)
+            if idx >= 15:
+                break
+            try:
+                mp4_data = sample["mp4"]
+                caption = sample["caption"]
+
+                video = self.decord_read(mp4_data)  # (T,C,H,W)
+                video = self.transform(video)  # T C H W -> T C H W
+                video = video.transpose(0, 1)  # T C H W -> C T H W
+                assert (video.shape[1] == self.num_frames), f'{len(video.shape[1])} != video_length:{self.num_frames}'
+
+                # Text
+                text = caption
+                text = text_preprocessing(text)
+                text_tokens_and_mask = self.tokenizer(
+                    text,
+                    max_length=self.llm_max_length,
+                    padding='max_length',
+                    truncation=True,
+                    return_attention_mask=True,
+                    add_special_tokens=True,
+                    return_tensors='pt'
+                )
+                input_ids = text_tokens_and_mask['input_ids'].squeeze(0)
+                cond_mask = text_tokens_and_mask['attention_mask'].squeeze(0)
+
+                self.success_cnt += 1
+                yield video, input_ids, cond_mask
+            except Exception as e:
+                yield self.process_error(idx, sample, webvid_iterator, e)
+
+    def process_error(self, index, sample, iterator: Iterator, error=None):
+        self.fail_cnt += 1
+        self.logger.warning(f'Catch {error}, {index}:{sample}, get next item instead, '
+                            f'fail={self.fail_cnt}, success={self.success_cnt}')
+        return next(iterator)
 
     def iterate_map(self, sample):
         print("[DEBUG] iterate_map called. caption is:", sample["caption"])
