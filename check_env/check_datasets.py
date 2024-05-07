@@ -147,25 +147,39 @@ def check_batch():
     #     max_frame_stride=args.sample_rate,
     # )
 
-    # 3. Panda70M Dataset
-    from opensora.dataset.panda70m_datasets import Panda70MPytorchDataset
-    PANDA70M_DIR = "/public/home/201810101923/datasets/panda70m/clips_0"
-    PANDA70M_META = "/public/home/201810101923/datasets/panda70m/panda70m_training_clips_0.csv"
+    # # 3. Panda70M Dataset
+    # from opensora.dataset.panda70m_datasets import Panda70MPytorchDataset
+    # PANDA70M_DIR = "/public/home/201810101923/datasets/panda70m/clips_0"
+    # PANDA70M_META = "/public/home/201810101923/datasets/panda70m/panda70m_training_clips_0.csv"
+    # tokenizer = AutoTokenizer.from_pretrained(
+    #         args.text_encoder_name, cache_dir=args.cache_dir)
+    # train_dataset = Panda70MPytorchDataset(
+    #     PANDA70M_META, PANDA70M_DIR, logger=logger,
+    #     tokenizer=tokenizer,
+    #     norm_fun=ae_norm[args.ae],
+    #     num_frames=32,
+    #     max_frame_stride=args.sample_rate,
+    # )
+    # total_len = len(train_dataset)
+    # print("len=", total_len)
+    # print("[0]=")
+    # print_batch(train_dataset[0])
+    # print("[-1]=")
+    # print_batch(train_dataset[total_len - 1])
+
+    # 4. WebVid Dataset
+    from opensora.dataset.webvid_datasets import WebVidHFWebDataset
+    WEBVID_DIR = "/exthome/future-technology-college-data/202321063560/webvid_data/webvid_train_data"
     tokenizer = AutoTokenizer.from_pretrained(
             args.text_encoder_name, cache_dir=args.cache_dir)
-    train_dataset = Panda70MPytorchDataset(
-        PANDA70M_META, PANDA70M_DIR, logger=logger,
+    train_dataset = WebVidHFWebDataset(
+        WEBVID_DIR, logger=logger,
         tokenizer=tokenizer,
         norm_fun=ae_norm[args.ae],
-        num_frames=32,
+        num_frames=129,
+        target_size=(512, 288),
         max_frame_stride=args.sample_rate,
     )
-    total_len = len(train_dataset)
-    print("len=", total_len)
-    print("[0]=")
-    print_batch(train_dataset[0])
-    print("[-1]=")
-    print_batch(train_dataset[total_len - 1])
 
     logger.info("[DEBUG] dataset got")
 
@@ -175,6 +189,7 @@ def check_batch():
         batch_size=args.train_batch_size,
         num_workers=2,
     )
+    train_dataloader = accelerator.prepare_data_loader(train_dataloader)
 
     for idx, batch in enumerate(tqdm(train_dataloader)):
         print_batch(batch)
