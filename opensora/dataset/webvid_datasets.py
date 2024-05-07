@@ -73,7 +73,7 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
             webvid_map, remove_columns=webvid_columns)  # "mp4", "caption", "dataset"
         webvid_dataset = webvid_dataset.filter(lambda x: x["mp4"] != None)
         webvid_dataset = webvid_dataset.map(
-            self.iterate_map, remove_columns=["mp4",]
+            self.iterate_map, remove_columns=["mp4", "video", "input_ids", "cond_mask"]
         )
         if self.logger is not None:
             logger.info(f"[WebVidHFWebDataset] webvid_dataset n_shards : {webvid_dataset.n_shards}")
