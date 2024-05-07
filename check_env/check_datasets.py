@@ -193,6 +193,7 @@ def check_batch():
         shuffle=False,
         batch_size=args.train_batch_size,
         num_workers=4,
+        drop_last=True,
     )
     train_dataloader = accelerator.prepare_data_loader(train_dataloader)
 
