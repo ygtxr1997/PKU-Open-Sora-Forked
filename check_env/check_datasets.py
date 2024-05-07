@@ -169,7 +169,8 @@ def check_batch():
 
     # 4. WebVid Dataset
     from opensora.dataset.webvid_datasets import WebVidHFWebDataset
-    WEBVID_DIR = "/exthome/future-technology-college-data/202321063560/webvid_data/webvid_train_data"
+    # WEBVID_DIR = "/exthome/future-technology-college-data/202321063560/webvid_data/webvid_train_data"
+    WEBVID_DIR = "/public/home/201810101923/datasets/webvid/data_demo"
     tokenizer = AutoTokenizer.from_pretrained(
             args.text_encoder_name, cache_dir=args.cache_dir)
     train_dataset = WebVidHFWebDataset(
@@ -193,6 +194,7 @@ def check_batch():
         batch_size=args.train_batch_size,
         num_workers=2,
     )
+    print(train_dataloader)
     train_dataloader = accelerator.prepare_data_loader(train_dataloader)
 
     for idx, batch in enumerate(tqdm(train_dataloader)):
