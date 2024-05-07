@@ -72,9 +72,9 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
         webvid_dataset = webvid_dataset.map(
             webvid_map, remove_columns=webvid_columns)  # "mp4", "caption", "dataset"
         webvid_dataset = webvid_dataset.filter(lambda x: x["mp4"] != None)
-        webvid_dataset = webvid_dataset.map(
-            self.iterate_map, remove_columns=["mp4", "video", "input_ids", "cond_mask", "caption", "dataset"]
-        )
+        # webvid_dataset = webvid_dataset.map(
+        #     self.iterate_map, remove_columns=["mp4", "video", "input_ids", "cond_mask", "caption", "dataset"]
+        # )
         if self.logger is not None:
             logger.info(f"[WebVidHFWebDataset] webvid_dataset n_shards : {webvid_dataset.n_shards}")
 
@@ -110,7 +110,7 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
     def _sample_generator(self):
         webvid_iterator = iter(self.webvid_dataset)
         for idx, sample in enumerate(webvid_iterator):
-            print(idx)
+            print(f"[DEBUG] iterating {idx}: {sample['caption'][:20]}")
             if idx >= 15:
                 break
             try:
