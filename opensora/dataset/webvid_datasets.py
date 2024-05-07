@@ -140,13 +140,13 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
                 self.success_cnt += 1
                 yield video, input_ids, cond_mask
             except Exception as e:
-                yield self.process_error(idx, sample, webvid_iterator, e)
+                self.process_error(idx, sample, e)
+                continue
 
-    def process_error(self, index, sample, iterator: Iterator, error=None):
+    def process_error(self, index, sample, error=None):
         self.fail_cnt += 1
         self.logger.warning(f'Catch {error}, {index}:{sample["caption"]}, get next item instead, '
                             f'fail={self.fail_cnt}, success={self.success_cnt}')
-        return next(iterator)
 
     def iterate_map(self, sample):
         print("[DEBUG] iterate_map called. caption is:", sample["caption"])
