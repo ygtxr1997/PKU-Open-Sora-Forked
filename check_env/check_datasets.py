@@ -192,7 +192,7 @@ def check_batch():
         train_dataset,
         shuffle=False,
         batch_size=args.train_batch_size,
-        num_workers=2,
+        num_workers=12,
     )
     print(train_dataloader)
     train_dataloader = accelerator.prepare_data_loader(train_dataloader)
