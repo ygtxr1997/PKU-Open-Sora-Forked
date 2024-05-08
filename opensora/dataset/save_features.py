@@ -189,7 +189,7 @@ def main(args):
 
     tokenizer = extract_dataset.tokenizer
     cache_tensors = torch.zeros(
-        (args.latent_cache_size, ae.z_channels, video_length + args.use_image_num, latent_size[0], latent_size[1]),
+        (args.latent_cache_size, ae.vae.z_channels, video_length + args.use_image_num, latent_size[0], latent_size[1]),
         dtype=torch.float32, device=accelerator.device, requires_grad=False)
     cache_ids = torch.zeros(
         (args.latent_cache_size),
