@@ -74,7 +74,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --config_file scripts/accelerate_configs/deepspeed_zero2_config.yaml \
   --num_processes $(($NUM_GPUS * $SLURM_NNODES)) --num_machines $SLURM_NNODES --machine_rank $SLURM_PROCID \
   --main_process_ip $MASTER_ADDR --main_process_port $MASTER_PORT \
-  opensora/train/train_t2v.py \
+  opensora/dataset/save_features.py \
   --text_encoder_name DeepFloyd/t5-v1_1-xxl \
   --cache_dir ${MODEL_CACHE_DIR}  \
   --dataset webvid \
