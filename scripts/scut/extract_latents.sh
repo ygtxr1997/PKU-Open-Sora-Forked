@@ -70,6 +70,7 @@ export PANDA70M_META="/public/home/201810101923/datasets/panda70m/panda70m_train
 export WEBVID_DIR="/exthome/future-technology-college-data/202321063560/webvid_data/webvid_train_data"
 #export WEBVID_DIR="/public/home/201810101923/datasets/webvid/data_demo"
 export OUTPUT_DIR="/public/home/201810101923/datasets/webvid/latents"
+echo "num_gpus: $NUM_GPUS, slurm_nnodes: $SLURM_NNODES"
 srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --config_file scripts/accelerate_configs/deepspeed_zero2_config.yaml \
   --num_processes $(($NUM_GPUS * $SLURM_NNODES)) --num_machines $SLURM_NNODES --machine_rank $SLURM_PROCID \
