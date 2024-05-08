@@ -301,6 +301,7 @@ def main(args):
 
 
 def save_latents(latents: torch.Tensor, vids: torch.Tensor, save_root: str, max_cnt: int = -1):
+    print("[DEBUG] ready to save latents.")
     b = latents.shape[0]
     if max_cnt == -1:
         max_cnt = b
