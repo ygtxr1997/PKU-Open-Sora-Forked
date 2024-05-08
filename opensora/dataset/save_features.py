@@ -254,7 +254,8 @@ def main(args):
             cache_cnt = (cache_cnt + b) % args.latent_cache_size
 
         # Validation and log
-        if accelerator.is_main_process and global_step % args.validation_steps == 0:
+        if accelerator.is_main_process and global_step % args.validation_steps == 0 and \
+                0 == int(os.environ["SLURM_PROCID"]):
             with torch.no_grad():
                 validation_prompt = tokenizer.decode(text_ids[0], skip_special_tokens=True)
                 validation_latent = x[0].unsqueeze(0)
@@ -314,6 +315,7 @@ def save_latents(latents: torch.Tensor, vids: torch.Tensor, save_root: str, max_
         video_id = vids[i]
         save_fn = os.path.join(save_root, f"{video_id}.npy")
         np.save(save_fn, latent)
+    print("[DEBUG] npy saved.")
 
 
 def parser_args():
