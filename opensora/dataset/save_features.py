@@ -247,7 +247,7 @@ def main(args):
             # Save latents
             b, c, f, h, w = x.shape
             if cache_cnt + b > args.latent_cache_size:  # cache is full, save
-                save_latents(cache_tensors, cache_ids, args.output_dir)
+                save_latents(cache_tensors, cache_ids, args.output_dir, max_cnt=cache_cnt)
                 cache_cnt = 0
             cache_tensors[cache_cnt: cache_cnt + b] = x.detach()
             cache_ids[cache_cnt: cache_cnt + b] = video_ids.detach()
