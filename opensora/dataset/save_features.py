@@ -251,7 +251,7 @@ def main(args):
                 cache_cnt = 0
             cache_tensors[cache_cnt: cache_cnt + b] = x.detach()
             cache_ids[cache_cnt: cache_cnt + b] = video_ids.detach()
-            cache_cnt = (cache_cnt + b) % args.latent_cache_size
+            cache_cnt = cache_cnt + b
 
         # Validation and log
         if accelerator.is_main_process and global_step % args.validation_steps == 0 and \
