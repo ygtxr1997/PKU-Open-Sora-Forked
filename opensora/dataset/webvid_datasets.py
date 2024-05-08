@@ -60,7 +60,6 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
                 webvid_dataset, rank=rank, world_size=world_size)
             if self.logger is not None:
                 self.logger.info(f"[WebVidHFWebDataset] distributed split by rank: {rank}/{world_size}")
-        print(f"[DEBUG][WebVidHFWebDataset] distributed split by rank: {rank}/{world_size}")
 
         def webvid_map(example):
             if example['txt'][-1] in ['\n', '.', ',', ' ']:
@@ -111,7 +110,7 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
     def _sample_generator(self):
         webvid_iterator = iter(self.webvid_dataset)
         for idx, sample in enumerate(webvid_iterator):
-            # print(f"[DEBUG] iterating {idx}: {sample['caption'][:20]}")
+            print(f"[DEBUG] iterating {idx}: {sample['caption'][:20]}")
             # if idx >= 15:
             #     break
             try:
