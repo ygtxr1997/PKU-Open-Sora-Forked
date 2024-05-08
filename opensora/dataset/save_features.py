@@ -301,7 +301,6 @@ def main(args):
 
 
 def save_latents(latents: torch.Tensor, vids: torch.Tensor, save_root: str, max_cnt: int = -1):
-    print("[DEBUG] ready to save latents.")
     b = latents.shape[0]
     if max_cnt == -1:
         max_cnt = b
@@ -316,7 +315,6 @@ def save_latents(latents: torch.Tensor, vids: torch.Tensor, save_root: str, max_
         video_id = vids[i]
         save_fn = os.path.join(save_root, f"{video_id}.npy")
         np.save(save_fn, latent)
-    print("[DEBUG] npy saved.")
 
 
 def parser_args():
