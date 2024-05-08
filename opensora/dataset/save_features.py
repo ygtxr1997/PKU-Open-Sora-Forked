@@ -162,8 +162,10 @@ def main(args):
             config=vars(args),
             init_kwargs={
                 "wandb":
-                    {"entity": args.tracker_entity,
-                     "name": args.tracker_run_name,
+                    {
+                        "dir": args.wandb_dir,
+                        "entity": args.tracker_entity,
+                        "name": args.tracker_run_name,
                      }
             },
         )
@@ -192,7 +194,8 @@ def main(args):
 
     tokenizer = extract_dataset.tokenizer
     cache_tensors = torch.zeros(
-        (args.latent_cache_size, ae.vae.z_channels, video_length + args.use_image_num, latent_size[0], latent_size[1]),
+        (args.latent_cache_size, ae.vae.config.z_channels,
+         video_length + args.use_image_num, latent_size[0], latent_size[1]),
         dtype=torch.float32, device=accelerator.device, requires_grad=False)
     cache_ids = torch.zeros(
         (args.latent_cache_size),
@@ -233,7 +236,7 @@ def main(args):
         # Validation and log
         if accelerator.is_main_process and global_step % args.validation_steps == 0:
             with torch.no_grad():
-                validation_prompt = tokenizer.decode(text_ids[0])
+                validation_prompt = tokenizer.decode(text_ids[0], skip_special_tokens=True)
                 validation_latent = x[0].unsqueeze(0)
                 logger.info(f"Running validation... \n"
                             f"Generating a video from the latent with caption: {validation_prompt}")
