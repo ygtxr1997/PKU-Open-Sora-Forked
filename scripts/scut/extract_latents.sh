@@ -92,7 +92,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --max_extract_steps=1000000 \
   --mixed_precision="bf16" \
   --report_to="wandb" \
-  --validation_steps=500 \
+  --validation_steps=2 \
   --output_dir=${OUTPUT_DIR} \
   --logging_dir="save_latents_log"  \
   --use_deepspeed \
