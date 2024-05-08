@@ -163,7 +163,7 @@ def main(args):
             init_kwargs={
                 "wandb":
                     {
-                        "dir": args.wandb_dir,
+                        "dir": args.logging_dir,
                         "entity": args.tracker_entity,
                         "name": args.tracker_run_name,
                      }
