@@ -133,19 +133,6 @@ def main(args):
     # The VAE is in float32 to avoid NaN losses.
     ae.to(accelerator.device, dtype=torch.float32)
 
-    # Use 8-bit Adam for lower memory usage or to fine-tune the model in 16GB GPUs
-    if args.use_8bit_adam:
-        try:
-            import bitsandbytes as bnb
-        except ImportError:
-            raise ImportError(
-                "To use 8-bit Adam, please install the bitsandbytes library: `pip install bitsandbytes`."
-            )
-
-        optimizer_class = bnb.optim.AdamW8bit
-    else:
-        optimizer_class = torch.optim.AdamW
-
     # Setup data:
     extract_dataset = getdataset(args, logger=logger)
     extract_dataloader = torch.utils.data.DataLoader(
