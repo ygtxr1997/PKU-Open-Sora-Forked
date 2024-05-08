@@ -139,6 +139,7 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
                     )
                     input_ids = text_tokens_and_mask['input_ids'].squeeze(0)
                     cond_mask = text_tokens_and_mask['attention_mask'].squeeze(0)
+                    self.success_cnt += 1
                     yield video_id, video, input_ids, cond_mask
                 else:
                     self.success_cnt += 1
