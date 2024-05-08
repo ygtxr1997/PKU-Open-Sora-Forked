@@ -149,7 +149,7 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
 
     def process_error(self, index, sample, error=None):
         self.fail_cnt += 1
-        self.logger.warning(f'Catch {error}, {index}:{sample["__key__"]} - {sample["caption"]}, get next item instead, '
+        self.logger.warning(f'Catch {error}, {index}: {sample["__key__"]} - {sample["caption"]}, get next item instead, '
                             f'fail={self.fail_cnt}, success={self.success_cnt}')
 
     def iterate_map(self, sample):

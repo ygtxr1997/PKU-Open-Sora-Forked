@@ -100,7 +100,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --model_max_length 300 \
   --use_image_num 0 \
   --enable_tiling  \
-  --tile_overlap_factor 0.5  \
+  --tile_overlap_factor 0.25  \
   --enable_tracker  \
   --tracker_project_name scut_extract_latents \
   --tracker_run_name webvid  \
