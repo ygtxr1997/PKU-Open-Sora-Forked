@@ -1,3 +1,4 @@
+import os
 from torchvision.transforms import Compose
 from transformers import AutoTokenizer
 
@@ -9,6 +10,7 @@ from .landscope import Landscope
 from .t2v_datasets import T2V_dataset
 from .internvid_datasets import InternVidDataset
 from .panda70m_datasets import Panda70MPytorchDataset
+from .webvid_datasets import WebVidHFWebDataset
 from .transform import ToTensorVideo, TemporalRandomCrop, RandomHorizontalFlipVideo, CenterCropResizeVideo
 from .ucf101 import UCF101
 from .sky_datasets import Sky
@@ -131,6 +133,29 @@ def getdataset(args, logger=None):
             norm_fun=norm_fun,
             num_frames=args.num_frames,
             max_frame_stride=args.sample_rate,
+        )
+    elif args.dataset == 'webvid':
+        w_ratio, h_ratio = [int(x) for x in args.wh_ratio.split(":")]
+        target_hw = (args.max_image_size // w_ratio * h_ratio, args.max_image_size)
+        assert target_hw[0] / target_hw[1] == h_ratio / w_ratio
+        transform = transforms.Compose([
+            ToTensorVideo(),
+            CenterCropResizeVideo(target_hw, h_ratio=h_ratio, w_ratio=w_ratio),
+            RandomHorizontalFlipVideo(p=0.5),
+            norm_fun
+        ])
+        tokenizer = AutoTokenizer.from_pretrained(
+            args.text_encoder_name, cache_dir=args.cache_dir)
+        return WebVidHFWebDataset(
+            args.webvid_dir,
+            logger=logger,
+            tokenizer=tokenizer,
+            transform=transform,
+            norm_fun=norm_fun,
+            num_frames=args.num_frames,
+            max_frame_stride=args.sample_rate,
+            rank=int(os.environ["RANK"]),
+            world_size=int(os.environ["WORLD_SIZE"])
         )
     elif args.dataset == 't2v_feature':
         return T2V_Feature_dataset(args, temporal_sample)

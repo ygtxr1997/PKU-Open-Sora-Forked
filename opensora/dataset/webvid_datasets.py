@@ -29,7 +29,7 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
     """ WebDataset format: https://huggingface.co/docs/hub/en/datasets-webdataset """
     def __init__(self,
                  dataset_dir: str,
-                 tokenizer,
+                 tokenizer=None,
                  dataset_meta: str = None,
                  transform=None,
                  norm_fun=None,
@@ -110,7 +110,7 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
     def _sample_generator(self):
         webvid_iterator = iter(self.webvid_dataset)
         for idx, sample in enumerate(webvid_iterator):
-            print(f"[DEBUG] iterating {idx}: {sample['caption'][:20]}")
+            # print(f"[DEBUG] iterating {idx}: {sample['caption'][:20]}")
             # if idx >= 15:
             #     break
             try:
@@ -124,22 +124,24 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
                 assert (video.shape[1] == self.num_frames), f'{len(video.shape[1])} != video_length:{self.num_frames}'
 
                 # Text
-                text = caption
-                text = text_preprocessing(text)
-                text_tokens_and_mask = self.tokenizer(
-                    text,
-                    max_length=self.llm_max_length,
-                    padding='max_length',
-                    truncation=True,
-                    return_attention_mask=True,
-                    add_special_tokens=True,
-                    return_tensors='pt'
-                )
-                input_ids = text_tokens_and_mask['input_ids'].squeeze(0)
-                cond_mask = text_tokens_and_mask['attention_mask'].squeeze(0)
-
-                self.success_cnt += 1
-                yield video, input_ids, cond_mask, video_id
+                if self.tokenizer is not None:
+                    text = caption
+                    text = text_preprocessing(text)
+                    text_tokens_and_mask = self.tokenizer(
+                        text,
+                        max_length=self.llm_max_length,
+                        padding='max_length',
+                        truncation=True,
+                        return_attention_mask=True,
+                        add_special_tokens=True,
+                        return_tensors='pt'
+                    )
+                    input_ids = text_tokens_and_mask['input_ids'].squeeze(0)
+                    cond_mask = text_tokens_and_mask['attention_mask'].squeeze(0)
+                    yield video_id, video, input_ids, cond_mask
+                else:
+                    self.success_cnt += 1
+                    yield video_id, video
             except Exception as e:
                 self.process_error(idx, sample, e)
                 continue
@@ -150,7 +152,6 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
                             f'fail={self.fail_cnt}, success={self.success_cnt}')
 
     def iterate_map(self, sample):
-        print("[DEBUG] iterate_map called. caption is:", sample["caption"])
         mp4_data = sample["mp4"]
         caption = sample["caption"]
 

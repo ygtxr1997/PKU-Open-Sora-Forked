@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=opensora_train
+#SBATCH --job-name=extract_latents
 #SBATCH --partition=gpuA800
-#SBATCH --nodes=8
+#SBATCH --nodes=4
 #SBATCH --exclude=gpu[1]
 #SBATCH --ntasks-per-node=1          # crucial - only 1 task per dist per node!
 #SBATCH --cpus-per-task=64           # number of cores per tasks
@@ -67,49 +67,38 @@ export INTERNVID_DIR="/exthome/future-technology-college-data/Internvid_dataset/
 export INTERNVID_META="/exthome/future-technology-college-data/Internvid_dataset/InternVid-10M-flt-clips1.jsonl"
 export PANDA70M_DIR="/public/home/201810101923/datasets/panda70m/clips_0"
 export PANDA70M_META="/public/home/201810101923/datasets/panda70m/panda70m_training_clips_0.csv"
-export WEBVID_DIR="/exthome/future-technology-college-data/202321063560/webvid_data/webvid_train_data"
-export OUTPUT_DIR="out_panda70m_129x288x512"
-export VIDEO_FOLDER="/remote-home1/dataset/data_split_tt"  # not used
+#export WEBVID_DIR="/exthome/future-technology-college-data/202321063560/webvid_data/webvid_train_data"
+export WEBVID_DIR="/public/home/201810101923/datasets/webvid/data_demo"
+export OUTPUT_DIR="/public/home/201810101923/datasets/webvid/latents"
 srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --config_file scripts/accelerate_configs/deepspeed_zero2_config.yaml \
   --num_processes $(($NUM_GPUS * $SLURM_NNODES)) --num_machines $SLURM_NNODES --machine_rank $SLURM_PROCID \
   --main_process_ip $MASTER_ADDR --main_process_port $MASTER_PORT \
   opensora/train/train_t2v.py \
-  --model LatteT2V-XL/122 \
   --text_encoder_name DeepFloyd/t5-v1_1-xxl \
   --cache_dir ${MODEL_CACHE_DIR}  \
-  --dataset panda70m \
+  --dataset webvid \
   --ae CausalVAEModel_4x8x8 \
   --ae_path CausalVAEModel_4x8x8 \
   --data_path ${DATA_PATH} \
   --replace_root ${REPLACE_ROOT}  \
-  --video_folder ${VIDEO_FOLDER} \
   --sample_rate 1 \
   --num_frames 129 \
   --max_image_size 512 \
   --wh_ratio "16:9" \
-  --gradient_checkpointing \
-  --attention_mode xformers \
-  --train_batch_size=2 \
+  --extract_batch_size=2 \
   --dataloader_num_workers 6 \
-  --gradient_accumulation_steps=1 \
-  --max_train_steps=1000000 \
-  --learning_rate=2e-05 \
-  --lr_scheduler="constant" \
-  --lr_warmup_steps=0 \
+  --max_extract_steps=1000000 \
   --mixed_precision="bf16" \
   --report_to="wandb" \
-  --checkpointing_steps=2000 \
+  --checkpointing_steps=500 \
   --output_dir=${OUTPUT_DIR} \
-  --allow_tf32 \
-  --pretrained ${PRETRAINED_MODEL_PT} \
   --use_deepspeed \
   --model_max_length 300 \
   --use_image_num 0 \
   --enable_tiling \
-  --tracker_project_name scut_opensora \
-  --tracker_run_name opensora512  \
-  --resume_from_checkpoint "latest"  \
+  --tracker_project_name scut_extract_latents \
+  --tracker_run_name webvid  \
   --internvid_meta ${INTERNVID_META}  \
   --internvid_dir ${INTERNVID_DIR}  \
   --panda70m_meta ${PANDA70M_META}  \
