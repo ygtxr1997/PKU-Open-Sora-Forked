@@ -70,7 +70,7 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
 
         webvid_columns = ["__key__", "__url__", "json", "txt"]
         webvid_dataset = webvid_dataset.map(
-            webvid_map, remove_columns=webvid_columns)  # "mp4", "caption", "dataset"
+            webvid_map, remove_columns=webvid_columns[1:])  # "__key__", "mp4", "caption", "dataset"
         webvid_dataset = webvid_dataset.filter(lambda x: x["mp4"] != None)
         # webvid_dataset = webvid_dataset.map(
         #     self.iterate_map, remove_columns=["mp4", "video", "input_ids", "cond_mask", "caption", "dataset"]
@@ -116,6 +116,7 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
             try:
                 mp4_data = sample["mp4"]
                 caption = sample["caption"]
+                video_key = sample["__key__"]
 
                 video = self.decord_read(mp4_data)  # (T,C,H,W)
                 video = self.transform(video)  # T C H W -> T C H W
@@ -138,14 +139,14 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
                 cond_mask = text_tokens_and_mask['attention_mask'].squeeze(0)
 
                 self.success_cnt += 1
-                yield video, input_ids, cond_mask
+                yield video, input_ids, cond_mask, video_key
             except Exception as e:
                 self.process_error(idx, sample, e)
                 continue
 
     def process_error(self, index, sample, error=None):
         self.fail_cnt += 1
-        self.logger.warning(f'Catch {error}, {index}:{sample["caption"]}, get next item instead, '
+        self.logger.warning(f'Catch {error}, {index}:{sample["__key__"]} - {sample["caption"]}, get next item instead, '
                             f'fail={self.fail_cnt}, success={self.success_cnt}')
 
     def iterate_map(self, sample):
