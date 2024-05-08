@@ -154,8 +154,8 @@ def getdataset(args, logger=None):
             norm_fun=norm_fun,
             num_frames=args.num_frames,
             max_frame_stride=args.sample_rate,
-            rank=int(os.environ["RANK"]),
-            world_size=int(os.environ["WORLD_SIZE"])
+            rank=int(os.environ["SLURM_PROCID"]),
+            world_size=int(os.environ["SLURM_NNODES"])
         )
     elif args.dataset == 't2v_feature':
         return T2V_Feature_dataset(args, temporal_sample)
