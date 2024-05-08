@@ -192,10 +192,16 @@ def main(args):
         disable=not accelerator.is_local_main_process,
     )
 
-    rank = int(os.environ["RANK"]),
-    world_size = int(os.environ["WORLD_SIZE"])
-    print(f"[DEBUG] rank={rank}, world_size={world_size}, {accelerator.device}, {accelerator.num_processes}, {accelerator.process_index} "
-          f"")
+    def print_env():
+        for key in sorted(os.environ.keys()):
+            if not (
+                    key.startswith(("SLURM_", "SUBMITIT_"))
+                    or key in ("MASTER_ADDR", "MASTER_PORT", "RANK", "WORLD_SIZE", "LOCAL_RANK", "LOCAL_WORLD_SIZE")
+            ):
+                continue
+            value = os.environ[key]
+            print(f"{key}={value}")
+    print_env()
 
     tokenizer = extract_dataset.tokenizer
     cache_tensors = torch.zeros(
