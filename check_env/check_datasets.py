@@ -181,10 +181,10 @@ def check_batch():
         target_size=(512, 288),
         max_frame_stride=args.sample_rate,
     )
-    # iterator = iter(train_dataset)
-    # for sample in iterator:
-    #     print_batch(sample)
-    #     exit()
+    iterator = iter(train_dataset)
+    for sample in iterator:
+        print_batch(sample)
+        exit()
 
     logger.info("[DEBUG] dataset got")
 
