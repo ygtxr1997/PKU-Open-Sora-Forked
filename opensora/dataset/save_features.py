@@ -44,6 +44,7 @@ from opensora.models.ae.videobase import CausalVQVAEModelWrapper, CausalVAEModel
 from opensora.models.text_encoder import get_text_enc
 from opensora.utils.dataset_utils import Collate
 from opensora.models.ae import ae_stride_config, ae_channel_config
+from opensora.models.diffusion import Diffusion_models
 
 # Will error if the minimal version of diffusers is not installed. Remove at your own risks.
 check_min_version("0.24.0")
@@ -310,6 +311,7 @@ def parser_args():
     parser.add_argument("--dataset", type=str, required=True)
     parser.add_argument("--data_path", type=str, required=True)
     parser.add_argument("--replace_root", type=str, default=None)
+    parser.add_argument("--model", type=str, choices=list(Diffusion_models.keys()), default="DiT-XL/122")
 
     parser.add_argument("--ae", type=str, default="stabilityai/sd-vae-ft-mse")
     parser.add_argument("--ae_path", type=str, default="stabilityai/sd-vae-ft-mse")
