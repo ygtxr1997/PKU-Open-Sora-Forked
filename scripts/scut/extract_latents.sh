@@ -3,7 +3,7 @@
 #SBATCH --partition=gpuA800
 #SBATCH --nodes=2
 #SBATCH --exclude=gpu[1]
-#SBATCH --ntasks-per-node=1          # crucial - only 1 task per dist per node!
+#SBATCH --ntasks-per-node=8          # crucial - only 1 task per dist per node!
 #SBATCH --cpus-per-task=64           # number of cores per tasks
 #SBATCH --gres=gpu:8               # number of gpus
 #SBATCH --mem=500000MB                # memory

@@ -193,6 +193,7 @@ def main(args):
     )
 
     def print_env():
+        line = ""
         for key in sorted(os.environ.keys()):
             if not (
                     key.startswith(("SLURM_", "SUBMITIT_"))
@@ -200,7 +201,8 @@ def main(args):
             ):
                 continue
             value = os.environ[key]
-            print(f"{key}={value}")
+            line += f"{key}={value}, "
+        print(line)
     print_env()
 
     tokenizer = extract_dataset.tokenizer
