@@ -57,9 +57,9 @@ logger = get_logger(__name__)
 
 def main(args):
     now = datetime.datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
-    logging_dir = Path(args.output_dir, args.logging_dir)
 
-    accelerator_project_config = ProjectConfiguration(project_dir=args.output_dir, logging_dir=logging_dir)
+    os.makedirs(args.logging_dir, exist_ok=True)
+    accelerator_project_config = ProjectConfiguration(project_dir=args.output_dir, logging_dir=args.logging_dir)
 
     accelerator = Accelerator(
         mixed_precision=args.mixed_precision,
