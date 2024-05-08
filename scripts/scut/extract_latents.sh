@@ -14,7 +14,6 @@ set -x -e
 
 # Set to equal gres=gpu:#
 export NUM_GPUS=8
-export WORLD_SIZE=$(($NUM_GPUS * $SLURM_NNODES))
 
 export OMP_NUM_THREADS=4
 

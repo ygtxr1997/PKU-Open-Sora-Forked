@@ -200,7 +200,7 @@ def main(args):
                     or key in ("MASTER_ADDR", "MASTER_PORT", "RANK", "WORLD_SIZE", "LOCAL_RANK", "LOCAL_WORLD_SIZE")
             ):
                 continue
-            if "SLURM" in key:
+            if ("SLURM" in key) and ("PROCID" not in key):
                 continue
             value = os.environ[key]
             line += f"{key}={value}, "
