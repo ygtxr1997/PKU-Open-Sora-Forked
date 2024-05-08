@@ -118,7 +118,10 @@ def main(args):
     # assert args.num_frames % ae_stride_t == 0, f"Num_frames must be divisible by ae_stride_t, but found num_frames ({args.num_frames}), ae_stride_t ({ae_stride_t})."
     assert args.max_image_size % ae_stride_h == 0, f"Image size must be divisible by ae_stride_h, but found max_image_size ({args.max_image_size}),  ae_stride_h ({ae_stride_h})."
 
-    latent_size = (args.max_image_size // ae_stride_h, args.max_image_size // ae_stride_w)
+    w_ratio, h_ratio = [int(x) for x in args.wh_ratio.split(":")]
+    target_hw = (args.max_image_size // w_ratio * h_ratio, args.max_image_size)
+    assert target_hw[0] / target_hw[1] == h_ratio / w_ratio
+    latent_size = (target_hw[0] // ae_stride_h, target_hw[1] // ae_stride_w)
 
     if getae_wrapper(args.ae) == CausalVQVAEModelWrapper or getae_wrapper(args.ae) == CausalVAEModelWrapper:
         args.video_length = video_length = args.num_frames // ae_stride_t + 1
