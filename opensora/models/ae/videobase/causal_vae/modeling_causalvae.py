@@ -601,11 +601,11 @@ class CausalVAEModel(VideoBaseAE_PL):
         overlap_size = int(self.tile_latent_min_size * (1 - self.tile_overlap_factor))
         blend_extent = int(self.tile_sample_min_size * self.tile_overlap_factor)
         row_limit = self.tile_sample_min_size - blend_extent
-        print("[DEBUG] tile_latent_min_size:", self.tile_latent_min_size)
-        print("[DEBUG] tile_sample_min_size:", self.tile_sample_min_size)
-        print("[DEBUG] overlap_size:", overlap_size)
-        print("[DEBUG] blend_extent:", blend_extent)
-        print("[DEBUG] row_limit:", row_limit)
+        # print("[DEBUG] tile_latent_min_size:", self.tile_latent_min_size)
+        # print("[DEBUG] tile_sample_min_size:", self.tile_sample_min_size)
+        # print("[DEBUG] overlap_size:", overlap_size)
+        # print("[DEBUG] blend_extent:", blend_extent)
+        # print("[DEBUG] row_limit:", row_limit)
 
         # Split z into overlapping 64x64 tiles and decode them separately.
         # The tiles have an overlap to avoid seams between tiles.
@@ -620,7 +620,7 @@ class CausalVAEModel(VideoBaseAE_PL):
                     i : i + self.tile_latent_min_size,
                     j : j + self.tile_latent_min_size,
                 ]
-                print("[DEBUG] tile:", tile.shape)
+                # print("[DEBUG] tile:", tile.shape)
                 tile = self.post_quant_conv(tile)
                 decoded = self.decoder(tile)
                 row.append(decoded)

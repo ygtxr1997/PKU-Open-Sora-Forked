@@ -67,8 +67,8 @@ export INTERNVID_DIR="/exthome/future-technology-college-data/Internvid_dataset/
 export INTERNVID_META="/exthome/future-technology-college-data/Internvid_dataset/InternVid-10M-flt-clips1.jsonl"
 export PANDA70M_DIR="/public/home/201810101923/datasets/panda70m/clips_0"
 export PANDA70M_META="/public/home/201810101923/datasets/panda70m/panda70m_training_clips_0.csv"
-#export WEBVID_DIR="/exthome/future-technology-college-data/202321063560/webvid_data/webvid_train_data"
-export WEBVID_DIR="/public/home/201810101923/datasets/webvid/data_demo"
+export WEBVID_DIR="/exthome/future-technology-college-data/202321063560/webvid_data/webvid_train_data"
+#export WEBVID_DIR="/public/home/201810101923/datasets/webvid/data_demo"
 export OUTPUT_DIR="/public/home/201810101923/datasets/webvid/latents"
 srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --config_file scripts/accelerate_configs/deepspeed_zero2_config.yaml \
@@ -98,7 +98,6 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --use_deepspeed \
   --model_max_length 300 \
   --use_image_num 0 \
-  --enable_tiling  \
   --enable_tracker  \
   --tracker_project_name scut_extract_latents \
   --tracker_run_name webvid  \
