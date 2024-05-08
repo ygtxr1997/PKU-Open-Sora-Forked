@@ -208,6 +208,7 @@ def main(args):
     print_env()
 
     tokenizer = extract_dataset.tokenizer
+    assert args.latent_cache_size > args.extract_batch_size
     cache_tensors = torch.zeros(
         (args.latent_cache_size, ae.vae.config.z_channels,
          video_length + args.use_image_num, latent_size[0], latent_size[1]),
@@ -243,10 +244,14 @@ def main(args):
                 # B, _, _ = input_ids.shape  # B T+num_images L  b 1+4, L
                 # cond = torch.stack([text_enc(input_ids[i], cond_mask[i]) for i in range(B)])  # B 1+num_images L D
 
+            # Save latents
             b, c, f, h, w = x.shape
+            if cache_cnt + b > args.latent_cache_size:  # cache is full, save
+                save_latents(cache_tensors, cache_ids, args.output_dir)
+                cache_cnt = 0
             cache_tensors[cache_cnt: cache_cnt + b] = x.detach()
             cache_ids[cache_cnt: cache_cnt + b] = video_ids.detach()
-            cache_cnt = (cache_cnt + 1) % args.latent_cache_size
+            cache_cnt = (cache_cnt + b) % args.latent_cache_size
 
         # Validation and log
         if accelerator.is_main_process and global_step % args.validation_steps == 0:
@@ -282,16 +287,13 @@ def main(args):
         logs = {"cache_cnt": cache_cnt}
         progress_bar.set_postfix(**logs)
 
-        # Save latents
-        if cache_cnt == 0:  # cache is full, save
-            save_latents(cache_tensors, cache_ids, args.output_dir)
-
         if global_step >= args.max_extract_steps:
             break
 
     # Save the rest latents
     if cache_cnt > 0:
         save_latents(cache_tensors, cache_ids, args.output_dir, max_cnt=cache_cnt)
+        cache_cnt = 0
 
     accelerator.wait_for_everyone()
     accelerator.end_training()
