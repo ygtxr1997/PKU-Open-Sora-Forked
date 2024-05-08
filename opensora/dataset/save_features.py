@@ -223,7 +223,6 @@ def main(args):
 
         # Sample noise that we'll add to the latents
         x = x.to(accelerator.device)  # B C T+num_images H W, 16 + 4
-        b, c, f, h, w = x.shape
 
         with torch.no_grad():
             # Map input images to latent space + normalize latents
@@ -242,6 +241,7 @@ def main(args):
                 # B, _, _ = input_ids.shape  # B T+num_images L  b 1+4, L
                 # cond = torch.stack([text_enc(input_ids[i], cond_mask[i]) for i in range(B)])  # B 1+num_images L D
 
+            b, c, f, h, w = x.shape
             cache_tensors[cache_cnt: cache_cnt + b] = x.detach()
             cache_ids[cache_cnt: cache_cnt + b] = video_ids.detach()
             cache_cnt = (cache_cnt + 1) % args.latent_cache_size
