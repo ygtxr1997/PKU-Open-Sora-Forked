@@ -195,7 +195,7 @@ def main(args):
     rank = int(os.environ["RANK"]),
     world_size = int(os.environ["WORLD_SIZE"])
     print(f"[DEBUG] rank={rank}, world_size={world_size}, {accelerator.device}, {accelerator.num_processes}, {accelerator.process_index} "
-          f"env_np={os.environ['num_processes']}, env_nm={os.environ['num_machines']}")
+          f"")
 
     tokenizer = extract_dataset.tokenizer
     cache_tensors = torch.zeros(
