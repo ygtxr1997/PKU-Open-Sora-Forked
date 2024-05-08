@@ -146,6 +146,12 @@ def getdataset(args, logger=None):
         ])
         tokenizer = AutoTokenizer.from_pretrained(
             args.text_encoder_name, cache_dir=args.cache_dir)
+        nnodes = int(os.environ["SLURM_NNODES"])
+        gpus_per_node = int(os.environ["WORLD_SIZE"])
+        node_id = int(os.environ["SLURM_PROCID"])
+        local_rank = int(os.environ["RANK"])
+        global_rank = node_id * gpus_per_node + local_rank
+        global_gpus = nnodes * gpus_per_node
         return WebVidHFWebDataset(
             args.webvid_dir,
             logger=logger,
@@ -154,8 +160,8 @@ def getdataset(args, logger=None):
             norm_fun=norm_fun,
             num_frames=args.num_frames,
             max_frame_stride=args.sample_rate,
-            rank=int(os.environ["SLURM_PROCID"]),
-            world_size=int(os.environ["SLURM_NNODES"])
+            rank=global_rank,
+            world_size=global_gpus,
         )
     elif args.dataset == 't2v_feature':
         return T2V_Feature_dataset(args, temporal_sample)
