@@ -192,6 +192,10 @@ def main(args):
         disable=not accelerator.is_local_main_process,
     )
 
+    rank = int(os.environ["RANK"]),
+    world_size = int(os.environ["WORLD_SIZE"])
+    print(f"[DEBUG] rank={rank}, world_size={world_size}")
+
     tokenizer = extract_dataset.tokenizer
     cache_tensors = torch.zeros(
         (args.latent_cache_size, ae.vae.config.z_channels,
