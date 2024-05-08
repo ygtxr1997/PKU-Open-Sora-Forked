@@ -116,7 +116,7 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
             try:
                 mp4_data = sample["mp4"]
                 caption = sample["caption"]
-                video_key = sample["__key__"]
+                video_id = int(sample["__key__"])
 
                 video = self.decord_read(mp4_data)  # (T,C,H,W)
                 video = self.transform(video)  # T C H W -> T C H W
@@ -139,7 +139,7 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
                 cond_mask = text_tokens_and_mask['attention_mask'].squeeze(0)
 
                 self.success_cnt += 1
-                yield video, input_ids, cond_mask, video_key
+                yield video, input_ids, cond_mask, video_id
             except Exception as e:
                 self.process_error(idx, sample, e)
                 continue

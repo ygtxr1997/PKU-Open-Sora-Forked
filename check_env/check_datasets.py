@@ -184,7 +184,6 @@ def check_batch():
     iterator = iter(train_dataset)
     for sample in iterator:
         print_batch(sample)
-        exit()
 
     logger.info("[DEBUG] dataset got")
 
