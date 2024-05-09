@@ -271,9 +271,9 @@ def merge_csv(file_list: list, out_path: str):
     for idx, csv_file in enumerate(tqdm(file_list, desc="Checking headers")):
         data = pd.read_csv(csv_file, encoding='utf-8')
         if idx == 0:
-            header = data.values.tolist()
+            header = data.columns
         else:
-            assert header == data.values.tolist(), f"{header} != {data.values.tolist()}"
+            assert header == data.columns, f"{header} != {columns}"
         data_frames.append(data)
     print(f"[merge_csv] read csv from: {file_list}, done.")
     df_merged = pd.concat(data_frames, ignore_index=True)
