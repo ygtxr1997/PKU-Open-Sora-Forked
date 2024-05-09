@@ -236,7 +236,6 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
         data = data[['videoid', 'name']]
         samples = []
         for index, row in data.iterrows():
-            print(row)
             video_id: int = int(row[0])
             caption: str = row[1]
             samples.append(
@@ -246,8 +245,6 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
                     "latent_fn": f"{video_id}.npy",
                 }
             )
-            if index > 5:
-                exit()
         self.samples: List[Dict] = samples
 
         if self.logger is not None:
