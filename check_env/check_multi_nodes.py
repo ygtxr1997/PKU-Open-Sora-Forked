@@ -111,6 +111,7 @@ def main(args):
 
     accelerator.wait_for_everyone()
     accelerator.end_training()
+    print("Check ok, existing...")
 
 
 def parser_args():
