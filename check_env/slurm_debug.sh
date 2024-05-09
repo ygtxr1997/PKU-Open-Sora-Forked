@@ -125,6 +125,7 @@ export CMD="$LAUNCHER $SCRIPT $SCRIPT_ARGS"
 #  --rdzv_endpoint $MASTER_ADDR:29500 \
 #  $SCRIPT $SCRIPT_ARGS
 srun accelerate launch \
+  --config_file scripts/accelerate_configs/deepspeed_zero2_config.yaml \
   --num_processes $((SLURM_NNODES * GPUS_PER_NODE)) \
   --num_machines $SLURM_NNODES \
   --machine_rank $SLURM_PROCID \
