@@ -280,7 +280,8 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
             local_rank = int(os.environ["RANK"])
             global_rank = node_id * gpus_per_node + local_rank
             global_gpus = nnodes * gpus_per_node
-            print(f"[DEBUG] {global_rank} call: {self.samples[index]['caption'][:30]}")
+            if index == 0:
+                print(f"[DEBUG] {global_rank} call index={index}: {self.samples[index]['caption'][:30]}")
 
             example = self.samples[index]
             latent_fn = example["latent_fn"]

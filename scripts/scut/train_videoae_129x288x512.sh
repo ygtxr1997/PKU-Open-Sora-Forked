@@ -101,7 +101,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --lr_warmup_steps=0 \
   --mixed_precision="bf16" \
   --report_to="wandb" \
-  --checkpointing_steps=2000 \
+  --checkpointing_steps=500 \
   --output_dir=${OUTPUT_DIR} \
   --allow_tf32 \
   --pretrained ${PRETRAINED_MODEL_PT} \
