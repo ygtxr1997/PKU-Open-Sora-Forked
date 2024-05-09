@@ -282,8 +282,6 @@ def worker_extract_meta(rank, world_size):
         caption = sample["txt"]
         meta["video_id"].append(video_id)
         meta["caption"].append(caption)
-        if idx >= 200:
-            break
     df = pd.DataFrame(meta)
     save_fn = f"{WEBVID_LATENT_META_FN}_{rank:04d}.csv"
     df.to_csv(save_fn, index=False)
