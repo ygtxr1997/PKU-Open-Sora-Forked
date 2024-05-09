@@ -292,8 +292,17 @@ def worker_extract_meta(iterable_args):
 
 
 def multi_worker_start(worker_func, worker_cnt: int = 8):
-    with multiprocessing.Pool(processes=worker_cnt) as pool:
-        iterable_input = [(i, worker_cnt) for i in range(worker_cnt)]
-        pool.map(worker_func, iterable_input)
+    processes = []
+    iterable_args = [(i, worker_cnt) for i in range(worker_cnt)]
+    for i in range(worker_cnt):
+        process = multiprocessing.Process(
+            target=worker_func,
+            args=iterable_args[i],
+        )
+        processes.append(process)
+        process.start()
+
+    for process in processes:
+        process.join()
 
     print("All processes are done.")
