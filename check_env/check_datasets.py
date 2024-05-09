@@ -170,6 +170,7 @@ def check_batch():
     # 4. WebVid Dataset
     from opensora.dataset.webvid_datasets import WebVidHFWebDataset, WebVidLatentDataset
     from opensora.dataset.webvid_datasets import multi_worker_start, worker_extract_meta
+    from datasets.distributed import split_dataset_by_node
     WEBVID_DIR = "/exthome/future-technology-college-data/202321063560/webvid_data/webvid_train_data"
     # WEBVID_DIR = "/public/home/201810101923/datasets/webvid/data_demo"
     tokenizer = AutoTokenizer.from_pretrained(
@@ -198,7 +199,7 @@ def check_batch():
     webvid_files = [os.path.join(WEBVID_DIR, f) for f in webvid_files if 'tar' in f]
     webvid_dataset = load_dataset(
         'webdataset', data_files=webvid_files, split='train', streaming=True)
-    # webvid_dataset = split_dataset_by_node(webvid_dataset, rank, world_size)
+    webvid_dataset = split_dataset_by_node(webvid_dataset, 0, 32)
     # print(f"[worker_extract_meta:{rank}] split {rank}/{world_size}")
     webvid_dataset = webvid_dataset.filter(lambda x: x["mp4"] is not None)
     # webvid_dataset = webvid_dataset.map(lambda x: x, remove_columns=["mp4", "__url__", "json"])
@@ -211,8 +212,8 @@ def check_batch():
         # meta["caption"].append(caption)
         if idx >= 200:
             break
-    exit()
-    multi_worker_start(worker_extract_meta, worker_cnt=16)
+
+    multi_worker_start(worker_extract_meta, worker_cnt=1)
     exit()
 
     logger.info("[DEBUG] dataset got")
