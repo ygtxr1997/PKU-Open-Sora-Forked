@@ -192,10 +192,6 @@ def check_batch():
     train_dataset = WebVidLatentDataset(
         WEBVID_LATENT_META, WEBVID_LATENT_DIR, logger=logger,
         tokenizer=tokenizer,
-        # norm_fun=ae_norm[args.ae],
-        # num_frames=129,
-        # target_size=(512, 288),
-        # max_frame_stride=args.sample_rate,
     )
 
     # multi_worker_start(worker_extract_meta, worker_cnt=4)

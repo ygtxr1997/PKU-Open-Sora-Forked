@@ -223,7 +223,7 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
                  dataset_dir: str,
                  tokenizer,
                  logger: MultiProcessAdapter = None,
-
+                 llm_max_length: int = 300,
                  ):
         self.dataset_meta = dataset_meta
         self.dataset_dir = dataset_dir
@@ -248,17 +248,65 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
             video_id = int(os.path.splitext(fn)[0])
             if video_id in video_ids_sorted:
                 good += 1
+                samples.append(
+                    {
+                        "video_id": int(video_id),
+                        "caption": str(captions[i]),
+                        "latent_fn": latent_fns[i],
+                    }
+                )
             else:
-                print(f"{video_id} not exists in csv")
                 bad += 1
         self.samples: List[Dict] = samples
-        print(f"good={good}, bad={bad}")
+
+        self.tokenizer = tokenizer
+        self.llm_max_length = llm_max_length
+
+        self.mem_bad_indices = []
+        self.fail_cnt = 0
+        self.success_cnt = 0
 
         if self.logger is not None:
-            self.logger.info(f"[WebVidLatentDataset] loaded cnt={len(self.samples)}")
+            self.logger.info(f"[WebVidLatentDataset] loaded cnt={len(self.samples)}, "
+                             f"meta missed cnt={bad}, meta exist cnt={good}.")
 
     def __getitem__(self, index):
-        pass
+        if index in self.mem_bad_indices:
+            return self.process_error(index, f"Skip bad index={index}")
+        try:
+            example = self.samples[index]
+            latent_fn = example["latent_fn"]
+            caption = example['caption']
+            latent_path = os.path.join(self.dataset_dir, latent_fn)
+
+            # Read latent from path
+            latent = np.load(latent_path)  # (B,C,T,H,W)
+
+            # Text
+            text = caption
+            text = text_preprocessing(text)
+            text_tokens_and_mask = self.tokenizer(
+                text,
+                max_length=self.llm_max_length,
+                padding='max_length',
+                truncation=True,
+                return_attention_mask=True,
+                add_special_tokens=True,
+                return_tensors='pt'
+            )
+            input_ids = text_tokens_and_mask['input_ids'].squeeze(0)
+            cond_mask = text_tokens_and_mask['attention_mask'].squeeze(0)
+
+            self.success_cnt += 1
+            return latent, input_ids, cond_mask
+        except Exception as e:
+            return self.process_error(index, e)
+
+    def process_error(self, index, error=None):
+        self.fail_cnt += 1
+        self.logger.warning(f'Catch {error}, {self.samples[index]}, get random item once again, '
+                            f'fail={self.fail_cnt}, success={self.success_cnt}')
+        return self.__getitem__(random.randint(0, self.__len__() - 1))
 
     def __len__(self):
         return len(self.samples)
