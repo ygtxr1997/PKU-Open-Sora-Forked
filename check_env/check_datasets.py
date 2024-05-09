@@ -188,9 +188,10 @@ def check_batch():
     webvid_dataset = load_dataset(
         'webdataset', data_files=webvid_files, split='train', streaming=True)
     webvid_dataset = webvid_dataset.filter(lambda x: x["mp4"] is not None)
+    webvid_dataset = webvid_dataset.map(lambda x: x, remove_columns=["mp4"])
     iterator = iter(webvid_dataset)
     for item in tqdm(iterator):
-        print_batch(item)
+        pass
     exit()
     # train_dataset = WebVidLatentDataset(
     #     WEBVID_META, WEBVID_DIR, logger=logger,
