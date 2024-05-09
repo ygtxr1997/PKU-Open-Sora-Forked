@@ -28,6 +28,14 @@ export MASTER_ADDR=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
 export NCCL_NET=IB
 ######################
 
+export LAUNCHER="accelerate launch \
+    --config_file scripts/accelerate_configs/deepspeed_zero2_config.yaml  \
+    --num_processes $((SLURM_NNODES * GPUS_PER_NODE)) \
+    --num_machines $SLURM_NNODES \
+    --rdzv_backend c10d \
+    --main_process_ip ${MASTER_ADDR} \
+    --main_process_port ${MASTER_PORT} \
+    "
 export PYTHONPATH=${PWD}
 export DATA_PATH="/public/home/201810101923/datasets/opensora/dataset_v1.0.0_tmptest_sorted/sharegpt4v_path_cap_64x512x512.json"
 export REPLACE_ROOT="/public/home/201810101923/datasets/opensora/dataset_v1.0.0_tmptest_sorted"
@@ -42,14 +50,6 @@ export WEBVID_LATENT_DIR="/public/home/201810101923/datasets/webvid/latents"
 export WEBVID_LATENT_META="/public/home/201810101923/datasets/webvid/latents_129x288x512/latents_meta_all.csv"
 export OUTPUT_DIR="out_panda70m_129x288x512"
 export VIDEO_FOLDER="/remote-home1/dataset/data_split_tt"  # not used
-export LAUNCHER="accelerate launch \
-    --config_file scripts/accelerate_configs/deepspeed_zero2_config.yaml  \
-    --num_processes $((SLURM_NNODES * GPUS_PER_NODE)) \
-    --num_machines $SLURM_NNODES \
-    --rdzv_backend c10d \
-    --main_process_ip ${MASTER_ADDR} \
-    --main_process_port ${MASTER_PORT} \
-    "
 export SCRIPT="check_env/check_multi_nodes.py"
 export SCRIPT_ARGS=' \
     --model LatteT2V-XL/122 \
@@ -97,5 +97,5 @@ export SCRIPT_ARGS=' \
     '
 
 # This step is necessary because accelerate launch does not handle multiline arguments properly
-export CMD="$LAUNCHER $SCRIPT $SCRIPT_SCRIPT_ARGS"
-srun $CMD
+export CMD="$LAUNCHER $SCRIPT $SCRIPT_ARGS"
+srun --jobid $SLURM_JOBID bash -c $CMD
