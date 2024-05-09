@@ -281,8 +281,8 @@ def worker_extract_meta(iterable_args):
     for idx, sample in tqdm(enumerate(iterator), disable=(rank != 0)):
         video_id = sample["__key__"]
         caption = sample["txt"]
-        meta["video_id"].append(video_id)
-        meta["caption"].append(caption)
+        # meta["video_id"].append(video_id)
+        # meta["caption"].append(caption)
         if idx >= 200:
             break
     df = pd.DataFrame(meta)
