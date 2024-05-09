@@ -214,3 +214,51 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
         video_data = video_data.permute(0, 3, 1, 2)  # (T,H,W,C) -> (T,C,H,W)
         return video_data
 
+
+class WebVidLatentDataset(torch.utils.data.Dataset):
+    def __init__(self,
+                 dataset_meta: str,
+                 dataset_dir: str,
+                 tokenizer,
+                 logger: MultiProcessAdapter = None,
+
+                 ):
+        self.dataset_meta = dataset_meta
+        self.dataset_dir = dataset_dir
+        self.logger = logger
+
+        ''' load meta '''
+        if self.logger is not None:
+            self.logger.info(f"[WebVidLatentDataset] loading csv: {dataset_meta}")
+        all_columns = ["videoid", "contentUrl", "duration", "page_dir", "name"]
+        with open(dataset_meta, 'r') as fid:
+            reader = csv.reader(fid, delimiter=',')
+            data = [x for x in reader]
+        print(data[0])
+        samples = []
+        for i in range(1, len(data)):  # skip 1st row
+            row = data[i]
+            print(row)
+            exit()
+            video_id: str = row[0]
+            captions_str = row[3]
+            captions: list = captions_str.replace("\"", "\'")[2:-2].split("', '")
+            for clip_id, caption in enumerate(captions):
+                samples.append(
+                    {
+                        "video_id": str(video_id),
+                        "caption": str(caption),
+                        "clip_id": int(clip_id),
+                        "video_fn": f"{video_id}_{clip_id:03d}.mp4",
+                    }
+                )
+        self.samples: List[Dict] = samples
+
+        if self.logger is not None:
+            self.logger.info(f"[WebVidLatentDataset] loaded cnt={len(self.samples)}")
+
+    def __getitem__(self, index):
+        pass
+
+    def __len__(self):
+        return len(self.samples)

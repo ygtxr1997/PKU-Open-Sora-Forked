@@ -365,14 +365,14 @@ def main(args):
     # The trackers initializes automatically on the main process.
     if accelerator.is_main_process:
         project_name = args.output_dir if args.tracker_project_name is None else args.tracker_project_name
-        project_name = f"({now}){project_name}"
+        project_name = f"{project_name}"
         accelerator.init_trackers(
             project_name,
             config=vars(args),
             init_kwargs={
                 "wandb":
                     {"entity": args.tracker_entity,
-                     "name": args.tracker_run_name,
+                     "name": f"({now}){args.tracker_run_name}",
                      }
             },
         )

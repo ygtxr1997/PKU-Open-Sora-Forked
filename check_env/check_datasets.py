@@ -168,22 +168,28 @@ def check_batch():
     # print_batch(train_dataset[total_len - 1])
 
     # 4. WebVid Dataset
-    from opensora.dataset.webvid_datasets import WebVidHFWebDataset
+    from opensora.dataset.webvid_datasets import WebVidHFWebDataset, WebVidLatentDataset
+    WEBVID_META = "/public/home/201810101923/datasets/webvid/total.csv"
     WEBVID_DIR = "/exthome/future-technology-college-data/202321063560/webvid_data/webvid_train_data"
     # WEBVID_DIR = "/public/home/201810101923/datasets/webvid/data_demo"
     tokenizer = AutoTokenizer.from_pretrained(
             args.text_encoder_name, cache_dir=args.cache_dir)
-    train_dataset = WebVidHFWebDataset(
-        WEBVID_DIR, logger=logger,
+    # train_dataset = WebVidHFWebDataset(
+    #     WEBVID_DIR, logger=logger,
+    #     tokenizer=tokenizer,
+    #     norm_fun=ae_norm[args.ae],
+    #     num_frames=129,
+    #     target_size=(512, 288),
+    #     max_frame_stride=args.sample_rate,
+    # )
+    train_dataset = WebVidLatentDataset(
+        WEBVID_META, WEBVID_DIR, logger=logger,
         tokenizer=tokenizer,
-        norm_fun=ae_norm[args.ae],
-        num_frames=129,
-        target_size=(512, 288),
-        max_frame_stride=args.sample_rate,
+        # norm_fun=ae_norm[args.ae],
+        # num_frames=129,
+        # target_size=(512, 288),
+        # max_frame_stride=args.sample_rate,
     )
-    # iterator = iter(train_dataset)
-    # for sample in iterator:
-    #     print_batch(sample)
 
     logger.info("[DEBUG] dataset got")
 
