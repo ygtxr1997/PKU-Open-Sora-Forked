@@ -115,8 +115,8 @@ def main(args):
 
 def parser_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", type=str, required=True)
-    parser.add_argument("--data_path", type=str, required=True)
+    parser.add_argument("--dataset", type=str, required=False)
+    parser.add_argument("--data_path", type=str, required=False)
     parser.add_argument("--replace_root", type=str, default=None)
     parser.add_argument("--model", type=str, choices=list(Diffusion_models.keys()), default="DiT-XL/122")
     parser.add_argument("--num_classes", type=int, default=1000)
