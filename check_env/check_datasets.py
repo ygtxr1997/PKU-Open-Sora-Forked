@@ -192,6 +192,26 @@ def check_batch():
     #     # target_size=(512, 288),
     #     # max_frame_stride=args.sample_rate,
     # )
+    WEBVID_DIR = "/exthome/future-technology-college-data/202321063560/webvid_data/webvid_train_data"
+    WEBVID_LATENT_META_FN = "/public/home/201810101923/datasets/webvid/latents_meta"
+    webvid_files = os.listdir(WEBVID_DIR)
+    webvid_files = [os.path.join(WEBVID_DIR, f) for f in webvid_files if 'tar' in f]
+    webvid_dataset = load_dataset(
+        'webdataset', data_files=webvid_files, split='train', streaming=True)
+    # webvid_dataset = split_dataset_by_node(webvid_dataset, rank, world_size)
+    # print(f"[worker_extract_meta:{rank}] split {rank}/{world_size}")
+    webvid_dataset = webvid_dataset.filter(lambda x: x["mp4"] is not None)
+    # webvid_dataset = webvid_dataset.map(lambda x: x, remove_columns=["mp4", "__url__", "json"])
+    iterator = iter(webvid_dataset)
+    meta = {"video_id": [], "caption": []}
+    for idx, sample in tqdm(enumerate(iterator)):
+        video_id = sample["__key__"]
+        caption = sample["txt"]
+        # meta["video_id"].append(video_id)
+        # meta["caption"].append(caption)
+        if idx >= 200:
+            break
+    exit()
     multi_worker_start(worker_extract_meta, worker_cnt=16)
     exit()
 
