@@ -3,6 +3,7 @@ import os, io, csv, math, random
 from typing import List, Dict, Iterator
 import cv2
 import numpy as np
+import pandas as pd
 import imageio as iio
 
 import torchvision
@@ -231,9 +232,7 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
         if self.logger is not None:
             self.logger.info(f"[WebVidLatentDataset] loading csv: {dataset_meta}")
         all_columns = ["videoid", "contentUrl", "duration", "page_dir", "name"]
-        with open(dataset_meta, 'r') as fid:
-            reader = csv.reader(fid, delimiter=',')
-            data = [x for x in reader]
+        data = pd.read_csv(dataset_meta, encoding='utf-8')
         print(data[0])
         samples = []
         for i in range(1, len(data)):  # skip 1st row
