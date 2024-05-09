@@ -273,7 +273,7 @@ def merge_csv(file_list: list, out_path: str):
         if idx == 0:
             header = data.values.tolist()
         else:
-            assert header == data.values.tolist()
+            assert header == data.values.tolist(), f"{header} != {data.values.tolist()}"
         data_frames.append(data)
     print(f"[merge_csv] read csv from: {file_list}, done.")
     df_merged = pd.concat(data_frames, ignore_index=True)
