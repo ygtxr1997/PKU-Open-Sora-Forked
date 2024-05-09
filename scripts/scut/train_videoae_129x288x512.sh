@@ -68,6 +68,8 @@ export INTERNVID_META="/exthome/future-technology-college-data/Internvid_dataset
 export PANDA70M_DIR="/public/home/201810101923/datasets/panda70m/clips_0"
 export PANDA70M_META="/public/home/201810101923/datasets/panda70m/panda70m_training_clips_0.csv"
 export WEBVID_DIR="/exthome/future-technology-college-data/202321063560/webvid_data/webvid_train_data"
+export WEBVID_LATENT_DIR="/public/home/201810101923/datasets/webvid/latents"
+export WEBVID_LATENT_META="/public/home/201810101923/datasets/webvid/latents_129x288x512/latents_meta_all.csv"
 export OUTPUT_DIR="out_panda70m_129x288x512"
 export VIDEO_FOLDER="/remote-home1/dataset/data_split_tt"  # not used
 srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
@@ -78,7 +80,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --model LatteT2V-XL/122 \
   --text_encoder_name DeepFloyd/t5-v1_1-xxl \
   --cache_dir ${MODEL_CACHE_DIR}  \
-  --dataset panda70m \
+  --dataset webvid_latent \
   --ae CausalVAEModel_4x8x8 \
   --ae_path CausalVAEModel_4x8x8 \
   --data_path ${DATA_PATH} \
@@ -114,7 +116,8 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --internvid_dir ${INTERNVID_DIR}  \
   --panda70m_meta ${PANDA70M_META}  \
   --panda70m_dir ${PANDA70M_DIR}  \
-  --webvid_dir ${WEBVID_DIR}
+  --webvid_meta ${WEBVID_LATENT_META}  \
+  --webvid_dir ${WEBVID_LATENT_DIR}
   '
 
 echo "DONE"

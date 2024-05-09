@@ -441,9 +441,13 @@ def main(args):
                 with torch.no_grad():
                     # Map input images to latent space + normalize latents
                     if args.use_image_num == 0:
-                        x = ae.encode(x)  # B C T H W
+                        if not args.is_video_latent:  # default
+                            x = ae.encode(x)  # B C T H W
+                        else:
+                            x = x.to(accelerator.device)  # B C T H W
                         cond = text_enc(input_ids, cond_mask)  # B L -> B L D
                     else:
+                        assert not args.is_video_latent, "joint training doesn't support for latent dataset yet"
                         videos, images = x[:, :, :-args.use_image_num], x[:, :, -args.use_image_num:]
                         videos = ae.encode(videos)  # B C T H W
                         images = rearrange(images, 'b c t h w -> (b t) c 1 h w')
@@ -512,6 +516,10 @@ def main(args):
             if global_step >= args.max_train_steps:
                 break
 
+            if os.environ.get("SLURM_PROCID") is None:
+                is_global_rank_0 = accelerator.is_main_process
+            else:  # SLURM env
+                is_global_rank_0 = accelerator.is_main_process and (0 == int(os.environ["SLURM_PROCID"]))
             if accelerator.is_main_process:
                 validation_prompt = "The majestic beauty of a waterfall cascading down a cliff into a serene lake. The camera angle provides a bird's eye view of the waterfall."
                 if global_step % args.checkpointing_steps == 0:
@@ -522,7 +530,7 @@ def main(args):
                         ema_model.store(model.parameters())
                         ema_model.copy_to(model.parameters())
 
-                    if args.enable_tracker:
+                    if args.enable_tracker and is_global_rank_0:
                         with torch.no_grad():
                             # create pipeline
                             ae_ = getae_wrapper(args.ae)(args.ae_path).to(accelerator.device).eval()
@@ -837,7 +845,11 @@ def parser_args():
     parser.add_argument("--panda70m_meta", type=str, default=None,
                         help="Panda70M .csv file")
     parser.add_argument("--webvid_dir", type=str, default=None,
-                        help="WebVid video root folder")
+                        help="WebVid video/latent root folder")
+    parser.add_argument("--webvid_meta", type=str, default=None,
+                        help="WebVid video/latent meta .csv file")
+    parser.add_argument("--is_video_latent", action="store_true",
+                        help="Do input videos have been transferred to latents?")
     parser.add_argument(
         "--tracker_project_name",
         type=str,

@@ -10,7 +10,7 @@ from .landscope import Landscope
 from .t2v_datasets import T2V_dataset
 from .internvid_datasets import InternVidDataset
 from .panda70m_datasets import Panda70MPytorchDataset
-from .webvid_datasets import WebVidHFWebDataset
+from .webvid_datasets import WebVidHFWebDataset, WebVidLatentDataset
 from .transform import ToTensorVideo, TemporalRandomCrop, RandomHorizontalFlipVideo, CenterCropResizeVideo
 from .ucf101 import UCF101
 from .sky_datasets import Sky
@@ -162,6 +162,18 @@ def getdataset(args, logger=None):
             max_frame_stride=args.sample_rate,
             rank=global_rank,
             world_size=global_gpus,
+        )
+    elif args.dataset == 'webvid_latent':
+        w_ratio, h_ratio = [int(x) for x in args.wh_ratio.split(":")]
+        target_hw = (args.max_image_size // w_ratio * h_ratio, args.max_image_size)
+        assert target_hw[0] / target_hw[1] == h_ratio / w_ratio
+        tokenizer = AutoTokenizer.from_pretrained(
+            args.text_encoder_name, cache_dir=args.cache_dir)
+        return WebVidLatentDataset(
+            args.webvid_meta,
+            args.webvid_dir,
+            logger=logger,
+            tokenizer=tokenizer,
         )
     elif args.dataset == 't2v_feature':
         return T2V_Feature_dataset(args, temporal_sample)
