@@ -116,7 +116,14 @@ export SCRIPT_ARGS=" \
 
 # This step is necessary because accelerate launch does not handle multiline arguments properly
 export CMD="$LAUNCHER $SCRIPT $SCRIPT_ARGS"
-srun --jobid $SLURM_JOBID bash -c "$CMD"
+#srun --jobid $SLURM_JOBID bash -c "$CMD"
+srun torchrun \
+  --nnodes 4 \
+  --nproc_per_node 8 \
+  --rdzv_id $RANDOM \
+  --rdzv_backend c10d \
+  --rdzv_endpoint $MASTER_ADDR:29500 \
+  $SCRIPT $SCRIPT_ARGS
 #All_ADDR=($(scontrol show hostnames $SLURM_JOB_NODELIST))
 #for mrank in $(seq 0 $((SLURM_NNODES - 1)))
 #do
