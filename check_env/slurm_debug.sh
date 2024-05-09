@@ -79,7 +79,6 @@ export SCRIPT_ARGS=" \
     --output_dir ${OUTPUT_DIR} \
     --allow_tf32 \
     --pretrained ${PRETRAINED_MODEL_PT} \
-    --use_deepspeed \
     --model_max_length 300 \
     --use_image_num 0 \
     --enable_tiling \
