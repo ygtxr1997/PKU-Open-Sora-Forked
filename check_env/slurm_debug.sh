@@ -51,7 +51,7 @@ export WEBVID_LATENT_META="/public/home/201810101923/datasets/webvid/latents_129
 export OUTPUT_DIR="out_panda70m_129x288x512"
 export VIDEO_FOLDER="/remote-home1/dataset/data_split_tt"  # not used
 export SCRIPT="check_env/check_multi_nodes.py"
-export SCRIPT_ARGS=' \
+export SCRIPT_ARGS=" \
     --model LatteT2V-XL/122 \
     --text_encoder_name DeepFloyd/t5-v1_1-xxl \
     --cache_dir ${MODEL_CACHE_DIR}  \
@@ -64,7 +64,7 @@ export SCRIPT_ARGS=' \
     --sample_rate 1 \
     --num_frames 129 \
     --max_image_size 512 \
-    --wh_ratio "16:9" \
+    --wh_ratio '16:9' \
     --gradient_checkpointing \
     --attention_mode xformers \
     --train_batch_size=2 \
@@ -72,10 +72,10 @@ export SCRIPT_ARGS=' \
     --gradient_accumulation_steps=1 \
     --max_train_steps=1000000 \
     --learning_rate=2e-05 \
-    --lr_scheduler="constant" \
+    --lr_scheduler='constant' \
     --lr_warmup_steps=0 \
-    --mixed_precision="bf16" \
-    --report_to="wandb" \
+    --mixed_precision='bf16' \
+    --report_to='wandb' \
     --checkpointing_steps=500 \
     --output_dir ${OUTPUT_DIR} \
     --allow_tf32 \
@@ -86,7 +86,7 @@ export SCRIPT_ARGS=' \
     --enable_tiling \
     --tracker_project_name scut_opensora \
     --tracker_run_name opensora512  \
-    --resume_from_checkpoint "latest"  \
+    --resume_from_checkpoint 'latest'  \
     --internvid_meta ${INTERNVID_META}  \
     --internvid_dir ${INTERNVID_DIR}  \
     --panda70m_meta ${PANDA70M_META}  \
@@ -94,7 +94,7 @@ export SCRIPT_ARGS=' \
     --is_video_latent  \
     --webvid_meta ${WEBVID_LATENT_META}  \
     --webvid_dir ${WEBVID_LATENT_DIR}
-    '
+    "
 
 # This step is necessary because accelerate launch does not handle multiline arguments properly
 export CMD="$LAUNCHER $SCRIPT $SCRIPT_ARGS"
