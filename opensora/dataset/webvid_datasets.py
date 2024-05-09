@@ -232,11 +232,11 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
         ''' load meta '''
         if self.logger is not None:
             self.logger.info(f"[WebVidLatentDataset] loading csv: {dataset_meta}")
-        all_columns = ["videoid", "contentUrl", "duration", "page_dir", "name"]
+        all_columns = ["video_id", "caption"]
         data = pd.read_csv(dataset_meta, encoding='utf-8')
-        data = data[['videoid', 'name']]
-        video_ids = data['videoid'].values.tolist()
-        captions = data['name'].values.tolist()
+        data = data[['video_id', 'caption']]
+        video_ids = data['video_id'].values.tolist()
+        captions = data['caption'].values.tolist()
         latent_fns = os.listdir(dataset_dir)
         if self.logger is not None:
             self.logger.info(f"[WebVidLatentDataset] csv loaded data_len={len(video_ids)}")

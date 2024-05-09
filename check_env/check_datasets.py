@@ -187,24 +187,23 @@ def check_batch():
     #     target_size=(512, 288),
     #     max_frame_stride=args.sample_rate,
     # )
-    WEBVID_META = "/public/home/201810101923/datasets/webvid/total.csv"
+    WEBVID_LATENT_META = "/public/home/201810101923/datasets/webvid/latents_129x288x512/latents_meta_all.csv"
     WEBVID_LATENT_DIR = "/public/home/201810101923/datasets/webvid/latents"
-    # train_dataset = WebVidLatentDataset(
-    #     WEBVID_META, WEBVID_DIR, logger=logger,
-    #     tokenizer=tokenizer,
-    #     # norm_fun=ae_norm[args.ae],
-    #     # num_frames=129,
-    #     # target_size=(512, 288),
-    #     # max_frame_stride=args.sample_rate,
-    # )
+    train_dataset = WebVidLatentDataset(
+        WEBVID_LATENT_META, WEBVID_LATENT_DIR, logger=logger,
+        tokenizer=tokenizer,
+        # norm_fun=ae_norm[args.ae],
+        # num_frames=129,
+        # target_size=(512, 288),
+        # max_frame_stride=args.sample_rate,
+    )
 
     # multi_worker_start(worker_extract_meta, worker_cnt=4)
 
-    meta_root = "/public/home/201810101923/datasets/webvid"
-    shard_files = glob.glob(f"{meta_root}/latents_meta_????.csv")
-    print(shard_files)
-    merge_csv(shard_files, os.path.join(meta_root, "latents_meta_all.csv"))
-    exit()
+    # meta_root = "/public/home/201810101923/datasets/webvid"
+    # shard_files = glob.glob(f"{meta_root}/latents_meta_????.csv")
+    # merge_csv(shard_files, os.path.join(meta_root, "latents_meta_all.csv"))
+    # exit()
 
     logger.info("[DEBUG] dataset got")
 
