@@ -201,7 +201,7 @@ def check_batch():
     # multi_worker_start(worker_extract_meta, worker_cnt=4)
 
     meta_root = "/public/home/201810101923/datasets/webvid"
-    shard_files = glob.glob(f"{meta_root}/latents_meta_0000*.csv")
+    shard_files = glob.glob(f"{meta_root}/latents_meta_????.csv")
     print(shard_files)
     merge_csv(shard_files, os.path.join(meta_root, "latents_meta_all.csv"))
     exit()

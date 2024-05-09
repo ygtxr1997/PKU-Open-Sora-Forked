@@ -285,7 +285,7 @@ def merge_csv(file_list: list, out_path: str):
     video_ids = data['video_id'].values.tolist()
     captions = data['caption'].values.tolist()
     assert len(video_ids) == len(captions)
-    print(f"[merge_csv] saved file checked: ok, len(w/o header)={video_ids}")
+    print(f"[merge_csv] saved file checked: ok, len(w/o header)={len(video_ids)}")
 
 
 def worker_extract_meta(rank, world_size):
