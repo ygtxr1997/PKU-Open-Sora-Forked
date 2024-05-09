@@ -1,6 +1,7 @@
 import json
 import os, io, csv, math, random
 from typing import List, Dict, Iterator
+import multiprocessing
 import cv2
 import numpy as np
 import pandas as pd
@@ -261,3 +262,38 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
 
     def __len__(self):
         return len(self.samples)
+
+
+def worker_extract_meta(iterable_args):
+    rank, world_size = iterable_args
+    WEBVID_DIR = "/exthome/future-technology-college-data/202321063560/webvid_data/webvid_train_data"
+    WEBVID_LATENT_META_FN = "/public/home/201810101923/datasets/webvid/latents_meta"
+    webvid_files = os.listdir(WEBVID_DIR)
+    webvid_files = [os.path.join(WEBVID_DIR, f) for f in webvid_files if 'tar' in f]
+    webvid_dataset = load_dataset(
+        'webdataset', data_files=webvid_files, split='train', streaming=True)
+    webvid_dataset = split_dataset_by_node(webvid_dataset, rank, world_size)
+    print(f"[worker_extract_meta:{rank}] split {rank}/{world_size}")
+    webvid_dataset = webvid_dataset.filter(lambda x: x["mp4"] is not None)
+    webvid_dataset = webvid_dataset.map(lambda x: x, remove_columns=["mp4", "__url__", "json"])
+    iterator = iter(webvid_dataset)
+    meta = {"video_id": [], "caption": []}
+    for idx, sample in enumerate(iterator):
+        video_id = sample["__key__"]
+        caption = sample["txt"]
+        meta["video_id"].append(video_id)
+        meta["caption"].append(caption)
+        if idx >= 20:
+            break
+    df = pd.DataFrame(meta)
+    save_fn = f"{WEBVID_LATENT_META_FN}_{rank:04d}.csv"
+    df.to_csv(save_fn, index=False)
+    print(f"[worker_extract_meta:{rank}] finished. meta saved to: {save_fn}")
+
+
+def multi_worker_start(worker_func, worker_cnt: int = 8):
+    with multiprocessing.Pool(processes=worker_cnt) as pool:
+        iterable_input = [(i, worker_cnt) for i in range(worker_cnt)]
+        pool.map(worker_func, iterable_input)
+
+    print("All processes are done.")

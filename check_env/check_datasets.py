@@ -169,6 +169,7 @@ def check_batch():
 
     # 4. WebVid Dataset
     from opensora.dataset.webvid_datasets import WebVidHFWebDataset, WebVidLatentDataset
+    from opensora.dataset.webvid_datasets import multi_worker_start, worker_extract_meta
     WEBVID_DIR = "/exthome/future-technology-college-data/202321063560/webvid_data/webvid_train_data"
     # WEBVID_DIR = "/public/home/201810101923/datasets/webvid/data_demo"
     tokenizer = AutoTokenizer.from_pretrained(
@@ -183,16 +184,6 @@ def check_batch():
     # )
     WEBVID_META = "/public/home/201810101923/datasets/webvid/total.csv"
     WEBVID_LATENT_DIR = "/public/home/201810101923/datasets/webvid/latents"
-    webvid_files = os.listdir(WEBVID_DIR)
-    webvid_files = [os.path.join(WEBVID_DIR, f) for f in webvid_files if 'tar' in f]
-    webvid_dataset = load_dataset(
-        'webdataset', data_files=webvid_files, split='train', streaming=True)
-    webvid_dataset = webvid_dataset.filter(lambda x: x["mp4"] is not None)
-    webvid_dataset = webvid_dataset.map(lambda x: x, remove_columns=["mp4"])
-    iterator = iter(webvid_dataset)
-    for item in tqdm(iterator):
-        pass
-    exit()
     # train_dataset = WebVidLatentDataset(
     #     WEBVID_META, WEBVID_DIR, logger=logger,
     #     tokenizer=tokenizer,
@@ -201,6 +192,7 @@ def check_batch():
     #     # target_size=(512, 288),
     #     # max_frame_stride=args.sample_rate,
     # )
+    multi_worker_start(worker_extract_meta, worker_cnt=8)
 
     logger.info("[DEBUG] dataset got")
 
