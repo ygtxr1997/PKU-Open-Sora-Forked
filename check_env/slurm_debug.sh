@@ -38,7 +38,7 @@ export NCCL_NET=IB
 export LAUNCHER="torchrun \
   --nproc_per_node=$GPUS_PER_NODE \
   --nnodes=$((SLURM_NNODES * GPUS_PER_NODE)) \
-  --node_rank=$SLURM_NNODES \
+  --node_rank=\$SLURM_PROCID \
   --master_addr=$MASTER_ADDR \
   --master_port=$MASTER_PORT  \
   "
