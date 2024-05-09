@@ -275,7 +275,7 @@ def worker_extract_meta(iterable_args):
     webvid_dataset = split_dataset_by_node(webvid_dataset, rank, world_size)
     print(f"[worker_extract_meta:{rank}] split {rank}/{world_size}")
     webvid_dataset = webvid_dataset.filter(lambda x: x["mp4"] is not None)
-    webvid_dataset = webvid_dataset.map(lambda x: x, remove_columns=["mp4", "__url__", "json"])
+    # webvid_dataset = webvid_dataset.map(lambda x: x, remove_columns=["mp4", "__url__", "json"])
     iterator = iter(webvid_dataset)
     meta = {"video_id": [], "caption": []}
     for idx, sample in tqdm(enumerate(iterator), disable=(rank != 0)):
