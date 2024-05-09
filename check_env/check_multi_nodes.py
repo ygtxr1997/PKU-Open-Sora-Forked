@@ -64,6 +64,8 @@ logger = get_logger(__name__)
 
 def main(args):
     now = datetime.datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
+    print(args.output_dir)
+    print(args.logging_dir)
     logging_dir = Path(args.output_dir, args.logging_dir)
 
     accelerator_project_config = ProjectConfiguration(project_dir=args.output_dir, logging_dir=str(logging_dir))
