@@ -74,7 +74,7 @@ def main(args):
         log_with=args.report_to,
         project_config=accelerator_project_config,
     )
-    print(accelerator.state)
+    print("[DEBUG]", accelerator.is_main_process, accelerator.is_local_main_process, accelerator.state)
 
     if args.report_to == "wandb":
         if not is_wandb_available():
