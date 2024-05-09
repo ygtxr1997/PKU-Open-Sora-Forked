@@ -35,6 +35,7 @@ export LAUNCHER="accelerate launch \
     --rdzv_backend c10d \
     --main_process_ip ${MASTER_ADDR} \
     --main_process_port ${MASTER_PORT} \
+    --machine_rank \$SLURM_PROCID  \
     "
 export PYTHONPATH=${PWD}
 export DATA_PATH="/public/home/201810101923/datasets/opensora/dataset_v1.0.0_tmptest_sorted/sharegpt4v_path_cap_64x512x512.json"
