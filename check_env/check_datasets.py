@@ -199,7 +199,7 @@ def check_batch():
     webvid_files = [os.path.join(WEBVID_DIR, f) for f in webvid_files if 'tar' in f]
     webvid_dataset = load_dataset(
         'webdataset', data_files=webvid_files, split='train', streaming=True)
-    webvid_dataset = split_dataset_by_node(webvid_dataset, 0, 32)
+    webvid_dataset = split_dataset_by_node(webvid_dataset, 0, 4)
     # print(f"[worker_extract_meta:{rank}] split {rank}/{world_size}")
     webvid_dataset = webvid_dataset.filter(lambda x: x["mp4"] is not None)
     # webvid_dataset = webvid_dataset.map(lambda x: x, remove_columns=["mp4", "__url__", "json"])
@@ -214,7 +214,7 @@ def check_batch():
             break
     logger.info("[DEBUG] Part 1 finished.")
 
-    multi_worker_start(worker_extract_meta, worker_cnt=1)
+    multi_worker_start(worker_extract_meta, worker_cnt=4)
     exit()
 
     logger.info("[DEBUG] dataset got")
