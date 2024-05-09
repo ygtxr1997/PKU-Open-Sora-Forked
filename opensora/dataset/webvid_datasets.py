@@ -234,7 +234,11 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
         all_columns = ["videoid", "contentUrl", "duration", "page_dir", "name"]
         data = pd.read_csv(dataset_meta, encoding='utf-8')
         data = data[['videoid', 'name']]
+        video_ids = data['videoid'].values.tolist()
+        captions = data['name'].values.tolist()
         samples = []
+        if self.logger is not None:
+            self.logger.info(f"[WebVidLatentDataset] csv loaded data_len={len(video_ids)}")
         for index, row in data.iterrows():
             video_id: int = int(row[0])
             caption: str = row[1]
