@@ -360,7 +360,7 @@ def clean_caption(caption):
         r'\b((?:www:(?:\/{1,3}|[a-zA-Z0-9%])|[a-zA-Z0-9.\-]+[.](?:com|co|ru|net|org|edu|gov|it)[\w/-]*\b\/?(?!@)))',  # noqa
         '', caption)  # regex for urls
     # html:
-    caption = BeautifulSoup(caption, features='html.parser').text
+    caption = BeautifulSoup(f"<html>{caption}</html>", features='html.parser').text  # fix warning
 
     # @<nickname>
     caption = re.sub(r'@[\w\d]+\b', '', caption)
