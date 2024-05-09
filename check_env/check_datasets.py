@@ -169,7 +169,6 @@ def check_batch():
 
     # 4. WebVid Dataset
     from opensora.dataset.webvid_datasets import WebVidHFWebDataset, WebVidLatentDataset
-    WEBVID_META = "/public/home/201810101923/datasets/webvid/total.csv"
     WEBVID_DIR = "/exthome/future-technology-college-data/202321063560/webvid_data/webvid_train_data"
     # WEBVID_DIR = "/public/home/201810101923/datasets/webvid/data_demo"
     tokenizer = AutoTokenizer.from_pretrained(
@@ -182,6 +181,8 @@ def check_batch():
     #     target_size=(512, 288),
     #     max_frame_stride=args.sample_rate,
     # )
+    WEBVID_META = "/public/home/201810101923/datasets/webvid/total.csv"
+    WEBVID_DIR = "/public/home/201810101923/datasets/webvid/latent"
     train_dataset = WebVidLatentDataset(
         WEBVID_META, WEBVID_DIR, logger=logger,
         tokenizer=tokenizer,
