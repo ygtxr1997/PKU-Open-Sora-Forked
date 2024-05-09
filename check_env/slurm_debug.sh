@@ -99,7 +99,8 @@ export SCRIPT_ARGS=" \
 #export CMD="$LAUNCHER $SCRIPT $SCRIPT_ARGS"
 #srun --jobid $SLURM_JOBID bash -c "$CMD"
 All_ADDR=($(scontrol show hostnames $SLURM_JOB_NODELIST))
-for mrank in $(seq 0 $((SLURM_NNODES - 1))); do
-  echo "$mrank address"=${All_ADDR[mrank]}
-  srun $SRUN_ARGS -w ${All_ADDR[mrank]} bash -c "$LAUNCHER --machine_rank $mrank $SCRIPT $SCRIPT_ARGS" &
+for mrank in $(seq 0 $((SLURM_NNODES - 1)))
+do
+echo "$mrank address"=${All_ADDR[mrank]}
+srun $SRUN_ARGS -w ${All_ADDR[mrank]} bash -c "$LAUNCHER --machine_rank $mrank $SCRIPT $SCRIPT_ARGS" &
 done
