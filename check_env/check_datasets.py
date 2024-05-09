@@ -192,7 +192,7 @@ def check_batch():
     #     # target_size=(512, 288),
     #     # max_frame_stride=args.sample_rate,
     # )
-    multi_worker_start(worker_extract_meta, worker_cnt=32)
+    multi_worker_start(worker_extract_meta, worker_cnt=16)
     exit()
 
     logger.info("[DEBUG] dataset got")
