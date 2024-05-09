@@ -264,6 +264,30 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
         return len(self.samples)
 
 
+def merge_csv(file_list: list, out_path: str):
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    header = None
+    data_frames = []
+    for idx, csv_file in enumerate(tqdm(file_list, desc="Checking headers")):
+        data = pd.read_csv(csv_file, encoding='utf-8')
+        if idx == 0:
+            header = data.values.tolist()
+        else:
+            assert header == data.values.tolist()
+        data_frames.append(data)
+    print(f"[merge_csv] read csv from: {file_list}, done.")
+    df_merged = pd.concat(data_frames, ignore_index=True)
+    df_merged.to_csv(out_path, index=False)
+    print(f"[merge_csv] merged csv saved to: {out_path}.")
+
+    data = pd.read_csv(out_path, encoding='utf-8')
+    data = data[['video_id', 'caption']]
+    video_ids = data['video_id'].values.tolist()
+    captions = data['caption'].values.tolist()
+    assert len(video_ids) == len(captions)
+    print(f"[merge_csv] saved file checked: ok, len(w/o header)={video_ids}")
+
+
 def worker_extract_meta(rank, world_size):
     WEBVID_DIR = "/exthome/future-technology-college-data/202321063560/webvid_data/webvid_train_data"
     WEBVID_LATENT_META_FN = "/public/home/201810101923/datasets/webvid/latents_meta"

@@ -1,6 +1,7 @@
 import os
 import logging
 from pathlib import Path
+import glob
 
 import datasets
 from tqdm import tqdm
@@ -172,6 +173,7 @@ def check_batch():
     # 4. WebVid Dataset
     from opensora.dataset.webvid_datasets import WebVidHFWebDataset, WebVidLatentDataset
     from opensora.dataset.webvid_datasets import multi_worker_start, worker_extract_meta
+    from opensora.dataset.webvid_datasets import merge_csv
     from datasets.distributed import split_dataset_by_node
     WEBVID_DIR = "/exthome/future-technology-college-data/202321063560/webvid_data/webvid_train_data"
     # WEBVID_DIR = "/public/home/201810101923/datasets/webvid/data_demo"
@@ -196,7 +198,12 @@ def check_batch():
     #     # max_frame_stride=args.sample_rate,
     # )
 
-    multi_worker_start(worker_extract_meta, worker_cnt=4)
+    # multi_worker_start(worker_extract_meta, worker_cnt=4)
+
+    meta_root = "/public/home/201810101923/datasets/webvid"
+    shard_files = glob.glob(f"{meta_root}/latents_meta_0000*.csv")
+    print(shard_files)
+    merge_csv(shard_files, os.path.join(meta_root, "latents_meta_all.csv"))
     exit()
 
     logger.info("[DEBUG] dataset got")
