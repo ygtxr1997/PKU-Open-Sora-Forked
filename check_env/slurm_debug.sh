@@ -28,13 +28,21 @@ export MASTER_ADDR=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
 export NCCL_NET=IB
 ######################
 
-export LAUNCHER="accelerate launch \
-    --config_file scripts/accelerate_configs/deepspeed_zero2_config.yaml  \
-    --num_processes $((SLURM_NNODES * GPUS_PER_NODE)) \
-    --num_machines $SLURM_NNODES \
-    --main_process_ip ${MASTER_ADDR} \
-    --main_process_port ${MASTER_PORT} \
-    "
+#export LAUNCHER="accelerate launch \
+#    --config_file scripts/accelerate_configs/deepspeed_zero2_config.yaml  \
+#    --num_processes $((SLURM_NNODES * GPUS_PER_NODE)) \
+#    --num_machines $SLURM_NNODES \
+#    --main_process_ip ${MASTER_ADDR} \
+#    --main_process_port ${MASTER_PORT} \
+#    "
+export LAUNCHER="torchrun \
+  --nproc_per_node=$GPUS_PER_NODE \
+  --nnodes=$((SLURM_NNODES * GPUS_PER_NODE)) \
+  --node_rank=$SLURM_NNODES \
+  --master_addr=$MASTER_ADDR \
+  --master_port=$MASTER_PORT  \
+  scripts/ddp_convnext.py --model_name \
+  "
 export PYTHONPATH=${PWD}
 export DATA_PATH="/public/home/201810101923/datasets/opensora/dataset_v1.0.0_tmptest_sorted/sharegpt4v_path_cap_64x512x512.json"
 export REPLACE_ROOT="/public/home/201810101923/datasets/opensora/dataset_v1.0.0_tmptest_sorted"
@@ -96,11 +104,11 @@ export SCRIPT_ARGS=" \
     "
 
 # This step is necessary because accelerate launch does not handle multiline arguments properly
-#export CMD="$LAUNCHER $SCRIPT $SCRIPT_ARGS"
-#srun --jobid $SLURM_JOBID bash -c "$CMD"
-All_ADDR=($(scontrol show hostnames $SLURM_JOB_NODELIST))
-for mrank in $(seq 0 $((SLURM_NNODES - 1)))
-do
-echo "$mrank address"=${All_ADDR[mrank]}
-srun $SRUN_ARGS -w ${All_ADDR[mrank]} bash -c "$LAUNCHER --machine_rank $mrank $SCRIPT $SCRIPT_ARGS" &
-done
+export CMD="$LAUNCHER $SCRIPT $SCRIPT_ARGS"
+srun --jobid $SLURM_JOBID bash -c "$CMD"
+#All_ADDR=($(scontrol show hostnames $SLURM_JOB_NODELIST))
+#for mrank in $(seq 0 $((SLURM_NNODES - 1)))
+#do
+#echo "$mrank address"=${All_ADDR[mrank]}
+#srun $SRUN_ARGS -w ${All_ADDR[mrank]} bash -c "$LAUNCHER --machine_rank $mrank $SCRIPT $SCRIPT_ARGS" &
+#done
