@@ -283,7 +283,7 @@ def worker_extract_meta(iterable_args):
         caption = sample["txt"]
         meta["video_id"].append(video_id)
         meta["caption"].append(caption)
-        if idx >= 20:
+        if idx >= 200:
             break
     df = pd.DataFrame(meta)
     save_fn = f"{WEBVID_LATENT_META_FN}_{rank:04d}.csv"
