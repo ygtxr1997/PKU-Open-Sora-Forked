@@ -233,25 +233,21 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
             self.logger.info(f"[WebVidLatentDataset] loading csv: {dataset_meta}")
         all_columns = ["videoid", "contentUrl", "duration", "page_dir", "name"]
         data = pd.read_csv(dataset_meta, encoding='utf-8')
-        print(data.iloc[0])
-        print(list(data.columns.values))
+        data = data.iloc['videoid', 'name']
         samples = []
-        for i in range(1, len(data)):  # skip 1st row
-            row = data[i]
+        for index, row in data.iterrows():
             print(row)
-            exit()
-            video_id: str = row[0]
-            captions_str = row[3]
-            captions: list = captions_str.replace("\"", "\'")[2:-2].split("', '")
-            for clip_id, caption in enumerate(captions):
-                samples.append(
-                    {
-                        "video_id": str(video_id),
-                        "caption": str(caption),
-                        "clip_id": int(clip_id),
-                        "video_fn": f"{video_id}_{clip_id:03d}.mp4",
-                    }
-                )
+            video_id: int = int(row[0])
+            caption: str = row[1]
+            samples.append(
+                {
+                    "video_id": str(video_id),
+                    "caption": str(caption),
+                    "latent_fn": f"{video_id}.npy",
+                }
+            )
+            if index > 5:
+                exit()
         self.samples: List[Dict] = samples
 
         if self.logger is not None:
