@@ -129,7 +129,7 @@ srun accelerate launch \
   --num_machines $SLURM_NNODES \
   --machine_rank $SLURM_PROCID \
   --rdzv_backend c10d \
-  --rdzv_conf endpoint=$MASTER_ADDR:$MASTER_PORT \
+  --rdzv_conf rdzv_endpoint=$MASTER_ADDR:$MASTER_PORT \
   $SCRIPT $SCRIPT_ARGS
 #All_ADDR=($(scontrol show hostnames $SLURM_JOB_NODELIST))
 #for mrank in $(seq 0 $((SLURM_NNODES - 1)))
