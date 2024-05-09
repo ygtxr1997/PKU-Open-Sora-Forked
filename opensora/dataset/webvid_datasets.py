@@ -236,14 +236,16 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
         data = data[['videoid', 'name']]
         video_ids = data['videoid'].values.tolist()
         captions = data['name'].values.tolist()
-        latent_fns = [f"{x}.npy" for x in video_ids]
+        latent_fns = os.listdir(dataset_dir)
         if self.logger is not None:
             self.logger.info(f"[WebVidLatentDataset] csv loaded data_len={len(video_ids)}")
         samples = []
         good, bad = 0, 0
+        video_ids_sorted = set([int(x) for x in video_ids])
         for i in tqdm(range(len(latent_fns)), desc="Check latent files"):
             fn = os.path.join(dataset_dir, latent_fns[i])
-            if os.path.exists(fn):
+            video_id = os.path.splitext(fn)[0]
+            if video_id in video_ids_sorted:
                 good += 1
             else:
                 bad += 1
