@@ -72,10 +72,10 @@ export SCRIPT_ARGS=" \
     --gradient_accumulation_steps=1 \
     --max_train_steps=1000000 \
     --learning_rate=2e-05 \
-    --lr_scheduler='constant' \
+    --lr_scheduler constant \
     --lr_warmup_steps=0 \
-    --mixed_precision='bf16' \
-    --report_to='wandb' \
+    --mixed_precision bf16 \
+    --report_to wandb \
     --checkpointing_steps=500 \
     --output_dir ${OUTPUT_DIR} \
     --allow_tf32 \
@@ -86,7 +86,7 @@ export SCRIPT_ARGS=" \
     --enable_tiling \
     --tracker_project_name scut_opensora \
     --tracker_run_name opensora512  \
-    --resume_from_checkpoint 'latest'  \
+    --resume_from_checkpoint latest  \
     --internvid_meta ${INTERNVID_META}  \
     --internvid_dir ${INTERNVID_DIR}  \
     --panda70m_meta ${PANDA70M_META}  \
