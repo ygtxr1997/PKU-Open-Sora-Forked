@@ -278,7 +278,7 @@ def worker_extract_meta(iterable_args):
     webvid_dataset = webvid_dataset.map(lambda x: x, remove_columns=["mp4", "__url__", "json"])
     iterator = iter(webvid_dataset)
     meta = {"video_id": [], "caption": []}
-    for idx, sample in enumerate(iterator):
+    for idx, sample in tqdm(enumerate(iterator), disable=(rank != 0)):
         video_id = sample["__key__"]
         caption = sample["txt"]
         meta["video_id"].append(video_id)
