@@ -182,7 +182,7 @@ def check_batch():
     #     max_frame_stride=args.sample_rate,
     # )
     WEBVID_META = "/public/home/201810101923/datasets/webvid/total.csv"
-    WEBVID_DIR = "/public/home/201810101923/datasets/webvid/latent"
+    WEBVID_DIR = "/public/home/201810101923/datasets/webvid/latents"
     train_dataset = WebVidLatentDataset(
         WEBVID_META, WEBVID_DIR, logger=logger,
         tokenizer=tokenizer,
