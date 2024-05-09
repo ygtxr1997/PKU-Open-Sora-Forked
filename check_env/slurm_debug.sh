@@ -25,14 +25,6 @@ export OMP_NUM_THREADS=4
 export MASTER_PORT=$((RANDOM % (19000 - 11000 + 1) + 11000))
 export MASTER_ADDR=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
 
-# function to create the hostile
-function makehostfile() {
-       perl -e '$slots=split /,/, $ENV{"SLURM_STEP_GPUS"};
-       $slots=8 if $slots==0; # workaround 8 gpu machines
-       @nodes = split /\n/, qx[scontrol show hostnames $ENV{"SLURM_JOB_NODELIST"}];
-       print map { "$b$_ slots=$slots\n" } @nodes'
-}
-makehostfile > hostfile
 export NCCL_NET=IB
 ######################
 
