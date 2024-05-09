@@ -40,13 +40,13 @@ export SCRIPT="check_env/check_multi_nodes.py"
 export SCRIPT_ARGS=' \
     --model LatteT2V-XL/122 \
     --text_encoder_name DeepFloyd/t5-v1_1-xxl \
-    --cache_dir ""  \
+    --cache_dir "."  \
     --dataset webvid_latent \
     --ae CausalVAEModel_4x8x8 \
     --ae_path CausalVAEModel_4x8x8 \
-    --data_path "" \
-    --replace_root ""  \
-    --video_folder "" \
+    --data_path "." \
+    --replace_root "."  \
+    --video_folder "." \
     --sample_rate 1 \
     --num_frames 129 \
     --max_image_size 512 \
@@ -63,9 +63,9 @@ export SCRIPT_ARGS=' \
     --mixed_precision="bf16" \
     --report_to="wandb" \
     --checkpointing_steps=500 \
-    --output_dir="" \
+    --output_dir="." \
     --allow_tf32 \
-    --pretrained "" \
+    --pretrained "." \
     --use_deepspeed \
     --model_max_length 300 \
     --use_image_num 0 \
