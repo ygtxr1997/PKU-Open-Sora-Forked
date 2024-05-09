@@ -182,15 +182,24 @@ def check_batch():
     #     max_frame_stride=args.sample_rate,
     # )
     WEBVID_META = "/public/home/201810101923/datasets/webvid/total.csv"
-    WEBVID_DIR = "/public/home/201810101923/datasets/webvid/latents"
-    train_dataset = WebVidLatentDataset(
-        WEBVID_META, WEBVID_DIR, logger=logger,
-        tokenizer=tokenizer,
-        # norm_fun=ae_norm[args.ae],
-        # num_frames=129,
-        # target_size=(512, 288),
-        # max_frame_stride=args.sample_rate,
-    )
+    WEBVID_LATENT_DIR = "/public/home/201810101923/datasets/webvid/latents"
+    webvid_files = os.listdir(WEBVID_DIR)
+    webvid_files = [os.path.join(WEBVID_DIR, f) for f in webvid_files if 'tar' in f]
+    webvid_dataset = load_dataset(
+        'webdataset', data_files=webvid_files, split='train', streaming=True)
+    webvid_dataset = webvid_dataset.filter(lambda x: x["mp4"] is not None)
+    iterator = iter(webvid_dataset)
+    for item in tqdm(iterator):
+        print_batch(item)
+    exit()
+    # train_dataset = WebVidLatentDataset(
+    #     WEBVID_META, WEBVID_DIR, logger=logger,
+    #     tokenizer=tokenizer,
+    #     # norm_fun=ae_norm[args.ae],
+    #     # num_frames=129,
+    #     # target_size=(512, 288),
+    #     # max_frame_stride=args.sample_rate,
+    # )
 
     logger.info("[DEBUG] dataset got")
 
