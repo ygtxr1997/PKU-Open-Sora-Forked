@@ -264,8 +264,7 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
         return len(self.samples)
 
 
-def worker_extract_meta(iterable_args):
-    rank, world_size = iterable_args
+def worker_extract_meta(rank, world_size):
     WEBVID_DIR = "/exthome/future-technology-college-data/202321063560/webvid_data/webvid_train_data"
     WEBVID_LATENT_META_FN = "/public/home/201810101923/datasets/webvid/latents_meta"
     webvid_files = os.listdir(WEBVID_DIR)

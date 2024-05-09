@@ -212,6 +212,7 @@ def check_batch():
         # meta["caption"].append(caption)
         if idx >= 200:
             break
+    logger.info("[DEBUG] Part 1 finished.")
 
     multi_worker_start(worker_extract_meta, worker_cnt=1)
     exit()
