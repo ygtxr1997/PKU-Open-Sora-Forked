@@ -24,9 +24,20 @@ export OMP_NUM_THREADS=4
 # Make sure another job doesnt use same port, here using random number
 export MASTER_PORT=$((RANDOM % (19000 - 11000 + 1) + 11000))
 export MASTER_ADDR=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
+
+# function to create the hostile
+function makehostfile() {
+       perl -e '$slots=split /,/, $ENV{"SLURM_STEP_GPUS"};
+       $slots=8 if $slots==0; # workaround 8 gpu machines
+       @nodes = split /\n/, qx[scontrol show hostnames $ENV{"SLURM_JOB_NODELIST"}];
+       print map { "$b$_ slots=$slots\n" } @nodes'
+}
+makehostfile > hostfile
+export NCCL_NET=IB
 ######################
 
 export LAUNCHER="accelerate launch \
+    --config_file scripts/accelerate_configs/deepspeed_zero2_config.yaml  \
     --num_processes $((SLURM_NNODES * GPUS_PER_NODE)) \
     --num_machines $SLURM_NNODES \
     --rdzv_backend c10d \
