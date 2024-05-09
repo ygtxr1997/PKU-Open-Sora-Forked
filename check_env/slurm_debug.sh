@@ -41,7 +41,6 @@ export LAUNCHER="torchrun \
   --node_rank=$SLURM_NNODES \
   --master_addr=$MASTER_ADDR \
   --master_port=$MASTER_PORT  \
-  scripts/ddp_convnext.py --model_name \
   "
 export PYTHONPATH=${PWD}
 export DATA_PATH="/public/home/201810101923/datasets/opensora/dataset_v1.0.0_tmptest_sorted/sharegpt4v_path_cap_64x512x512.json"
