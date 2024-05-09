@@ -74,6 +74,7 @@ def main(args):
         log_with=args.report_to,
         project_config=accelerator_project_config,
     )
+    print(accelerator.state)
 
     if args.report_to == "wandb":
         if not is_wandb_available():
