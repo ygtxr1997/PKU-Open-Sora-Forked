@@ -32,7 +32,6 @@ export LAUNCHER="accelerate launch \
     --config_file scripts/accelerate_configs/deepspeed_zero2_config.yaml  \
     --num_processes $((SLURM_NNODES * GPUS_PER_NODE)) \
     --num_machines $SLURM_NNODES \
-    --rdzv_backend c10d \
     --main_process_ip ${MASTER_ADDR} \
     --main_process_port ${MASTER_PORT} \
     --machine_rank \$SLURM_PROCID  \
@@ -99,4 +98,4 @@ export SCRIPT_ARGS=" \
 
 # This step is necessary because accelerate launch does not handle multiline arguments properly
 export CMD="$LAUNCHER $SCRIPT $SCRIPT_ARGS"
-srun --jobid $SLURM_JOBID bash -c '$CMD'
+srun --jobid $SLURM_JOBID bash -c "$CMD"
