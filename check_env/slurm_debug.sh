@@ -26,6 +26,18 @@ export MASTER_PORT=$((RANDOM % (19000 - 11000 + 1) + 11000))
 export MASTER_ADDR=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
 
 export NCCL_NET=IB
+export NCCL_NSOCKS_PERTHREAD=4
+export NCCL_SOCKET_NTHREADS=2
+export NCCL_MIN_CHANNELS=32
+
+#export MASTER_PORT=$(expr 10000 + $(echo -n $SLURM_JOBID | tail -c 4))
+#export WORLD_SIZE=$(($SLURM_NNODES * $SLURM_NTASKS_PER_NODE))
+#echo "MASTER_PORT"=$MASTER_PORT
+#echo "WORLD_SIZE="$WORLD_SIZE
+#
+#master_addr=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
+#export MASTER_ADDR=$master_addr
+#echo "MASTER_ADDR="$MASTER_ADDR
 ######################
 
 #export LAUNCHER="accelerate launch \
@@ -109,5 +121,5 @@ All_ADDR=($(scontrol show hostnames $SLURM_JOB_NODELIST))
 for mrank in $(seq 0 $((SLURM_NNODES - 1)))
 do
 echo "$mrank address"=${All_ADDR[mrank]}
-srun $SRUN_ARGS -w ${All_ADDR[mrank]} bash -c "$LAUNCHER $SCRIPT $SCRIPT_ARGS" &
+srun --jobid $SLURM_JOBID -w ${All_ADDR[mrank]} bash -c "$LAUNCHER $SCRIPT $SCRIPT_ARGS" &
 done
