@@ -98,4 +98,4 @@ export SCRIPT_ARGS=" \
 
 # This step is necessary because accelerate launch does not handle multiline arguments properly
 export CMD="$LAUNCHER $SCRIPT $SCRIPT_ARGS"
-srun --jobid $SLURM_JOBID bash -c $CMD
+srun --jobid $SLURM_JOBID bash -c '$CMD'
