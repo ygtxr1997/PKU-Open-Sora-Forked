@@ -135,14 +135,15 @@ export CMD="$LAUNCHER $SCRIPT $SCRIPT_ARGS"
 #  --force_multi \
 #  $SCRIPT $SCRIPT_ARGS \
 #  --deepspeed
-srun --wait=60 --jobid $SLURM_JOB_ID accelerate launch \
+srun --wait=60 --jobid $SLURM_JOB_ID bash -c 'accelerate launch \
   --config_file scripts/accelerate_configs/acc_fsdp_config.yaml \
   --num_processes $((SLURM_NNODES * GPUS_PER_NODE)) \
   --num_machines $SLURM_NNODES \
   --main_process_ip ${MASTER_ADDR} \
   --main_process_port ${MASTER_PORT} \
-  --machine_rank '$SLURM_PROCID' \
+  --machine_rank \$SLURM_PROCID \
   $SCRIPT $SCRIPT_ARGS
+  '
 
 ##srun accelerate launch \
 #  --config_file scripts/accelerate_configs/deepspeed_zero2_config.yaml \
