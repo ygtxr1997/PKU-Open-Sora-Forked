@@ -20,5 +20,4 @@
         "sub_group_size": 1e9,
         "reduce_bucket_size": 5e8
     },
-    "force_multi": true
 }
