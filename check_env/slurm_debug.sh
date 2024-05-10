@@ -33,6 +33,7 @@ function makehostfile() {
        print map { "$b$_ slots=$slots\n" } @nodes'
 }
 makehostfile > hostfile
+echo "[slurm node name] slots=$SLURM_NTASKS" > hostfile
 
 export NCCL_NET=IB
 export NCCL_NSOCKS_PERTHREAD=4
