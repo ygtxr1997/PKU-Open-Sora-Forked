@@ -140,7 +140,7 @@ deepspeed \
   --master_addr $MASTER_ADDR \
   --master_port $MASTER_PORT \
   --launcher SLURM \
-  --hostfile $HOSTFILE \
+  --hostfile=$HOSTFILE \
   $SCRIPT $SCRIPT_ARGS \
   --deepspeed
 
