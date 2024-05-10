@@ -136,7 +136,6 @@ export CMD="$LAUNCHER $SCRIPT $SCRIPT_ARGS"
 #  $SCRIPT $SCRIPT_ARGS \
 #  --deepspeed
 LAUNCHER="accelerate launch \
-    --multi_gpu \
     --config_file scripts/accelerate_configs/deepspeed_zero2_config.yaml \
     --num_machines $SLURM_NNODES \
     --num_processes $((SLURM_NNODES * GPUS_PER_NODE)) \
