@@ -6,7 +6,7 @@
 #SBATCH --ntasks-per-node=1         # number of MP tasks
 #SBATCH --gres=gpu:8                # number of GPUs per node
 #SBATCH --cpus-per-task=64          # number of cores per tasks
-#SBATCH --mem=5000000MB              # memory
+#SBATCH --mem=500000MB              # memory
 #SBATCH --output=outputs/%x-%j.out  # output file name
 #SBATCH --time=30-00:00:00          # max time
 
