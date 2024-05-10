@@ -9,6 +9,8 @@ A minimal training script for DiT using PyTorch DDP.
 """
 import argparse
 import logging
+import time
+
 import math
 import os
 import datetime
@@ -520,6 +522,9 @@ def main(args):
                 is_global_rank_0 = accelerator.is_main_process
             else:  # SLURM env
                 is_global_rank_0 = accelerator.is_main_process and (0 == int(os.environ["SLURM_PROCID"]))
+            if not is_global_rank_0:
+                print(f"[DEBUG] gpu{accelerator.process_index}@node{int(os.environ['SLURM_PROCID'])} is sleeping...")
+                time.sleep(100000000)
             if accelerator.is_main_process:
                 validation_prompt = "The majestic beauty of a waterfall cascading down a cliff into a serene lake. The camera angle provides a bird's eye view of the waterfall."
                 if global_step % args.checkpointing_steps == 0:
