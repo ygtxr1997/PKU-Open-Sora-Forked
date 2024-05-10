@@ -134,7 +134,7 @@ export CMD="$LAUNCHER $SCRIPT $SCRIPT_ARGS"
 #  --rdzv_backend c10d \
 #  --rdzv_endpoint $MASTER_ADDR:29500 \
 #  $SCRIPT $SCRIPT_ARGS
-srun deepspeed \
+srun --jobid $SLURM_JOBID bash -c 'deepspeed \
   --num_nodes 4 \
   --num_gpus 8 \
   --master_addr $MASTER_ADDR \
@@ -143,6 +143,7 @@ srun deepspeed \
   --hostfile=$HOSTFILE \
   $SCRIPT $SCRIPT_ARGS \
   --deepspeed
+  '
 
 #srun accelerate launch \
 #  --config_file scripts/accelerate_configs/deepspeed_zero2_config.yaml \
