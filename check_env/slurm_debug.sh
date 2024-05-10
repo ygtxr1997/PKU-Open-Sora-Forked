@@ -149,6 +149,7 @@ LAUNCHER="accelerate launch \
     --tee 3 \
 "
 #srun --wait=60 --jobid $SLURM_JOB_ID bash -c '$LAUNCHER $SCRIPT $SCRIPT_ARGS'
+echo 'current node is: $SLURM_PROCID'
 srun --wait=60 --jobid $SLURM_JOB_ID bash -c 'echo $SLURM_PROCID'
 
 ##srun accelerate launch \
