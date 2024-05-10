@@ -23,7 +23,7 @@ export OMP_NUM_THREADS=4
 ######################
 # Make sure another job doesnt use same port, here using random number
 export MASTER_PORT=$((RANDOM % (19000 - 11000 + 1) + 11000))
-export MASTER_PORT=28988
+export MASTER_PORT=0
 export MASTER_ADDR=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
 
 # function to create the hostile
