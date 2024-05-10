@@ -3,13 +3,13 @@ distributed_type: DEEPSPEED
 deepspeed_config:
  deepspeed_config_file: scripts/accelerate_configs/zero2.json
  deepspeed_multinode_launcher: SLURM
+ deepspeed_hostfile: hostfile
 fsdp_config: {}
 machine_rank: 0
 main_process_ip: null
-main_process_port: 29501
+main_process_port: null
 main_training_function: main
-rdzv_backend: c10d
-num_machines: 4
-num_processes: 8
+num_machines: null
+num_processes: null
 gpu_ids: 0,1,2,3,4,5,6,7
 use_cpu: false
