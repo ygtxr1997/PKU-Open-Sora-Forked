@@ -22,8 +22,7 @@ export OMP_NUM_THREADS=4
 #### Set network #####
 ######################
 # Make sure another job doesnt use same port, here using random number
-#export MASTER_PORT=$((RANDOM % (19000 - 11000 + 1) + 11000))
-export MASTER_PORT=28888
+export MASTER_PORT=$((RANDOM % (19000 - 11000 + 1) + 11000))
 export MASTER_ADDR=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
 
 # function to create the hostile
@@ -137,6 +136,7 @@ export CMD="$LAUNCHER $SCRIPT $SCRIPT_ARGS"
 #  $SCRIPT $SCRIPT_ARGS \
 #  --deepspeed
 srun accelerate launch \
+  --config_file scripts/accelerate_configs/acc_fsdp_config.yaml \
   --num_processes $((SLURM_NNODES * GPUS_PER_NODE)) \
   --num_machines $SLURM_NNODES \
   --main_process_ip ${MASTER_ADDR} \
