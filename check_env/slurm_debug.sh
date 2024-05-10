@@ -156,7 +156,7 @@ srun --jobid $SLURM_JOBID -w ${All_ADDR[mrank]} bash -c "accelerate launch \
   --main_process_port ${MASTER_PORT} \
   --machine_rank $mrank \
   $SCRIPT $SCRIPT_ARGS
-  "
+  "  &
 done
 
 ##srun accelerate launch \
