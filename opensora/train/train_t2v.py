@@ -522,7 +522,7 @@ def main(args):
                 is_global_rank_0 = accelerator.is_main_process
             else:  # SLURM env
                 is_global_rank_0 = accelerator.is_main_process and (0 == int(os.environ["SLURM_PROCID"]))
-            if not is_global_rank_0:
+            if 0 != int(os.environ["SLURM_PROCID"]):
                 print(f"[DEBUG] gpu{accelerator.process_index}@node{int(os.environ['SLURM_PROCID'])} is sleeping...")
                 time.sleep(100000000)
             if accelerator.is_main_process:
