@@ -26,13 +26,14 @@ export MASTER_PORT=$((RANDOM % (19000 - 11000 + 1) + 11000))
 export MASTER_ADDR=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
 
 # function to create the hostile
+export HOSTFILE="./hostfile"
 function makehostfile() {
        perl -e '$slots=split /,/, $ENV{"SLURM_STEP_GPUS"};
        $slots=8 if $slots==0; # workaround 8 gpu machines
        @nodes = split /\n/, qx[scontrol show hostnames $ENV{"SLURM_JOB_NODELIST"}];
        print map { "$b$_ slots=$slots\n" } @nodes'
 }
-makehostfile > hostfile
+makehostfile > $HOSTFILE
 
 export NCCL_NET=IB
 export NCCL_NSOCKS_PERTHREAD=4
@@ -134,7 +135,7 @@ export CMD="$LAUNCHER $SCRIPT $SCRIPT_ARGS"
 #  --rdzv_endpoint $MASTER_ADDR:29500 \
 #  $SCRIPT $SCRIPT_ARGS
 deepspeed \
-  --hostfile ./hostfile \
+  --hostfile $HOSTFILE \
   --num_nodes 4 \
   --num_gpus 32 \
   --master_addr $MASTER_ADDR \
