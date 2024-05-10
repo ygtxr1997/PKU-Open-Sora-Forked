@@ -143,7 +143,7 @@ LAUNCHER="accelerate launch \
     --main_process_ip "$MASTER_ADDR" \
     --main_process_port $MASTER_PORT \
     --num_processes $((SLURM_NNODES * GPUS_PER_NODE)) \
-    --machine_rank \$SLURM_PROCID \
+    --machine_rank $SLURM_PROCID \
     --rdzv_conf rdzv_backend=c10d \
     --max_restarts 0 \
     --tee 3 \
