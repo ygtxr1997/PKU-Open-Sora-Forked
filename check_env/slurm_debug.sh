@@ -143,13 +143,12 @@ LAUNCHER="accelerate launch \
     --main_process_ip "$MASTER_ADDR" \
     --main_process_port $MASTER_PORT \
     --num_processes $((SLURM_NNODES * GPUS_PER_NODE)) \
-    --machine_rank $SLURM_PROCID \
     --rdzv_conf rdzv_backend=c10d \
     --max_restarts 0 \
     --tee 3 \
 "
-srun --jobid $SLURM_JOB_ID bash -c 'echo current node is: $SLURM_PROCID'
-#srun --wait=60 --jobid $SLURM_JOB_ID bash -c '$LAUNCHER $SCRIPT $SCRIPT_ARGS'
+#srun --jobid $SLURM_JOB_ID bash -c 'echo current node is: $SLURM_PROCID'
+srun --wait=60 --jobid $SLURM_JOB_ID bash -c '$LAUNCHER --machine_rank=$SLURM_PROCID $SCRIPT $SCRIPT_ARGS'
 
 ##srun accelerate launch \
 #  --config_file scripts/accelerate_configs/deepspeed_zero2_config.yaml \
