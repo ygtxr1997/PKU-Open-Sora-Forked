@@ -3,10 +3,10 @@
 #SBATCH --partition=gpuA800
 #SBATCH --nodes=4                   # number of nodes
 #SBATCH --exclude=gpu[1]
-#SBATCH --ntasks-per-node=8         # number of MP tasks
+#SBATCH --ntasks-per-node=1         # number of MP tasks
 #SBATCH --gres=gpu:8                # number of GPUs per node
-#SBATCH --cpus-per-task=8          # number of cores per tasks
-#SBATCH --mem=500000MB              # memory
+#SBATCH --cpus-per-task=64          # number of cores per tasks
+#SBATCH --mem=5000000MB              # memory
 #SBATCH --output=outputs/%x-%j.out  # output file name
 #SBATCH --time=30-00:00:00          # max time
 
@@ -23,7 +23,6 @@ export OMP_NUM_THREADS=4
 ######################
 # Make sure another job doesnt use same port, here using random number
 export MASTER_PORT=$((RANDOM % (19000 - 11000 + 1) + 11000))
-export MASTER_PORT=0
 export MASTER_ADDR=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
 
 # function to create the hostile
