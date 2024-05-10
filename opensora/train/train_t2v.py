@@ -518,13 +518,6 @@ def main(args):
             if global_step >= args.max_train_steps:
                 break
 
-            if os.environ.get("SLURM_PROCID") is None:
-                is_global_rank_0 = accelerator.is_main_process
-            else:  # SLURM env
-                is_global_rank_0 = accelerator.is_main_process and (0 == int(os.environ["SLURM_PROCID"]))
-            if 0 != int(os.environ["SLURM_PROCID"]):
-                print(f"[DEBUG] gpu{accelerator.process_index}@node{int(os.environ['SLURM_PROCID'])} is sleeping...")
-                time.sleep(100000000)
             if accelerator.is_main_process:
                 validation_prompt = "The majestic beauty of a waterfall cascading down a cliff into a serene lake. The camera angle provides a bird's eye view of the waterfall."
                 if global_step % args.checkpointing_steps == 0:
@@ -535,7 +528,7 @@ def main(args):
                         ema_model.store(model.parameters())
                         ema_model.copy_to(model.parameters())
 
-                    if args.enable_tracker and is_global_rank_0:
+                    if args.enable_tracker:
                         with torch.no_grad():
                             # create pipeline
                             ae_ = getae_wrapper(args.ae)(args.ae_path).to(accelerator.device).eval()

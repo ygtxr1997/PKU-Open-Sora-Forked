@@ -147,11 +147,9 @@ def getdataset(args, logger=None):
         tokenizer = AutoTokenizer.from_pretrained(
             args.text_encoder_name, cache_dir=args.cache_dir)
         nnodes = int(os.environ["SLURM_NNODES"])
-        gpus_per_node = int(os.environ["WORLD_SIZE"])
+        global_gpus = int(os.environ["WORLD_SIZE"])
         node_id = int(os.environ["SLURM_PROCID"])
-        local_rank = int(os.environ["RANK"])
-        global_rank = node_id * gpus_per_node + local_rank
-        global_gpus = nnodes * gpus_per_node
+        global_rank = int(os.environ["RANK"])
         return WebVidHFWebDataset(
             args.webvid_dir,
             logger=logger,
