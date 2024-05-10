@@ -158,6 +158,8 @@ def parser_args():
         default=None,
         help="The output directory where the model predictions and checkpoints will be written.",
     )
+    import deepspeed
+    deepspeed
     parser.add_argument(
         "--train_batch_size", type=int, default=16, help="Batch size (per device) for the training dataloader."
     )

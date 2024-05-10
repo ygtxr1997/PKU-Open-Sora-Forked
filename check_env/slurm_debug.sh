@@ -136,7 +136,7 @@ export CMD="$LAUNCHER $SCRIPT $SCRIPT_ARGS"
 #  $SCRIPT $SCRIPT_ARGS
 deepspeed \
   --num_nodes 4 \
-  --num_gpus 32 \
+  --num_gpus 8 \
   --master_addr $MASTER_ADDR \
   --master_port $MASTER_PORT \
   --launcher SLURM \
