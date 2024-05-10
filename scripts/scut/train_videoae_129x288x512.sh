@@ -73,6 +73,7 @@ export WEBVID_LATENT_META="/public/home/201810101923/datasets/webvid/latents_129
 export OUTPUT_DIR="out_panda70m_129x288x512"
 export VIDEO_FOLDER="/remote-home1/dataset/data_split_tt"  # not used
 srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
+  --multi_gpu \
   --config_file scripts/accelerate_configs/deepspeed_zero2_config.yaml \
   --num_processes $(($NUM_GPUS * $SLURM_NNODES)) --num_machines $SLURM_NNODES --machine_rank $SLURM_PROCID \
   --main_process_ip $MASTER_ADDR --main_process_port $MASTER_PORT \
