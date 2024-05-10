@@ -33,7 +33,6 @@ function makehostfile() {
        print map { "$b$_ slots=$slots\n" } @nodes'
 }
 makehostfile > hostfile
-echo "[slurm node name] slots=$SLURM_NTASKS" > hostfile
 
 export NCCL_NET=IB
 export NCCL_NSOCKS_PERTHREAD=4
@@ -135,6 +134,7 @@ export CMD="$LAUNCHER $SCRIPT $SCRIPT_ARGS"
 #  --rdzv_endpoint $MASTER_ADDR:29500 \
 #  $SCRIPT $SCRIPT_ARGS
 deepspeed \
+  --hostfile hostfile \
   --num_nodes 4 \
   --num_gpus 32 \
   --master_addr $MASTER_ADDR \
