@@ -126,8 +126,8 @@ export SCRIPT_ARGS=" \
 
 # This step is necessary because accelerate launch does not handle multiline arguments properly
 export CMD="$LAUNCHER $SCRIPT $SCRIPT_ARGS"
-#srun --jobid $SLURM_JOBID bash -c "$CMD"
-#srun torchrun \
+##srun --jobid $SLURM_JOBID bash -c "$CMD"
+##srun torchrun \
 #  --nnodes 4 \
 #  --nproc_per_node 8 \
 #  --rdzv_id $RANDOM \
@@ -145,7 +145,7 @@ srun --jobid $SLURM_JOBID -n 4 bash -c 'deepspeed \
   --deepspeed
   '
 
-#srun accelerate launch \
+##srun accelerate launch \
 #  --config_file scripts/accelerate_configs/deepspeed_zero2_config.yaml \
 #  --num_processes $((SLURM_NNODES * GPUS_PER_NODE)) \
 #  --num_machines $SLURM_NNODES \
@@ -157,5 +157,5 @@ srun --jobid $SLURM_JOBID -n 4 bash -c 'deepspeed \
 #for mrank in $(seq 0 $((SLURM_NNODES - 1)))
 #do
 #echo "$mrank address"=${All_ADDR[mrank]}
-#srun --jobid $SLURM_JOBID -w ${All_ADDR[mrank]} bash -c "$LAUNCHER $SCRIPT $SCRIPT_ARGS" &
+##srun --jobid $SLURM_JOBID -w ${All_ADDR[mrank]} bash -c "$LAUNCHER $SCRIPT $SCRIPT_ARGS" &
 #done
