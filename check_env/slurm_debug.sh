@@ -6,7 +6,7 @@
 #SBATCH --ntasks-per-node=8         # number of MP tasks
 #SBATCH --gres=gpu:8                # number of GPUs per node
 #SBATCH --cpus-per-task=8          # number of cores per tasks
-#SBATCH --mem=50000MB              # memory
+#SBATCH --mem=500000MB              # memory
 #SBATCH --output=outputs/%x-%j.out  # output file name
 #SBATCH --time=30-00:00:00          # max time
 
@@ -141,6 +141,7 @@ srun --jobid $SLURM_JOBID --exclusive -n 4 bash -c 'deepspeed \
   --master_port $MASTER_PORT \
   --launcher SLURM \
   --hostfile=$HOSTFILE \
+  --force_multi \
   $SCRIPT $SCRIPT_ARGS \
   --deepspeed
   '
