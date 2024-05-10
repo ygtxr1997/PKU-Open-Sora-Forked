@@ -134,7 +134,7 @@ export CMD="$LAUNCHER $SCRIPT $SCRIPT_ARGS"
 #  --rdzv_backend c10d \
 #  --rdzv_endpoint $MASTER_ADDR:29500 \
 #  $SCRIPT $SCRIPT_ARGS
-deepspeed \
+srun deepspeed \
   --num_nodes 4 \
   --num_gpus 8 \
   --master_addr $MASTER_ADDR \
