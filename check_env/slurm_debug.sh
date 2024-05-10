@@ -134,7 +134,7 @@ export CMD="$LAUNCHER $SCRIPT $SCRIPT_ARGS"
 #  --rdzv_backend c10d \
 #  --rdzv_endpoint $MASTER_ADDR:29500 \
 #  $SCRIPT $SCRIPT_ARGS
-srun --jobid $SLURM_JOBID bash -c 'deepspeed \
+srun --jobid $SLURM_JOBID -n 4 bash -c 'deepspeed \
   --num_nodes 4 \
   --num_gpus 8 \
   --master_addr $MASTER_ADDR \
