@@ -125,16 +125,23 @@ export CMD="$LAUNCHER $SCRIPT $SCRIPT_ARGS"
 #  --rdzv_backend c10d \
 #  --rdzv_endpoint $MASTER_ADDR:29500 \
 #  $SCRIPT $SCRIPT_ARGS
-deepspeed \
-  --num_nodes 4 \
-  --num_gpus 8 \
-  --master_addr $MASTER_ADDR \
-  --master_port $MASTER_PORT \
-  --launcher SLURM \
-  --hostfile=$HOSTFILE \
-  --force_multi \
-  $SCRIPT $SCRIPT_ARGS \
-  --deepspeed
+#deepspeed \
+#  --num_nodes 4 \
+#  --num_gpus 8 \
+#  --master_addr $MASTER_ADDR \
+#  --master_port $MASTER_PORT \
+#  --launcher SLURM \
+#  --hostfile=$HOSTFILE \
+#  --force_multi \
+#  $SCRIPT $SCRIPT_ARGS \
+#  --deepspeed
+accelerate launch \
+    --config_file scripts/accelerate_configs/deepspeed_zero2_config.yaml  \
+    --num_processes $((SLURM_NNODES * GPUS_PER_NODE)) \
+    --num_machines $SLURM_NNODES \
+    --main_process_ip ${MASTER_ADDR} \
+    --main_process_port ${MASTER_PORT} \
+    $SCRIPT $SCRIPT_ARGS
 
 ##srun accelerate launch \
 #  --config_file scripts/accelerate_configs/deepspeed_zero2_config.yaml \

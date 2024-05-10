@@ -96,7 +96,7 @@ def main(args):
         diffusers.utils.logging.set_verbosity_error()
 
     def print_env():
-        line = ""
+        line = "[DEBUG] "
         for key in sorted(os.environ.keys()):
             if not (
                     key.startswith(("SLURM_", "SUBMITIT_"))
