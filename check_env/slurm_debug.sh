@@ -3,7 +3,7 @@
 #SBATCH --partition=gpuA800
 #SBATCH --nodes=4                   # number of nodes
 #SBATCH --exclude=gpu[1]
-#SBATCH --ntasks-per-node=1         # number of MP tasks
+#SBATCH --ntasks-per-node=8         # number of MP tasks
 #SBATCH --gres=gpu:8                # number of GPUs per node
 #SBATCH --cpus-per-task=64          # number of cores per tasks
 #SBATCH --mem=500000MB              # memory
@@ -135,6 +135,8 @@ export CMD="$LAUNCHER $SCRIPT $SCRIPT_ARGS"
 #  --rdzv_endpoint $MASTER_ADDR:29500 \
 #  $SCRIPT $SCRIPT_ARGS
 srun --jobid $SLURM_JOBID -n 4 bash -c 'deepspeed \
+  --num_nodes 4 \
+  --num_gpus 8 \
   --master_addr $MASTER_ADDR \
   --master_port $MASTER_PORT \
   --launcher SLURM \
