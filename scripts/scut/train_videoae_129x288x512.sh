@@ -62,7 +62,7 @@ export PYTHONPATH=${PWD}
 export DATA_PATH="/public/home/201810101923/datasets/opensora/dataset_v1.0.0_tmptest_sorted/sharegpt4v_path_cap_64x512x512.json"
 export REPLACE_ROOT="/public/home/201810101923/datasets/opensora/dataset_v1.0.0_tmptest_sorted"
 export MODEL_CACHE_DIR="/public/home/201810101923/models/opensora/v1.0.0"
-export PRETRAINED_MODEL_PT="/public/home/201810101923/models/opensora/v1.0.0_sorted/panda70m_129x144x256/checkpoint-96000/model/diffusion_pytorch_model.safetensors"
+export PRETRAINED_MODEL_PT="/public/home/201810101923/models/opensora/v1.0.0_sorted/out_panda70m_129x288x512/checkpoint-36000/model/diffusion_pytorch_model.safetensors"
 export INTERNVID_DIR="/exthome/future-technology-college-data/Internvid_dataset/InternVid-10M-FLT-clip"
 export INTERNVID_META="/exthome/future-technology-college-data/Internvid_dataset/InternVid-10M-flt-clips1.jsonl"
 export PANDA70M_DIR="/public/home/201810101923/datasets/panda70m/clips_0"
@@ -70,7 +70,7 @@ export PANDA70M_META="/public/home/201810101923/datasets/panda70m/panda70m_train
 export WEBVID_DIR="/exthome/future-technology-college-data/202321063560/webvid_data/webvid_train_data"
 export WEBVID_LATENT_DIR="/public/home/201810101923/datasets/webvid/latents"
 export WEBVID_LATENT_META="/public/home/201810101923/datasets/webvid/latents_129x288x512/latents_meta_all.csv"
-export OUTPUT_DIR="out_panda70m_129x288x512"
+export OUTPUT_DIR="out_webvidlatent_129x288x512"
 export VIDEO_FOLDER="/remote-home1/dataset/data_split_tt"  # not used
 srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --multi_gpu \
