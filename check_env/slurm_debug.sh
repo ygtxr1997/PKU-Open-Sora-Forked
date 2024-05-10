@@ -147,7 +147,7 @@ export CMD="$LAUNCHER $SCRIPT $SCRIPT_ARGS"
 All_ADDR=($(scontrol show hostnames $SLURM_JOB_NODELIST))
 for mrank in $(seq 0 $((SLURM_NNODES - 1)))
 do
-srun --jobid $SLURM_JOBID -w ${All_ADDR[mrank]} bash -c "srun accelerate launch \
+srun --jobid $SLURM_JOBID -w ${All_ADDR[mrank]} bash -c "accelerate launch \
   --multi_gpu \
   --config_file scripts/accelerate_configs/acc_fsdp_config.yaml \
   --num_processes $((SLURM_NNODES * GPUS_PER_NODE)) \
