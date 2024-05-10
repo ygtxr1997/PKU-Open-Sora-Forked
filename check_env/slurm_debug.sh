@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=multinode_debug
 #SBATCH --partition=gpuA800
-#SBATCH --nodes=2                   # number of nodes
+#SBATCH --nodes=4                   # number of nodes
 #SBATCH --exclude=gpu[1]
 #SBATCH --ntasks-per-node=1         # number of MP tasks
 #SBATCH --gres=gpu:8                # number of GPUs per node
@@ -137,7 +137,7 @@ export CMD="$LAUNCHER $SCRIPT $SCRIPT_ARGS"
 #  --deepspeed
 LAUNCHER="accelerate launch \
     --multi_gpu \
-    --config_file scripts/accelerate_configs/acc_fsdp_config.yaml \
+    --config_file scripts/accelerate_configs/deepspeed_zero2_config.yaml \
     --num_machines $SLURM_NNODES \
     --num_processes $((SLURM_NNODES * GPUS_PER_NODE)) \
     --main_process_ip "$MASTER_ADDR" \
