@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=multinode_debug
 #SBATCH --partition=gpuA800
-#SBATCH --nodes=4                   # number of nodes
+#SBATCH --nodes=2                   # number of nodes
 #SBATCH --exclude=gpu[1]
 #SBATCH --ntasks-per-node=1         # number of MP tasks
 #SBATCH --gres=gpu:8                # number of GPUs per node
