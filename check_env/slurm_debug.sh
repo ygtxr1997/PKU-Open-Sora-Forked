@@ -136,7 +136,7 @@ export CMD="$LAUNCHER $SCRIPT $SCRIPT_ARGS"
 deepspeed --hostfile=hostfile \
   --num_nodes=4 \
   --num_gpus=32 \
-  --launcher="SLURM" \
+  --launcher=SLURM \
   $SCRIPT $SCRIPT_ARGS \
   --deepspeed scripts/accelerate_configs/zero2.json
 
