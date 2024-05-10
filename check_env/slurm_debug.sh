@@ -25,6 +25,15 @@ export OMP_NUM_THREADS=4
 export MASTER_PORT=$((RANDOM % (19000 - 11000 + 1) + 11000))
 export MASTER_ADDR=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
 
+# function to create the hostile
+function makehostfile() {
+       perl -e '$slots=split /,/, $ENV{"SLURM_STEP_GPUS"};
+       $slots=8 if $slots==0; # workaround 8 gpu machines
+       @nodes = split /\n/, qx[scontrol show hostnames $ENV{"SLURM_JOB_NODELIST"}];
+       print map { "$b$_ slots=$slots\n" } @nodes'
+}
+makehostfile > hostfile
+
 export NCCL_NET=IB
 export NCCL_NSOCKS_PERTHREAD=4
 export NCCL_SOCKET_NTHREADS=2
@@ -117,13 +126,19 @@ export SCRIPT_ARGS=" \
 # This step is necessary because accelerate launch does not handle multiline arguments properly
 export CMD="$LAUNCHER $SCRIPT $SCRIPT_ARGS"
 #srun --jobid $SLURM_JOBID bash -c "$CMD"
-srun torchrun \
-  --nnodes 4 \
-  --nproc_per_node 8 \
-  --rdzv_id $RANDOM \
-  --rdzv_backend c10d \
-  --rdzv_endpoint $MASTER_ADDR:29500 \
-  $SCRIPT $SCRIPT_ARGS
+#srun torchrun \
+#  --nnodes 4 \
+#  --nproc_per_node 8 \
+#  --rdzv_id $RANDOM \
+#  --rdzv_backend c10d \
+#  --rdzv_endpoint $MASTER_ADDR:29500 \
+#  $SCRIPT $SCRIPT_ARGS
+deepspeed --hostfile=hostfile \
+  --num_nodes=4 \
+  --num_gpus=32 \
+  --launcher="SLURM" \
+  $SCRIPT $SCRIPT_ARGS \
+
 #srun accelerate launch \
 #  --config_file scripts/accelerate_configs/deepspeed_zero2_config.yaml \
 #  --num_processes $((SLURM_NNODES * GPUS_PER_NODE)) \
