@@ -149,6 +149,7 @@ for mrank in $(seq 0 $((SLURM_NNODES - 1)))
 do
 echo "$mrank address"=${All_ADDR[mrank]}
 srun --jobid $SLURM_JOBID -w ${All_ADDR[mrank]} bash -c "srun accelerate launch \
+  --multi_gpu \
   --config_file scripts/accelerate_configs/acc_fsdp_config.yaml \
   --num_processes $((SLURM_NNODES * GPUS_PER_NODE)) \
   --num_machines $SLURM_NNODES \
