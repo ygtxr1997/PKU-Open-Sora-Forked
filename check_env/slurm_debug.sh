@@ -137,7 +137,7 @@ deepspeed --hostfile=hostfile \
   --num_nodes=4 \
   --num_gpus=32 \
   --launcher="SLURM" \
-  $SCRIPT $SCRIPT_ARGS \
+  $SCRIPT $SCRIPT_ARGS
 
 #srun accelerate launch \
 #  --config_file scripts/accelerate_configs/deepspeed_zero2_config.yaml \
