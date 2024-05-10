@@ -137,7 +137,6 @@ export CMD="$LAUNCHER $SCRIPT $SCRIPT_ARGS"
 #  $SCRIPT $SCRIPT_ARGS \
 #  --deepspeed
 srun accelerate launch \
-  --config_file scripts/accelerate_configs/deepspeed_zero2_config.yaml  \
   --num_processes $((SLURM_NNODES * GPUS_PER_NODE)) \
   --num_machines $SLURM_NNODES \
   --main_process_ip ${MASTER_ADDR} \
