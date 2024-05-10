@@ -94,16 +94,16 @@ export SCRIPT_ARGS=" \
     --wh_ratio '16:9' \
     --gradient_checkpointing \
     --attention_mode xformers \
-    --train_batch_size=2 \
+    --train_batch_size 2 \
     --dataloader_num_workers 6 \
-    --gradient_accumulation_steps=1 \
-    --max_train_steps=1000000 \
-    --learning_rate=2e-05 \
+    --gradient_accumulation_steps 1 \
+    --max_train_steps 1000000 \
+    --learning_rate 2e-05 \
     --lr_scheduler constant \
-    --lr_warmup_steps=0 \
+    --lr_warmup_steps 0 \
     --mixed_precision bf16 \
     --report_to wandb \
-    --checkpointing_steps=500 \
+    --checkpointing_steps 500 \
     --output_dir ${OUTPUT_DIR} \
     --allow_tf32 \
     --pretrained ${PRETRAINED_MODEL_PT} \
@@ -133,10 +133,10 @@ export CMD="$LAUNCHER $SCRIPT $SCRIPT_ARGS"
 #  --rdzv_backend c10d \
 #  --rdzv_endpoint $MASTER_ADDR:29500 \
 #  $SCRIPT $SCRIPT_ARGS
-deepspeed --hostfile=hostfile \
-  --num_nodes=4 \
-  --num_gpus=32 \
-  --launcher=SLURM \
+deepspeed --hostfile hostfile \
+  --num_nodes 4 \
+  --num_gpus 32 \
+  --launcher SLURM \
   $SCRIPT $SCRIPT_ARGS \
   --deepspeed scripts/accelerate_configs/zero2.json
 
