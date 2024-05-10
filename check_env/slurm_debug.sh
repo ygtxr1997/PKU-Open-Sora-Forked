@@ -136,6 +136,8 @@ export CMD="$LAUNCHER $SCRIPT $SCRIPT_ARGS"
 deepspeed --hostfile hostfile \
   --num_nodes 4 \
   --num_gpus 32 \
+  --master_addr $MASTER_ADDR \
+  --master_port $MASTER_PORT \
   --launcher SLURM \
   $SCRIPT $SCRIPT_ARGS \
   --deepspeed

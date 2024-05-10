@@ -144,6 +144,7 @@ def parser_args():
     parser.add_argument("--use_image_num", type=int, default=0)
     parser.add_argument("--use_img_from_vid", action="store_true")
     parser.add_argument("--use_deepspeed", action="store_true")
+    parser.add_argument("--deepspeed", action="store_true", help="used by deepspeed launcher")
     parser.add_argument("--seed", type=int, default=None, help="A seed for reproducible training.")
     parser.add_argument(
         "--num_validation_videos",
