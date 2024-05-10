@@ -135,7 +135,6 @@ export CMD="$LAUNCHER $SCRIPT $SCRIPT_ARGS"
 #  --rdzv_endpoint $MASTER_ADDR:29500 \
 #  $SCRIPT $SCRIPT_ARGS
 deepspeed \
-  --hostfile $HOSTFILE \
   --num_nodes 4 \
   --num_gpus 32 \
   --master_addr $MASTER_ADDR \
