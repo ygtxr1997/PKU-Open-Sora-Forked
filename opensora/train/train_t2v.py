@@ -527,8 +527,9 @@ def main(args):
 
                     if args.enable_tracker:
                         with torch.no_grad():
+                            logger.info(f"Preparing validation...")
                             # create pipeline
-                            ae_ = getae_wrapper(args.ae)(args.ae_path).to(accelerator.device).eval()
+                            ae_ = getae_wrapper(args.ae)("LanguageBind/Open-Sora-Plan-v1.0.0", subfolder="vae", cache_dir=args.cache_dir, is_training=False).to(accelerator.device).eval()
                             if args.enable_tiling:
                                 ae_.vae.enable_tiling()
                                 ae_.vae.tile_overlap_factor = args.tile_overlap_factor
