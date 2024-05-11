@@ -288,7 +288,7 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
             latent = np.load(latent_path)  # (B,C,T,H,W)
 
             # Text
-            text = caption
+            text = f"{caption}, watermark with horizontal flipped text \'SHUTTERSTOCK\'"
             text = text_preprocessing(text)
             text_tokens_and_mask = self.tokenizer(
                 text,

@@ -193,6 +193,16 @@ def check_batch():
         WEBVID_LATENT_META, WEBVID_LATENT_DIR, logger=logger,
         tokenizer=tokenizer,
     )
+    from opensora.models.ae import getae, getae_wrapper
+    from opensora.models.text_encoder import get_text_enc
+    import wandb
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    ae = getae_wrapper("CausalVAEModel_4x8x8")(
+        "LanguageBind/Open-Sora-Plan-v1.0.0", subfolder="vae",
+        cache_dir="/public/home/201810101923/models/opensora/v1.0.0",
+        is_training=False).to(device, dtype=torch.float16)
+    ae.vae.enable_tiling()
+    ae.vae.tile_overlap_factor = 0.25
 
     # multi_worker_start(worker_extract_meta, worker_cnt=4)
 
@@ -214,6 +224,31 @@ def check_batch():
 
     for idx, batch in enumerate(tqdm(train_dataloader)):
         print_batch(batch)
+
+        x, text_ids, cond_mask = batch
+        x = x.to(device)
+        with torch.no_grad():
+            validation_prompt = tokenizer.decode(text_ids[0], skip_special_tokens=True)
+            validation_latent = x[0].unsqueeze(0)
+            logger.info(f"Running validation... \n"
+                        f"Generating a video from the latent with caption: {validation_prompt}")
+            val_output = ae.decode(validation_latent)
+            val_output = (ae_denorm[args.ae](val_output[0]) * 255).add_(0.5).clamp_(0, 255).to(
+                dtype=torch.uint8).cpu().contiguous()  # t c h w
+        videos = torch.stack([val_output]).numpy()
+        if args.enable_tracker:
+            for tracker in accelerator.trackers:
+                if tracker.name == "wandb":
+                    tracker.log(
+                        {
+                            "validation": [
+                                wandb.Video(video, caption=f"{i}: {validation_prompt}", fps=10)
+                                for i, video in enumerate(videos)
+                            ]
+                        }
+                    )
+        torch.cuda.empty_cache()
+
 
 
 if __name__ == "__main__":
