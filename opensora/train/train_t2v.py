@@ -544,11 +544,11 @@ def main(args):
                             videos = []
                             prompts = []
                             # 1. check training input
-                            validation_prompt = tokenizer_.decode(input_ids[0], skip_special_tokens=True)
-                            validation_latent = x[0].unsqueeze(0)
+                            validation_prompt = tokenizer_.decode(input_ids[0].detach(), skip_special_tokens=True)
+                            validation_latent = x[0].detach().unsqueeze(0)
                             logger.info(f"Running validation... \n"
                                         f"Generating a video from the latent with caption: {validation_prompt}")
-                            val_output = ae.decode(validation_latent)
+                            val_output = ae_.decode(validation_latent)
                             val_output = (ae_denorm[args.ae](val_output[0]) * 255).add_(0.5).clamp_(0, 255).to(
                                 dtype=torch.uint8).cpu().contiguous()  # t c h w
                             videos.append(val_output)

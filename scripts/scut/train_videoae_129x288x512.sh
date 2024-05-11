@@ -119,8 +119,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --panda70m_dir ${PANDA70M_DIR}  \
   --is_video_latent  \
   --webvid_meta ${WEBVID_LATENT_META}  \
-  --webvid_dir ${WEBVID_LATENT_DIR}  \
-  --enable_tracker
+  --webvid_dir ${WEBVID_LATENT_DIR}
   '
 
 echo "DONE"
