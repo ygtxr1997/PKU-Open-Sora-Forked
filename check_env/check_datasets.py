@@ -203,7 +203,7 @@ def check_batch():
     #     target_size=(512, 288),
     #     max_frame_stride=args.sample_rate,
     # )
-    WEBVID_LATENT_META = "/public/home/201810101923/datasets/webvid/latents_129x288x512/latents_meta_0000.csv"
+    WEBVID_LATENT_META = "/public/home/201810101923/datasets/webvid/latents_129x288x512/latents_meta_all.csv"
     WEBVID_LATENT_DIR = "/public/home/201810101923/datasets/webvid/latents"
     train_dataset = WebVidLatentDataset(
         WEBVID_LATENT_META, WEBVID_LATENT_DIR, logger=logger,
