@@ -213,12 +213,14 @@ def check_batch():
     from opensora.models.text_encoder import get_text_enc
     import wandb
     device = "cuda" if torch.cuda.is_available() else "cpu"
+    print(f"Running on: {device}")
     ae = getae_wrapper("CausalVAEModel_4x8x8")(
         "LanguageBind/Open-Sora-Plan-v1.0.0", subfolder="vae",
         cache_dir="/public/home/201810101923/models/opensora/v1.0.0",
         is_training=False).to(device, dtype=torch.float16)
     ae.vae.enable_tiling()
     ae.vae.tile_overlap_factor = 0.25
+    ae.eval()
 
     # multi_worker_start(worker_extract_meta, worker_cnt=4)
 
