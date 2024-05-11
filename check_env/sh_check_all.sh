@@ -40,4 +40,5 @@ python check_env/check_datasets.py \
   --enable_tiling  \
   --enable_tracker  \
   --tracker_project_name check_debug \
-  --tracker_run_name webvid_latent
+  --tracker_run_name webvid_latent  \
+  --logging_dir log_check_all
