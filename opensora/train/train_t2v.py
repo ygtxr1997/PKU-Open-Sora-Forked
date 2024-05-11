@@ -534,9 +534,13 @@ def main(args):
                                 ae_.vae.enable_tiling()
                                 ae_.vae.tile_overlap_factor = args.tile_overlap_factor
                             # text_enc_ = get_text_enc(args).to(accelerator.device).eval()
+                            logger.info(f"AutoEncoder loaded.")
                             model_ = LatteT2V.from_pretrained(save_path, subfolder="model").to(accelerator.device).eval()
+                            logger.info(f"UNet model loaded.")
                             diffusion_ = create_diffusion(str(250))
+                            logger.info(f"Diffusion process created.")
                             tokenizer_ = AutoTokenizer.from_pretrained(args.text_encoder_name, cache_dir=args.cache_dir)
+                            logger.info(f"Tokenizer loaded.")
                             videos = []
                             # 1. check training input
                             validation_prompt = tokenizer_.decode(input_ids[0], skip_special_tokens=True)
