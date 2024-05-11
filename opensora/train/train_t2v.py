@@ -519,10 +519,7 @@ def main(args):
                 break
 
             if accelerator.is_main_process:
-                validation_prompt = "The majestic beauty of a waterfall cascading down a cliff into a serene lake. The camera angle provides a bird's eye view of the waterfall."
                 if global_step % args.checkpointing_steps == 0:
-                    logger.info(f"Running validation... \n"
-                                f"Generating {args.num_validation_videos} videos with prompt: {validation_prompt}")
                     if args.use_ema:
                         # Store the UNet parameters temporarily and load the EMA parameters to perform inference.
                         ema_model.store(model.parameters())
@@ -540,6 +537,21 @@ def main(args):
                             diffusion_ = create_diffusion(str(250))
                             tokenizer_ = AutoTokenizer.from_pretrained(args.text_encoder_name, cache_dir=args.cache_dir)
                             videos = []
+                            # 1. check training input
+                            validation_prompt = tokenizer_.decode(input_ids[0], skip_special_tokens=True)
+                            validation_latent = x[0].unsqueeze(0)
+                            logger.info(f"Running validation... \n"
+                                        f"Generating a video from the latent with caption: {validation_prompt}")
+                            val_output = ae.decode(validation_latent)
+                            val_output = (ae_denorm[args.ae](val_output[0]) * 255).add_(0.5).clamp_(0, 255).to(
+                                dtype=torch.uint8).cpu().contiguous()  # t c h w
+                            videos.append(val_output)
+
+                            # 2. validate random prompt
+                            validation_prompt = "The majestic beauty of a waterfall cascading down a cliff into a " \
+                                                "serene lake. The camera angle provides a bird's eye view of the waterfall."
+                            logger.info(f"Running validation... \n"
+                                        f"Generating {args.num_validation_videos} videos with prompt: {validation_prompt}")
                             for idx in range(args.num_validation_videos):
                                 with torch.autocast(device_type='cuda', dtype=weight_dtype):
                                     z = torch.randn(1, model_.in_channels, video_length,
