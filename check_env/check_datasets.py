@@ -242,7 +242,7 @@ def check_batch():
         print_batch(batch)
 
         x, text_ids, cond_mask = batch
-        x = x.to(device)
+        x = x.to(device, dtype=torch.float16)
         with torch.no_grad():
             validation_prompt = tokenizer.decode(text_ids[0], skip_special_tokens=True)
             validation_latent = x[0].unsqueeze(0)
