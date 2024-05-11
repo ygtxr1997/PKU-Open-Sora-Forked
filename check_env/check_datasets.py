@@ -2,6 +2,7 @@ import os
 import logging
 from pathlib import Path
 import glob
+import datetime
 
 import datasets
 from tqdm import tqdm
@@ -116,6 +117,7 @@ def print_batch(batch):
 
 
 def check_batch():
+    now = datetime.datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
     args = parser_args()
     logger = get_logger(__name__)
     logging_dir = Path(args.output_dir, args.logging_dir)
@@ -130,6 +132,20 @@ def check_batch():
         format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
         datefmt="%m/%d/%Y %H:%M:%S",
         level=logging.INFO,
+    )
+    project_name = args.output_dir if args.tracker_project_name is None else args.tracker_project_name
+    project_name = f"{project_name}"
+    accelerator.init_trackers(
+        project_name,
+        config=vars(args),
+        init_kwargs={
+            "wandb":
+                {
+                    "dir": args.logging_dir,
+                    "entity": args.tracker_entity,
+                    "name": f"({now}){args.tracker_run_name}",
+                }
+        },
     )
 
     # 1. Opensora Dataset

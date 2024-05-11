@@ -35,4 +35,7 @@ python check_env/check_datasets.py \
   --model_max_length 300 \
   --use_image_num 16 \
   --use_img_from_vid \
-  --enable_tiling
+  --enable_tiling  \
+  --enable_tracker  \
+  --tracker_project_name check_debug \
+  --tracker_run_name webvid_latent
