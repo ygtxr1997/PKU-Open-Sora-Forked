@@ -542,6 +542,7 @@ def main(args):
                             tokenizer_ = AutoTokenizer.from_pretrained(args.text_encoder_name, cache_dir=args.cache_dir)
                             logger.info(f"Tokenizer loaded.")
                             videos = []
+                            prompts = []
                             # 1. check training input
                             validation_prompt = tokenizer_.decode(input_ids[0], skip_special_tokens=True)
                             validation_latent = x[0].unsqueeze(0)
@@ -551,6 +552,7 @@ def main(args):
                             val_output = (ae_denorm[args.ae](val_output[0]) * 255).add_(0.5).clamp_(0, 255).to(
                                 dtype=torch.uint8).cpu().contiguous()  # t c h w
                             videos.append(val_output)
+                            prompts.append(validation_prompt)
 
                             # 2. validate random prompt
                             validation_prompt = "The majestic beauty of a waterfall cascading down a cliff into a " \
@@ -587,6 +589,7 @@ def main(args):
                                     video = (ae_denorm[args.ae](samples[0]) * 255).add_(0.5).clamp_(0, 255).to(
                                         dtype=torch.uint8).cpu().contiguous()  # t c h w
                                     videos.append(video)
+                                    prompts.append(validation_prompt)
 
                         videos = torch.stack(videos).numpy()
                         for tracker in accelerator.trackers:
@@ -597,7 +600,7 @@ def main(args):
                                 tracker.log(
                                     {
                                         "validation": [
-                                            wandb.Video(video, caption=f"{i}: {validation_prompt}", fps=10)
+                                            wandb.Video(video, caption=f"{i}: {prompts[i]}", fps=10)
                                             for i, video in enumerate(videos)
                                         ]
                                     }
