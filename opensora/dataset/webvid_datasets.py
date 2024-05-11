@@ -274,10 +274,11 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
         if index in self.mem_bad_indices:
             return self.process_error(index, f"Skip bad index={index}")
         try:
-            nnodes = int(os.environ["SLURM_NNODES"])
-            global_gpus = int(os.environ["WORLD_SIZE"])
-            node_id = int(os.environ["SLURM_PROCID"])
-            global_rank = int(os.environ["RANK"])
+            if os.environ.get("WORLD_SIZE") is not None:
+                nnodes = int(os.environ["SLURM_NNODES"])
+                global_gpus = int(os.environ["WORLD_SIZE"])
+                node_id = int(os.environ["SLURM_PROCID"])
+                global_rank = int(os.environ["RANK"])
 
             example = self.samples[index]
             latent_fn = example["latent_fn"]
