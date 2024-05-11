@@ -559,8 +559,9 @@ def main(args):
                                         f"Generating {args.num_validation_videos} videos with prompt: {validation_prompt}")
                             for idx in range(args.num_validation_videos):
                                 with torch.autocast(device_type='cuda', dtype=weight_dtype):
-                                    z = torch.randn(1, model_.in_channels, video_length,
-                                                    latent_size[0], latent_size[1], device=accelerator.device)
+                                    # z = torch.randn(1, model_.in_channels, video_length,
+                                    #                 latent_size[0], latent_size[1], device=accelerator.device)
+                                    z = torch.randn(validation_latent.shape, device=accelerator.device)
                                     text_tokens_and_mask = tokenizer_(
                                         validation_prompt,
                                         max_length=args.model_max_length,
@@ -605,6 +606,7 @@ def main(args):
                         # del ae_, text_enc_, model_, diffusion_, tokenizer_
                         del ae_, model_, diffusion_, tokenizer_
                         torch.cuda.empty_cache()
+                        logger.info(f"Validation finished.")
 
     accelerator.wait_for_everyone()
     accelerator.end_training()
