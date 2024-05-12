@@ -215,8 +215,9 @@ def main(args):
     assert args.latent_cache_size > args.extract_batch_size
     cache_tensors = torch.zeros(
         (args.latent_cache_size, ae.vae.config.z_channels,
-         video_length + args.use_image_num, latent_size[0], latent_size[1]),
+         video_length * 10 + args.use_image_num, latent_size[0], latent_size[1]),
         dtype=torch.float32, device=accelerator.device, requires_grad=False)
+    cache_tensor_tlens = [None] * args.latent_cache_size
     cache_ids = [None] * args.latent_cache_size
     cache_cnt = 0
     for step, batch in enumerate(extract_dataloader):
@@ -251,11 +252,12 @@ def main(args):
                 # cond = torch.stack([text_enc(input_ids[i], cond_mask[i]) for i in range(B)])  # B 1+num_images L D
 
             # Save latents
-            b, c, f, h, w = x.shape
+            b, c, t, h, w = x.shape
             if cache_cnt + b > args.latent_cache_size:  # cache is full, save
-                save_latents(cache_tensors, cache_ids, args.output_dir, max_cnt=cache_cnt)
+                save_latents(cache_tensors, cache_tensor_tlens, cache_ids, args.output_dir, max_cnt=cache_cnt)
                 cache_cnt = 0
-            cache_tensors[cache_cnt: cache_cnt + b] = x.detach()
+            cache_tensors[cache_cnt: cache_cnt + b, :, :t] = x.detach()
+            cache_tensor_tlens[cache_cnt: cache_cnt + b] = t
             if isinstance(video_ids, torch.Tensor):
                 cache_ids[cache_cnt: cache_cnt + b] = video_ids.detach()
             else:
@@ -267,7 +269,7 @@ def main(args):
                 0 == int(os.environ["SLURM_PROCID"]):
             with torch.no_grad():
                 validation_prompt = tokenizer.decode(text_ids[0], skip_special_tokens=True)
-                validation_latent = x[0].unsqueeze(0)
+                validation_latent = x[0, :, :video_length].unsqueeze(0)  # crop former
                 logger.info(f"Running validation... \n"
                             f"Generating a video from the latent with caption: {validation_prompt}")
                 val_output = ae.decode(validation_latent)
@@ -283,7 +285,10 @@ def main(args):
                         tracker.log(
                             {
                                 "validation": [
-                                    wandb.Video(video, caption=f"{i}: {validation_prompt}", fps=10)
+                                    wandb.Video(video,
+                                                caption=f"{i}: {validation_prompt}, "
+                                                        f"ori_len={t}, crop_len={video_length}",
+                                                fps=10)
                                     for i, video in enumerate(videos)
                                 ]
                             }
@@ -302,15 +307,18 @@ def main(args):
 
     # Save the rest latents
     if cache_cnt > 0:
-        save_latents(cache_tensors, cache_ids, args.output_dir, max_cnt=cache_cnt)
+        save_latents(cache_tensors, cache_tensor_tlens, cache_ids, args.output_dir, max_cnt=cache_cnt)
         cache_cnt = 0
 
     accelerator.wait_for_everyone()
     accelerator.end_training()
 
 
-def save_latents(latents: torch.Tensor, vids: Union[torch.Tensor, list], save_root: str, max_cnt: int = -1):
-    b = latents.shape[0]
+def save_latents(latents: torch.Tensor,
+                 latent_tlens: list,
+                 vids: Union[torch.Tensor, list],
+                 save_root: str, max_cnt: int = -1):
+    b = latents.shape[0]  # (B,C,T,H,W)
     if max_cnt == -1:
         max_cnt = b
     if not os.path.exists(save_root):
@@ -321,7 +329,7 @@ def save_latents(latents: torch.Tensor, vids: Union[torch.Tensor, list], save_ro
     for i in range(b):
         if i >= max_cnt:
             break
-        latent = latents[i]
+        latent = latents[i, :, latent_tlens[i]]
         video_id = vids[i]
         save_fn = os.path.join(save_root, f"{video_id}.npy")
         np.save(save_fn, latent)
