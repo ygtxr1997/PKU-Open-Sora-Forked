@@ -13,7 +13,7 @@
 set -x -e
 
 # Set to equal gres=gpu:#
-export NUM_GPUS=12
+export NUM_GPUS=8
 
 export OMP_NUM_THREADS=4
 
