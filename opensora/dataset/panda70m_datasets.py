@@ -34,6 +34,7 @@ class Panda70MPytorchDataset(Dataset):
                  target_size: tuple = (512, 512),
                  num_frames: int = 16,
                  max_frame_stride: int = 8,
+                 use_crop_time: bool = True,
                  llm_max_length: int = 300,
                  proportion_empty_prompts: float = 0.,
                  rank: int = None,
@@ -75,7 +76,7 @@ class Panda70MPytorchDataset(Dataset):
         self.max_frame_stride = max_frame_stride
         self.target_size = target_size
         self.num_frames = num_frames
-        self.max_frame_stride = max_frame_stride
+        self.use_crop_time = use_crop_time
         self.llm_max_length = llm_max_length
         self.proportion_empty_prompts = proportion_empty_prompts
 
@@ -192,8 +193,13 @@ class Panda70MPytorchDataset(Dataset):
             all_frames = list(range(0, total_frames, frame_stride))
 
         # Select a random clip
-        rand_idx = random.randint(0, len(all_frames) - self.num_frames)
-        frame_indice = all_frames[rand_idx:rand_idx + self.num_frames]
+        if self.use_crop_time:
+            rand_idx = random.randint(0, len(all_frames) - self.num_frames)
+            crop_frames = self.num_frames
+        else:
+            rand_idx = 0
+            crop_frames = len(all_frames)
+        frame_indice = all_frames[rand_idx:rand_idx + crop_frames]
         video_data = decord_vr.get_batch(frame_indice).asnumpy()  # (T,H,W,C)
 
         # If too small resolution

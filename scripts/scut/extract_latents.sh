@@ -13,7 +13,7 @@
 set -x -e
 
 # Set to equal gres=gpu:#
-export NUM_GPUS=8
+export NUM_GPUS=12
 
 export OMP_NUM_THREADS=4
 
@@ -88,7 +88,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --num_frames 129 \
   --max_image_size 512 \
   --wh_ratio "16:9" \
-  --extract_batch_size=2 \
+  --extract_batch_size=1 \
   --dataloader_num_workers 6 \
   --max_extract_steps=1000000 \
   --mixed_precision="bf16" \

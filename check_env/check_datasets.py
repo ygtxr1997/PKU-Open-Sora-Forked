@@ -94,7 +94,7 @@ def download_dataset():
 def print_batch(batch):
     def print_k_v(k, v):
         if isinstance(v, torch.Tensor) or isinstance(v, np.ndarray):
-            print(f"({k}):{type(v)}, {v.shape}")
+            print(f"({k}):{type(v)}, {v.shape}, {v.dtype}")
         elif isinstance(v, list):
             print(f"({k}):{type(v)}, len={len(v)}, [0]type:{type(v[0])}")
         elif isinstance(v, str) or isinstance(v, np.int64):
@@ -178,8 +178,7 @@ def check_batch():
         norm_fun=ae_norm[args.ae],
         num_frames=32,
         max_frame_stride=args.sample_rate,
-        rank=0,
-        world_size=64,
+        use_crop_time=False,
     )
     total_len = len(train_dataset)
     print("len=", total_len)
