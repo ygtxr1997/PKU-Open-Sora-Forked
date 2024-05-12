@@ -93,7 +93,7 @@ class Panda70MPytorchDataset(Dataset):
             self.logger.info(f"[Panda70MPytorchDataset] loaded cnt={len(self.samples)}")
 
     def __getitem__(self, index):
-        if self.success_cnt == 0:
+        if self.success_cnt == 0 and self.fail_cnt == 0:
             global_gpus = int(os.environ["WORLD_SIZE"])
             global_rank = int(os.environ["RANK"])
             print(f"[DEBUG] rank({global_rank}/{global_gpus}) iterating {index}: {self.samples[index]['caption'][:20]}")

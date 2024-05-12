@@ -137,7 +137,7 @@ def getdataset(args, logger=None):
             num_frames=args.num_frames,
             max_frame_stride=args.sample_rate,
         )
-        # rank_dataset = split_dataset_by_node(rank_dataset, rank=global_rank, world_size=global_gpus)
+        rank_dataset = split_dataset_by_node(rank_dataset, rank=global_rank, world_size=global_gpus)
         return rank_dataset
     elif args.dataset == 'webvid':
         w_ratio, h_ratio = [int(x) for x in args.wh_ratio.split(":")]
