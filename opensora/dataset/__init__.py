@@ -53,6 +53,10 @@ ae_denorm = {
 def getdataset(args, logger=None):
     temporal_sample = TemporalRandomCrop(args.num_frames * args.sample_rate)  # 16 x
     norm_fun = ae_norm[args.ae]
+    nnodes = int(os.environ["SLURM_NNODES"])
+    global_gpus = int(os.environ["WORLD_SIZE"])
+    node_id = int(os.environ["SLURM_PROCID"])
+    global_rank = int(os.environ["RANK"])
     if args.dataset == 'ucf101':
         transform = Compose(
             [
@@ -152,10 +156,6 @@ def getdataset(args, logger=None):
         ])
         tokenizer = AutoTokenizer.from_pretrained(
             args.text_encoder_name, cache_dir=args.cache_dir)
-        nnodes = int(os.environ["SLURM_NNODES"])
-        global_gpus = int(os.environ["WORLD_SIZE"])
-        node_id = int(os.environ["SLURM_PROCID"])
-        global_rank = int(os.environ["RANK"])
         return WebVidHFWebDataset(
             args.webvid_dir,
             logger=logger,
@@ -178,6 +178,8 @@ def getdataset(args, logger=None):
             args.webvid_dir,
             logger=logger,
             tokenizer=tokenizer,
+            rank=global_rank,
+            world_size=global_gpus,
         )
     elif args.dataset == 't2v_feature':
         return T2V_Feature_dataset(args, temporal_sample)

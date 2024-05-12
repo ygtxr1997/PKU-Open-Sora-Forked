@@ -37,7 +37,7 @@ class Panda70MPytorchDataset(Dataset):
                  llm_max_length: int = 300,
                  proportion_empty_prompts: float = 0.,
                  rank: int = None,
-                 world_size: int = None
+                 world_size: int = None,
                  ):
         self.dataset_meta = dataset_meta
         self.dataset_dir = dataset_dir

@@ -224,10 +224,14 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
                  tokenizer,
                  logger: MultiProcessAdapter = None,
                  llm_max_length: int = 300,
+                 rank: int = None,
+                 world_size: int = None,
                  ):
         self.dataset_meta = dataset_meta
         self.dataset_dir = dataset_dir
         self.logger = logger
+        self.rank = rank
+        self.world_size = world_size
 
         ''' load meta '''
         if self.logger is not None:
@@ -273,16 +277,21 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
             self.logger.info(f"[WebVidLatentDataset] loaded cnt={len(self.samples)}, "
                              f"meta missed cnt={bad}, meta exist cnt={good}.")
 
+    def _split_samples_by_rank(self, samples):
+        if self.rank is None or self.world_size is None:
+            return samples
+        rank, world_size = self.rank, self.world_size
+        all_indices = np.arange(len(samples))
+        rank_indices = np.array_split(all_indices, world_size)[rank]
+        if self.logger is not None:
+            self.logger.info(f"[WebVidLatentDataset] split by rank=({self.rank}/{self.world_size}), "
+                             f"range:{rank_indices[0]}-{rank_indices[-1]}", main_process_only=False)
+        return [samples[i] for i in rank_indices]
+
     def __getitem__(self, index):
         if index in self.mem_bad_indices:
             return self.process_error(index, f"Skip bad index={index}")
         try:
-            if os.environ.get("WORLD_SIZE") is not None:
-                nnodes = int(os.environ["SLURM_NNODES"])
-                global_gpus = int(os.environ["WORLD_SIZE"])
-                node_id = int(os.environ["SLURM_PROCID"])
-                global_rank = int(os.environ["RANK"])
-
             example = self.samples[index]
             latent_fn = example["latent_fn"]
             caption = example['caption']
