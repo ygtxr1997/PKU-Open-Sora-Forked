@@ -86,10 +86,9 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --replace_root ${REPLACE_ROOT}  \
   --sample_rate 1 \
   --num_frames 129 \
-  --no_crop_time \
   --max_image_size 512 \
   --wh_ratio "16:9" \
-  --extract_batch_size=1 \
+  --extract_batch_size=2 \
   --dataloader_num_workers 6 \
   --max_extract_steps=1000000 \
   --mixed_precision="bf16" \
