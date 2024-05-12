@@ -71,6 +71,7 @@ export WEBVID_DIR="/exthome/future-technology-college-data/202321063560/webvid_d
 export OUTPUT_DIR="/public/home/201810101923/datasets/panda70m/latents_128x288x512_clips0"
 echo "num_gpus: $NUM_GPUS, slurm_nnodes: $SLURM_NNODES"
 srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
+  --multi_gpu  \
   --config_file scripts/accelerate_configs/deepspeed_zero2_config.yaml \
   --num_processes $(($NUM_GPUS * $SLURM_NNODES)) --num_machines $SLURM_NNODES --machine_rank $SLURM_PROCID \
   --main_process_ip $MASTER_ADDR --main_process_port $MASTER_PORT \
