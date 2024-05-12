@@ -138,6 +138,7 @@ def getdataset(args, logger=None):
             norm_fun=norm_fun,
             num_frames=args.num_frames,
             max_frame_stride=args.sample_rate,
+            use_crop_time=not args.no_crop_time,
         )
         return all_dataset
     elif args.dataset == 'webvid':

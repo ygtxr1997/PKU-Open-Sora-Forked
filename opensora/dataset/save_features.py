@@ -426,6 +426,7 @@ def parser_args():
 
     parser.add_argument("--cache_dir", type=str, default=None,
                         help="HuggingFace cache dir. Default is ~/.cache/huggingface/hub/")
+    parser.add_argument("--no_crop_time", action="store_true", help="if true, close time cropping for dataset")
     parser.add_argument("--internvid_dir", type=str, default=None,
                         help="InternVid video root folder")
     parser.add_argument("--internvid_meta", type=str, default=None,

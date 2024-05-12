@@ -95,7 +95,8 @@ class Panda70MPytorchDataset(Dataset):
         self.success_cnt = 0
 
         if self.logger is not None:
-            self.logger.info(f"[Panda70MPytorchDataset] loaded cnt={len(self.samples)}")
+            self.logger.info(f"[Panda70MPytorchDataset] loaded cnt={len(self.samples)}, "
+                             f"time_crop={self.use_crop_time}")
 
     def _split_samples_by_rank(self, samples):
         if self.rank is None or self.world_size is None:
