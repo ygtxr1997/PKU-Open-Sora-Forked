@@ -245,29 +245,29 @@ def check_batch():
     for idx, batch in enumerate(tqdm(train_dataloader)):
         print_batch(batch)
 
-        x, text_ids, cond_mask = batch
-        x = x.to(device, dtype=torch.float16)
-        with torch.no_grad():
-            validation_prompt = tokenizer.decode(text_ids[0], skip_special_tokens=True)
-            validation_latent = x[0].unsqueeze(0)
-            logger.info(f"Running validation... \n"
-                        f"Generating a video from the latent with caption: {validation_prompt}")
-            val_output = ae.decode(validation_latent)
-            val_output = (ae_denorm[args.ae](val_output[0]) * 255).add_(0.5).clamp_(0, 255).to(
-                dtype=torch.uint8).cpu().contiguous()  # t c h w
-        videos = torch.stack([val_output]).numpy()
-        if args.enable_tracker:
-            for tracker in accelerator.trackers:
-                if tracker.name == "wandb":
-                    tracker.log(
-                        {
-                            "validation": [
-                                wandb.Video(video, caption=f"{i}: {validation_prompt}", fps=10)
-                                for i, video in enumerate(videos)
-                            ]
-                        }
-                    )
-        torch.cuda.empty_cache()
+        # x, text_ids, cond_mask = batch
+        # x = x.to(device, dtype=torch.float16)
+        # with torch.no_grad():
+        #     validation_prompt = tokenizer.decode(text_ids[0], skip_special_tokens=True)
+        #     validation_latent = x[0].unsqueeze(0)
+        #     logger.info(f"Running validation... \n"
+        #                 f"Generating a video from the latent with caption: {validation_prompt}")
+        #     val_output = ae.decode(validation_latent)
+        #     val_output = (ae_denorm[args.ae](val_output[0]) * 255).add_(0.5).clamp_(0, 255).to(
+        #         dtype=torch.uint8).cpu().contiguous()  # t c h w
+        # videos = torch.stack([val_output]).numpy()
+        # if args.enable_tracker:
+        #     for tracker in accelerator.trackers:
+        #         if tracker.name == "wandb":
+        #             tracker.log(
+        #                 {
+        #                     "validation": [
+        #                         wandb.Video(video, caption=f"{i}: {validation_prompt}", fps=10)
+        #                         for i, video in enumerate(videos)
+        #                     ]
+        #                 }
+        #             )
+        # torch.cuda.empty_cache()
 
 
 

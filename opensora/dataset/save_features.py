@@ -148,9 +148,11 @@ def main(args):
     )
 
     # Prepare everything with our `accelerator`.
+    print("[DEBUG] before:", accelerator.process_index, len(extract_dataloader))
     extract_dataloader = accelerator.prepare(
         extract_dataloader,
     )
+    print("[DEBUG] after:", accelerator.process_index, len(extract_dataloader))
 
     # We need to initialize the trackers we use, and also store our configuration.
     # The trackers initialize automatically on the main process.
