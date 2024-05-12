@@ -264,7 +264,7 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
                 )
             else:
                 bad += 1
-        self.samples: List[Dict] = samples
+        self.samples: List[Dict] = self._split_samples_by_rank(samples)
 
         self.tokenizer = tokenizer
         self.llm_max_length = llm_max_length
