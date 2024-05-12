@@ -105,7 +105,7 @@ class Panda70MPytorchDataset(Dataset):
         if self.logger is not None:
             self.logger.info(f"[Panda70MPytorchDataset] split by rank=({self.rank}/{self.world_size}), "
                              f"range:{rank_indices[0]}-{rank_indices[-1]}")
-        return samples[rank_indices]
+        return [samples[i] for i in rank_indices]
 
     def __getitem__(self, index):
         if self.success_cnt == 0 and self.fail_cnt == 0:
