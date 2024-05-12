@@ -14,7 +14,7 @@ import os
 import datetime
 import shutil
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 from einops import rearrange
@@ -305,14 +305,15 @@ def main(args):
     accelerator.end_training()
 
 
-def save_latents(latents: torch.Tensor, vids: torch.Tensor, save_root: str, max_cnt: int = -1):
+def save_latents(latents: torch.Tensor, vids: Union[torch.Tensor, list], save_root: str, max_cnt: int = -1):
     b = latents.shape[0]
     if max_cnt == -1:
         max_cnt = b
     if not os.path.exists(save_root):
         os.makedirs(save_root, exist_ok=True)
     latents = latents.cpu().numpy()
-    vids = vids.cpu().numpy()
+    if isinstance(vids, torch.Tensor):
+        vids = vids.cpu().numpy()
     for i in range(b):
         if i >= max_cnt:
             break
