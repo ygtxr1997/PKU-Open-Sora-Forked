@@ -213,9 +213,7 @@ def main(args):
         (args.latent_cache_size, ae.vae.config.z_channels,
          video_length + args.use_image_num, latent_size[0], latent_size[1]),
         dtype=torch.float32, device=accelerator.device, requires_grad=False)
-    cache_ids = torch.zeros(
-        (args.latent_cache_size),
-        dtype=torch.long, device="cpu", requires_grad=False)
+    cache_ids = [None] * args.latent_cache_size
     cache_cnt = 0
     for step, batch in enumerate(extract_dataloader):
         if isinstance(batch, tuple) or isinstance(batch, list):
@@ -254,7 +252,10 @@ def main(args):
                 save_latents(cache_tensors, cache_ids, args.output_dir, max_cnt=cache_cnt)
                 cache_cnt = 0
             cache_tensors[cache_cnt: cache_cnt + b] = x.detach()
-            cache_ids[cache_cnt: cache_cnt + b] = video_ids.detach()
+            if isinstance(video_ids, torch.Tensor):
+                cache_ids[cache_cnt: cache_cnt + b] = video_ids.detach()
+            else:
+                cache_ids[cache_cnt: cache_cnt + b] = video_ids
             cache_cnt = cache_cnt + b
 
         # Validation and log
