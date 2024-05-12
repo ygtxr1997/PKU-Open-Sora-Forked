@@ -96,7 +96,7 @@ class Panda70MPytorchDataset(Dataset):
         if self.success_cnt == 0 and self.fail_cnt == 0:
             global_gpus = int(os.environ["WORLD_SIZE"])
             global_rank = int(os.environ["RANK"])
-            print(f"[DEBUG] rank({global_rank}/{global_gpus}) iterating {index}: {self.samples[index]['caption'][:20]}")
+            print(f"[DEBUG] rank({global_rank}/{global_gpus}) iterating {index}: {self.samples[index]['caption'][:40]}")
         if index in self.mem_bad_indices:
             return self.process_error(index, f"Skip bad index={index}")
         try:
