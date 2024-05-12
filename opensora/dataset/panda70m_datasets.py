@@ -69,7 +69,7 @@ class Panda70MPytorchDataset(Dataset):
                         "video_fn": f"{video_id}_{clip_id:03d}.mp4",
                     }
                 )
-        self.samples: List[Dict] = samples
+        self.samples: List[Dict] = self._split_samples_by_rank(samples)
 
         self.tokenizer = tokenizer
         self.max_frame_stride = max_frame_stride
