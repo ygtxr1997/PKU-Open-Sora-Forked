@@ -125,7 +125,8 @@ class Panda70MPytorchDataset(Dataset):
             video = self.decord_read(video_path)  # (T,C,H,W)
             video = self.transform(video)  # T C H W -> T C H W
             video = video.transpose(0, 1)  # T C H W -> C T H W
-            assert (video.shape[1] == self.num_frames), f'{len(video.shape[1])} != video_length:{self.num_frames}'
+            if self.use_crop_time:
+                assert (video.shape[1] == self.num_frames), f'{video.shape[1]} != video_length:{self.num_frames}'
 
             # Text
             text = caption
