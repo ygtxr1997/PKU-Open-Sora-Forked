@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=extract_latents
 #SBATCH --partition=gpuA800
-#SBATCH --nodes=6
+#SBATCH --nodes=8
 #SBATCH --exclude=gpu[1]
 #SBATCH --ntasks-per-node=1          # crucial - only 1 task per dist per node!
 #SBATCH --cpus-per-task=64           # number of cores per tasks
@@ -68,8 +68,7 @@ export INTERNVID_META="/exthome/future-technology-college-data/Internvid_dataset
 export PANDA70M_DIR="/public/home/201810101923/datasets/panda70m/clips_0"
 export PANDA70M_META="/public/home/201810101923/datasets/panda70m/panda70m_training_clips_0.csv"
 export WEBVID_DIR="/exthome/future-technology-college-data/202321063560/webvid_data/webvid_train_data"
-#export WEBVID_DIR="/public/home/201810101923/datasets/webvid/data_demo"
-export OUTPUT_DIR="/public/home/201810101923/datasets/webvid/latents"
+export OUTPUT_DIR="/public/home/201810101923/datasets/panda70m/latents_128x288x512_clips0"
 echo "num_gpus: $NUM_GPUS, slurm_nnodes: $SLURM_NNODES"
 srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --config_file scripts/accelerate_configs/deepspeed_zero2_config.yaml \
