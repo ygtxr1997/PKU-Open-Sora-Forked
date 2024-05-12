@@ -79,7 +79,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --model LatteT2V-XL/122 \
   --text_encoder_name DeepFloyd/t5-v1_1-xxl \
   --cache_dir ${MODEL_CACHE_DIR}  \
-  --dataset webvid \
+  --dataset panda70m \
   --ae CausalVAEModel_4x8x8 \
   --ae_path CausalVAEModel_4x8x8 \
   --data_path ${DATA_PATH} \
@@ -103,7 +103,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --tile_overlap_factor 0.25  \
   --enable_tracker  \
   --tracker_project_name scut_extract_latents \
-  --tracker_run_name webvid  \
+  --tracker_run_name panda70m  \
   --internvid_meta ${INTERNVID_META}  \
   --internvid_dir ${INTERNVID_DIR}  \
   --panda70m_meta ${PANDA70M_META}  \
