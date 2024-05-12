@@ -352,9 +352,12 @@ def main(args):
     )
 
     # Prepare everything with our `accelerator`.
+    before_len = len(train_dataloader)
     model, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
         model, optimizer, train_dataloader, lr_scheduler
     )
+    after_len = len(train_dataloader)
+    logger.info(f"[DEBUG] before prepare: len={before_len}, after: len={after_len}")
 
     # We need to recalculate our total training steps as the size of the training dataloader may have changed.
     num_update_steps_per_epoch = math.ceil(len(train_dataloader) / args.gradient_accumulation_steps)

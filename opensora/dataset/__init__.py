@@ -129,9 +129,7 @@ def getdataset(args, logger=None):
         ])
         tokenizer = AutoTokenizer.from_pretrained(
             args.text_encoder_name, cache_dir=args.cache_dir)
-        global_gpus = int(os.environ["WORLD_SIZE"])
-        global_rank = int(os.environ["RANK"])
-        rank_dataset = Panda70MPytorchDataset(
+        all_dataset = Panda70MPytorchDataset(
             args.panda70m_meta,
             args.panda70m_dir,
             logger=logger,
@@ -140,10 +138,8 @@ def getdataset(args, logger=None):
             norm_fun=norm_fun,
             num_frames=args.num_frames,
             max_frame_stride=args.sample_rate,
-            rank=global_rank,
-            world_size=global_gpus,
         )
-        return rank_dataset
+        return all_dataset
     elif args.dataset == 'webvid':
         w_ratio, h_ratio = [int(x) for x in args.wh_ratio.split(":")]
         target_hw = (args.max_image_size // w_ratio * h_ratio, args.max_image_size)
@@ -178,8 +174,6 @@ def getdataset(args, logger=None):
             args.webvid_dir,
             logger=logger,
             tokenizer=tokenizer,
-            rank=global_rank,
-            world_size=global_gpus,
         )
     elif args.dataset == 't2v_feature':
         return T2V_Feature_dataset(args, temporal_sample)

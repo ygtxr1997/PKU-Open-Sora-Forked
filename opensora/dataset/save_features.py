@@ -148,10 +148,10 @@ def main(args):
     )
 
     # Prepare everything with our `accelerator`.
-    # NO need to split again, already split in the dataset.
-    # extract_dataloader = accelerator.prepare(
-    #     extract_dataloader,
-    # )
+    # NO need to split again if already split in the dataset.
+    extract_dataloader = accelerator.prepare(
+        extract_dataloader,
+    )
 
     # We need to initialize the trackers we use, and also store our configuration.
     # The trackers initialize automatically on the main process.
