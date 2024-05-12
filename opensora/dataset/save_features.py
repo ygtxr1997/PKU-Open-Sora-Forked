@@ -257,7 +257,7 @@ def main(args):
                 save_latents(cache_tensors, cache_tensor_tlens, cache_ids, args.output_dir, max_cnt=cache_cnt)
                 cache_cnt = 0
             cache_tensors[cache_cnt: cache_cnt + b, :, :t] = x.detach()
-            cache_tensor_tlens[cache_cnt: cache_cnt + b] = t
+            cache_tensor_tlens[cache_cnt: cache_cnt + b] = [t] * b
             if isinstance(video_ids, torch.Tensor):
                 cache_ids[cache_cnt: cache_cnt + b] = video_ids.detach()
             else:
