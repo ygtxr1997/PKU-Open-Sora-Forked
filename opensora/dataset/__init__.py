@@ -5,6 +5,7 @@ from transformers import AutoTokenizer
 from .feature_datasets import T2V_Feature_dataset, T2V_T5_Feature_dataset
 from torchvision import transforms
 from torchvision.transforms import Lambda
+from datasets.distributed import split_dataset_by_node
 
 from .landscope import Landscope
 from .t2v_datasets import T2V_dataset
@@ -124,7 +125,9 @@ def getdataset(args, logger=None):
         ])
         tokenizer = AutoTokenizer.from_pretrained(
             args.text_encoder_name, cache_dir=args.cache_dir)
-        return Panda70MPytorchDataset(
+        global_gpus = int(os.environ["WORLD_SIZE"])
+        global_rank = int(os.environ["RANK"])
+        rank_dataset = Panda70MPytorchDataset(
             args.panda70m_meta,
             args.panda70m_dir,
             logger=logger,
@@ -134,6 +137,8 @@ def getdataset(args, logger=None):
             num_frames=args.num_frames,
             max_frame_stride=args.sample_rate,
         )
+        # rank_dataset = split_dataset_by_node(rank_dataset, rank=global_rank, world_size=global_gpus)
+        return rank_dataset
     elif args.dataset == 'webvid':
         w_ratio, h_ratio = [int(x) for x in args.wh_ratio.split(":")]
         target_hw = (args.max_image_size // w_ratio * h_ratio, args.max_image_size)

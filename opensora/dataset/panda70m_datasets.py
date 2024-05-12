@@ -93,6 +93,10 @@ class Panda70MPytorchDataset(Dataset):
             self.logger.info(f"[Panda70MPytorchDataset] loaded cnt={len(self.samples)}")
 
     def __getitem__(self, index):
+        if index == 0:
+            global_gpus = int(os.environ["WORLD_SIZE"])
+            global_rank = int(os.environ["RANK"])
+            print(f"[DEBUG] rank({global_rank}/{global_gpus}) iterating {index}: {self.samples[index]['caption'][:20]}")
         if index in self.mem_bad_indices:
             return self.process_error(index, f"Skip bad index={index}")
         try:
@@ -123,7 +127,7 @@ class Panda70MPytorchDataset(Dataset):
             cond_mask = text_tokens_and_mask['attention_mask'].squeeze(0)
 
             self.success_cnt += 1
-            return video, input_ids, cond_mask
+            return os.path.splitext(video_fn)[0], video, input_ids, cond_mask
 
             fps_ori = video_reader.get_avg_fps()
             fps_clip = fps_ori // frame_stride

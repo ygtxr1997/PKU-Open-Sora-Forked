@@ -217,7 +217,11 @@ def main(args):
         (args.latent_cache_size),
         dtype=torch.long, device="cpu", requires_grad=False)
     cache_cnt = 0
-    for step, (video_ids, x, text_ids, conda_mask) in enumerate(extract_dataloader):
+    for step, batch in enumerate(extract_dataloader):
+        if isinstance(batch, tuple) or isinstance(batch, list):
+            video_ids, x, text_ids, conda_mask = batch
+        else:
+            raise TypeError(f"Batch type {type(batch)} not supported!")
         if global_step < initial_global_step:
             progress_bar.update(1)
             global_step += 1
