@@ -62,7 +62,7 @@ export MODEL_DIR="pretrained_pipeline_fp16"
 export PROMPT_LIST="examples/demo.txt"
 export TRAIN_SIZE="129x288x512"
 export SAMPLE_SIZE="129x288x512"
-export TRAIN_STEPS="6000"
+export TRAIN_STEPS="5500"
 export CKPT_PATH="/public/home/201810101923/code/PKU-Open-Sora-Forked/out_webvidlatent_${TRAIN_SIZE}/checkpoint-${TRAIN_STEPS}/model/diffusion_pytorch_model.safetensors"
 export OUTPUT_DIR="./sample_videos/demo_webvidlatent${TRAIN_SIZE}_${TRAIN_STEPS}_${SAMPLE_SIZE}"
 srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
