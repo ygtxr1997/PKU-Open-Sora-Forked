@@ -108,7 +108,7 @@ class Panda70MPytorchDataset(Dataset):
         return [samples[i] for i in rank_indices]
 
     def __getitem__(self, index):
-        if self.success_cnt == 0 and self.fail_cnt == 0:
+        if self.success_cnt == 0 and self.fail_cnt == 0 and os.environ.get("RANK") is not None:
             global_gpus = int(os.environ["WORLD_SIZE"])
             global_rank = int(os.environ["RANK"])
             print(f"[DEBUG] rank({global_rank}/{global_gpus}) iterating {index}: {self.samples[index]['caption'][:40]}")
