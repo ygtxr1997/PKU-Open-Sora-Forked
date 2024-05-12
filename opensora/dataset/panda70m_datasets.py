@@ -36,10 +36,14 @@ class Panda70MPytorchDataset(Dataset):
                  max_frame_stride: int = 8,
                  llm_max_length: int = 300,
                  proportion_empty_prompts: float = 0.,
+                 rank: int = None,
+                 world_size: int = None
                  ):
         self.dataset_meta = dataset_meta
         self.dataset_dir = dataset_dir
         self.logger = logger
+        self.rank = rank
+        self.world_size = world_size
 
         ''' load meta '''
         if self.logger is not None:
@@ -91,6 +95,17 @@ class Panda70MPytorchDataset(Dataset):
 
         if self.logger is not None:
             self.logger.info(f"[Panda70MPytorchDataset] loaded cnt={len(self.samples)}")
+
+    def _split_samples_by_rank(self, samples):
+        if self.rank is None or self.world_size is None:
+            return samples
+        rank, world_size = self.rank, self.world_size
+        all_indices = np.arange(len(samples))
+        rank_indices = np.array_split(all_indices)[rank]
+        if self.logger is not None:
+            self.logger.info(f"[Panda70MPytorchDataset] split by rank=({self.rank}/{self.world_size}), "
+                             f"range:{rank_indices[0]}-{rank_indices[-1]}")
+        return samples[rank_indices]
 
     def __getitem__(self, index):
         if self.success_cnt == 0 and self.fail_cnt == 0:
