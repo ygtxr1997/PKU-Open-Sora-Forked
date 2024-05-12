@@ -101,7 +101,7 @@ class Panda70MPytorchDataset(Dataset):
             return samples
         rank, world_size = self.rank, self.world_size
         all_indices = np.arange(len(samples))
-        rank_indices = np.array_split(all_indices)[rank]
+        rank_indices = np.array_split(all_indices, world_size)[rank]
         if self.logger is not None:
             self.logger.info(f"[Panda70MPytorchDataset] split by rank=({self.rank}/{self.world_size}), "
                              f"range:{rank_indices[0]}-{rank_indices[-1]}")
