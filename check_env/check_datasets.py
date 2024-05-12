@@ -166,61 +166,63 @@ def check_batch():
     #     max_frame_stride=args.sample_rate,
     # )
 
-    # # 3. Panda70M Dataset
-    # from opensora.dataset.panda70m_datasets import Panda70MPytorchDataset
-    # PANDA70M_DIR = "/public/home/201810101923/datasets/panda70m/clips_0"
-    # PANDA70M_META = "/public/home/201810101923/datasets/panda70m/panda70m_training_clips_0.csv"
-    # tokenizer = AutoTokenizer.from_pretrained(
-    #         args.text_encoder_name, cache_dir=args.cache_dir)
-    # train_dataset = Panda70MPytorchDataset(
-    #     PANDA70M_META, PANDA70M_DIR, logger=logger,
-    #     tokenizer=tokenizer,
-    #     norm_fun=ae_norm[args.ae],
-    #     num_frames=32,
-    #     max_frame_stride=args.sample_rate,
-    # )
-    # total_len = len(train_dataset)
-    # print("len=", total_len)
-    # print("[0]=")
-    # print_batch(train_dataset[0])
-    # print("[-1]=")
-    # print_batch(train_dataset[total_len - 1])
-
-    # 4. WebVid Dataset
-    from opensora.dataset.webvid_datasets import WebVidHFWebDataset, WebVidLatentDataset
-    from opensora.dataset.webvid_datasets import multi_worker_start, worker_extract_meta
-    from opensora.dataset.webvid_datasets import merge_csv
-    from datasets.distributed import split_dataset_by_node
-    WEBVID_DIR = "/exthome/future-technology-college-data/202321063560/webvid_data/webvid_train_data"
-    # WEBVID_DIR = "/public/home/201810101923/datasets/webvid/data_demo"
+    # 3. Panda70M Dataset
+    from opensora.dataset.panda70m_datasets import Panda70MPytorchDataset
+    PANDA70M_DIR = "/public/home/201810101923/datasets/panda70m/clips_0"
+    PANDA70M_META = "/public/home/201810101923/datasets/panda70m/panda70m_training_clips_0.csv"
     tokenizer = AutoTokenizer.from_pretrained(
             args.text_encoder_name, cache_dir=args.cache_dir)
-    # train_dataset = WebVidHFWebDataset(
-    #     WEBVID_DIR, logger=logger,
-    #     tokenizer=tokenizer,
-    #     norm_fun=ae_norm[args.ae],
-    #     num_frames=129,
-    #     target_size=(512, 288),
-    #     max_frame_stride=args.sample_rate,
-    # )
-    WEBVID_LATENT_META = "/public/home/201810101923/datasets/webvid/latents_129x288x512/latents_meta_all.csv"
-    WEBVID_LATENT_DIR = "/public/home/201810101923/datasets/webvid/latents"
-    train_dataset = WebVidLatentDataset(
-        WEBVID_LATENT_META, WEBVID_LATENT_DIR, logger=logger,
+    train_dataset = Panda70MPytorchDataset(
+        PANDA70M_META, PANDA70M_DIR, logger=logger,
         tokenizer=tokenizer,
+        norm_fun=ae_norm[args.ae],
+        num_frames=32,
+        max_frame_stride=args.sample_rate,
+        rank=0,
+        world_size=64,
     )
-    from opensora.models.ae import getae, getae_wrapper
-    from opensora.models.text_encoder import get_text_enc
-    import wandb
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"Running on: {device}")
-    ae = getae_wrapper("CausalVAEModel_4x8x8")(
-        "LanguageBind/Open-Sora-Plan-v1.0.0", subfolder="vae",
-        cache_dir="/public/home/201810101923/models/opensora/v1.0.0",
-        is_training=False).to(device, dtype=torch.float16)
-    ae.vae.enable_tiling()
-    ae.vae.tile_overlap_factor = 0.25
-    ae.eval()
+    total_len = len(train_dataset)
+    print("len=", total_len)
+    print("[0]=")
+    print_batch(train_dataset[0])
+    print("[-1]=")
+    print_batch(train_dataset[total_len - 1])
+
+    # # 4. WebVid Dataset
+    # from opensora.dataset.webvid_datasets import WebVidHFWebDataset, WebVidLatentDataset
+    # from opensora.dataset.webvid_datasets import multi_worker_start, worker_extract_meta
+    # from opensora.dataset.webvid_datasets import merge_csv
+    # from datasets.distributed import split_dataset_by_node
+    # WEBVID_DIR = "/exthome/future-technology-college-data/202321063560/webvid_data/webvid_train_data"
+    # # WEBVID_DIR = "/public/home/201810101923/datasets/webvid/data_demo"
+    # tokenizer = AutoTokenizer.from_pretrained(
+    #         args.text_encoder_name, cache_dir=args.cache_dir)
+    # # train_dataset = WebVidHFWebDataset(
+    # #     WEBVID_DIR, logger=logger,
+    # #     tokenizer=tokenizer,
+    # #     norm_fun=ae_norm[args.ae],
+    # #     num_frames=129,
+    # #     target_size=(512, 288),
+    # #     max_frame_stride=args.sample_rate,
+    # # )
+    # WEBVID_LATENT_META = "/public/home/201810101923/datasets/webvid/latents_129x288x512/latents_meta_all.csv"
+    # WEBVID_LATENT_DIR = "/public/home/201810101923/datasets/webvid/latents"
+    # train_dataset = WebVidLatentDataset(
+    #     WEBVID_LATENT_META, WEBVID_LATENT_DIR, logger=logger,
+    #     tokenizer=tokenizer,
+    # )
+    # from opensora.models.ae import getae, getae_wrapper
+    # from opensora.models.text_encoder import get_text_enc
+    # import wandb
+    # device = "cuda" if torch.cuda.is_available() else "cpu"
+    # print(f"Running on: {device}")
+    # ae = getae_wrapper("CausalVAEModel_4x8x8")(
+    #     "LanguageBind/Open-Sora-Plan-v1.0.0", subfolder="vae",
+    #     cache_dir="/public/home/201810101923/models/opensora/v1.0.0",
+    #     is_training=False).to(device, dtype=torch.float16)
+    # ae.vae.enable_tiling()
+    # ae.vae.tile_overlap_factor = 0.25
+    # ae.eval()
 
     # multi_worker_start(worker_extract_meta, worker_cnt=4)
 
