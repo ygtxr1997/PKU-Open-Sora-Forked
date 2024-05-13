@@ -114,8 +114,11 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
     def _sample_generator(self):
         webvid_iterator = iter(self.webvid_dataset)
         for idx, sample in enumerate(webvid_iterator):
-            if idx == 0:
-                print(f"[DEBUG] iterating {idx}: {sample['caption'][:30]}")
+            if self.success_cnt == 0 and self.fail_cnt == 0 and os.environ.get("RANK") is not None:
+                global_gpus = int(os.environ["WORLD_SIZE"])
+                global_rank = int(os.environ["RANK"])
+                print(f"[DEBUG] rank({global_rank}/{global_gpus}) "
+                      f"iterating {idx}: {sample['caption'][:40]}")
             try:
                 mp4_data = sample["mp4"]
                 caption = sample["caption"]

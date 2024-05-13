@@ -165,6 +165,8 @@ def getdataset(args, logger=None):
             num_frames=args.num_frames,
             use_smaller_frames=args.use_smaller_frames,
             max_frame_stride=args.sample_rate,
+            rank=global_rank,
+            world_size=global_gpus,
         )
     elif args.dataset == 'webvid_latent':
         w_ratio, h_ratio = [int(x) for x in args.wh_ratio.split(":")]
