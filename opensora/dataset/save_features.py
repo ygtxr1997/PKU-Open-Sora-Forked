@@ -249,7 +249,7 @@ def main(args):
         # Sample noise that we'll add to the latents
         x = x.to(accelerator.device)  # B C T+num_images H W, 16 + 4
         batch_max_frames = video_n_frames.max()
-        x = x[:, :, batch_max_frames]  # use only first several frames
+        x = x[:, :, :batch_max_frames]  # use only first several frames
 
         with torch.no_grad():
             # Map input images to latent space + normalize latents
