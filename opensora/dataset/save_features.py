@@ -154,10 +154,9 @@ def main(args):
     # NO need to split again if already split in the dataset.
     if hasattr(extract_dataset, "len"):
         before_len = len(extract_dataloader)
-    extract_dataloader = accelerator.prepare(
-        extract_dataloader,
-    )
-    if hasattr(extract_dataset, "len"):
+        extract_dataloader = accelerator.prepare(
+            extract_dataloader,
+        )
         after_len = len(extract_dataloader)
         logger.info(f"[DEBUG] before prepare: len={before_len}, after: len={after_len}")
     else:
