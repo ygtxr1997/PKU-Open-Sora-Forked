@@ -56,6 +56,7 @@ logger = get_logger(__name__)
 #                                  Extracting Loop                              #
 #################################################################################
 
+@torch.no_grad()
 def main(args):
     now = datetime.datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
 
@@ -94,9 +95,8 @@ def main(args):
         set_seed(42)  # should keep same
 
     # Handle the repository creation
-    if accelerator.is_main_process:
-        if args.output_dir is not None:
-            os.makedirs(args.output_dir, exist_ok=True)
+    if args.output_dir is not None:
+        os.makedirs(args.output_dir, exist_ok=True)
 
     # Create model:
     # ae = getae_wrapper(args.ae)(args.ae_path).eval()

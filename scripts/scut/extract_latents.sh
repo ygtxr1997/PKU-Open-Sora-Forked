@@ -68,7 +68,7 @@ export INTERNVID_META="/exthome/future-technology-college-data/Internvid_dataset
 export PANDA70M_DIR="/public/home/201810101923/datasets/panda70m/clips_0"
 export PANDA70M_META="/public/home/201810101923/datasets/panda70m/panda70m_training_clips_0.csv"
 export WEBVID_DIR="/exthome/future-technology-college-data/202321063560/webvid_data/webvid_train_data"
-export OUTPUT_DIR="/public/home/201810101923/datasets/webavid/latents_v385x288x512/latents"
+export OUTPUT_DIR="/public/home/201810101923/datasets/webavid/latents_v257x288x512/latents"
 echo "num_gpus: $NUM_GPUS, slurm_nnodes: $SLURM_NNODES"
 srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --multi_gpu  \
@@ -86,7 +86,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --data_path ${DATA_PATH} \
   --replace_root ${REPLACE_ROOT}  \
   --sample_rate 1 \
-  --num_frames 321 \
+  --num_frames 257 \
   --use_smaller_frames  \
   --max_image_size 512 \
   --wh_ratio "16:9" \
@@ -95,7 +95,8 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --max_extract_steps=1000000 \
   --mixed_precision="bf16" \
   --report_to="wandb" \
-  --validation_steps=1000000 \
+  --enable_tracker \
+  --validation_steps=200 \
   --output_dir=${OUTPUT_DIR} \
   --allow_tf32 \
   --logging_dir="save_latents_log"  \
