@@ -85,7 +85,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --data_path ${DATA_PATH} \
   --replace_root ${REPLACE_ROOT}  \
   --sample_rate 1 \
-  --num_frames 257 \
+  --num_frames 384 \
   --use_smaller_frames  \
   --max_image_size 512 \
   --wh_ratio "16:9" \
