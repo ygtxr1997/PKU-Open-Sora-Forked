@@ -318,7 +318,7 @@ def main(args):
                                 ]
                             }
                         )
-            torch.cuda.empty_cache()
+        torch.cuda.empty_cache()
 
         # Update tqdm and tracker log
         progress_bar.update(1)
