@@ -272,7 +272,7 @@ def main(args):
             cache_cnt = cache_cnt + b
 
         # Validation and log
-        if accelerator.is_main_process and global_step % args.validation_steps == 0:
+        if args.enable_tracker and accelerator.is_main_process and global_step % args.validation_steps == 0:
             videos = []
             captions = []
             with torch.no_grad():
@@ -302,22 +302,22 @@ def main(args):
                 videos.append(val_output)
                 captions.append(f"{validation_prompt}. (frames:useful={useful_frames}),")
             videos = torch.stack(videos).numpy()
-            if args.enable_tracker:
-                for tracker in accelerator.trackers:
-                    if tracker.name == "tensorboard":
-                        np_videos = np.stack([np.asarray(vid) for vid in videos])
-                        tracker.writer.add_video("validation", np_videos, global_step, fps=10)
-                    if tracker.name == "wandb":
-                        tracker.log(
-                            {
-                                "validation": [
-                                    wandb.Video(video,
-                                                caption=f"{i}: {captions[i]}",
-                                                fps=10)
-                                    for i, video in enumerate(videos)
-                                ]
-                            }
-                        )
+            for tracker in accelerator.trackers:
+                if tracker.name == "tensorboard":
+                    np_videos = np.stack([np.asarray(vid) for vid in videos])
+                    tracker.writer.add_video("validation", np_videos, global_step, fps=10)
+                if tracker.name == "wandb":
+                    tracker.log(
+                        {
+                            "validation": [
+                                wandb.Video(video,
+                                            caption=f"{i}: {captions[i]}",
+                                            fps=10)
+                                for i, video in enumerate(videos)
+                            ]
+                        }
+                    )
+            logger.info(f"Validation finished.")
         torch.cuda.empty_cache()
 
         # Update tqdm and tracker log

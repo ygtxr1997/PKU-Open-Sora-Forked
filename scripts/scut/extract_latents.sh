@@ -94,7 +94,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --max_extract_steps=1000000 \
   --mixed_precision="bf16" \
   --report_to="wandb" \
-  --validation_steps=10 \
+  --validation_steps=1000000 \
   --output_dir=${OUTPUT_DIR} \
   --logging_dir="save_latents_log"  \
   --use_deepspeed \
@@ -102,7 +102,6 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --use_image_num 0 \
   --enable_tiling  \
   --tile_overlap_factor 0.25  \
-  --enable_tracker  \
   --tracker_project_name scut_extract_latents \
   --tracker_run_name webvid  \
   --internvid_meta ${INTERNVID_META}  \
