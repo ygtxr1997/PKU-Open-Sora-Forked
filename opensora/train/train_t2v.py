@@ -437,7 +437,6 @@ def main(args):
             with accelerator.accumulate(model):
                 # Sample noise that we'll add to the latents
                 x = x.to(accelerator.device)  # B C T+num_images H W, 16 + 4
-                print("[DEBUG] x.shape:", x.shape)
                 # attn_mask = attn_mask.to(device)  # B T H W
                 # assert torch.all(attn_mask.bool()), 'do not enable dynamic input'
                 attn_mask = None

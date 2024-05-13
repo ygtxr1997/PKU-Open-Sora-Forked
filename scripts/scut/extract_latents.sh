@@ -80,6 +80,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --text_encoder_name DeepFloyd/t5-v1_1-xxl \
   --cache_dir ${MODEL_CACHE_DIR}  \
   --dataset webvid \
+  --no_text \
   --ae CausalVAEModel_4x8x8 \
   --ae_path CausalVAEModel_4x8x8 \
   --data_path ${DATA_PATH} \
