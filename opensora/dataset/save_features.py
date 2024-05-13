@@ -155,7 +155,7 @@ def main(args):
         extract_dataloader,
     )
     if hasattr(extract_dataset, "len"):
-        after_len = len(extract_dataset)
+        after_len = len(extract_dataloader)
         logger.info(f"[DEBUG] before prepare: len={before_len}, after: len={after_len}")
     else:
         logger.info(f"[DEBUG] No dataset len. Maybe an IterableDataset.")
