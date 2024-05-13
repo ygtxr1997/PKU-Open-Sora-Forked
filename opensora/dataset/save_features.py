@@ -231,7 +231,7 @@ def main(args):
         elif isinstance(batch, dict):
             video_ids = batch["video_id"]
             x = batch["video"]
-            video_n_frames = batch["video_n_frames"]  # (B,)
+            video_n_frames = batch["video_n_frames"]  # (B,1)
             text_ids = batch["text_ids"] if "text_ids" in batch.keys() else None
             conda_mask = batch["conda_mask"] if "conda_mask" in batch.keys() else None
         else:
@@ -268,7 +268,7 @@ def main(args):
                 save_latents(cache_tensors, cache_tensor_tlens, cache_ids, args.output_dir, max_cnt=cache_cnt)
                 cache_cnt = 0
             cache_tensors[cache_cnt: cache_cnt + b, :, :t] = x.detach()
-            cache_tensor_tlens[cache_cnt: cache_cnt + b] = video_n_frames.detach()
+            cache_tensor_tlens[cache_cnt: cache_cnt + b] = video_n_frames.detach().squeeze()
             if isinstance(video_ids, torch.Tensor):
                 cache_ids[cache_cnt: cache_cnt + b] = video_ids.detach()
             else:

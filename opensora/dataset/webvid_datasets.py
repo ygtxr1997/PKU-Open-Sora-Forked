@@ -227,13 +227,15 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
             frame_stride = total_frames // target_n_frames
             assert (frame_stride > 0)
             all_frames = list(range(0, total_frames, frame_stride))
+        assert len(all_frames) == total_frames, f"[WebVidHFWebDataset] total_frames no consistent! " \
+                                                f"{len(all_frames)} != {total_frames} ."
 
         # Select a random clip
         rand_idx = random.randint(0, len(all_frames) - target_n_frames)
         frame_indices = all_frames[rand_idx:rand_idx + target_n_frames]
         if len(frame_indices) < self.num_frames:  # If existing frames < needed max frames:
             frame_indices += [all_frames[-1]] * (self.num_frames - len(frame_indices))  # repeat last frames as padding
-        assert len(frame_indices) == self.num_frames, f"[WebVidHFWebDataset] num_frames no consistent! " \
+        assert len(frame_indices) == self.num_frames, f"[WebVidHFWebDataset] self.num_frames no consistent! " \
                                                       f"{len(frame_indices)} != {self.num_frames} ."
         video_data = decord_vr.get_batch(frame_indices).asnumpy()  # (T,H,W,C)
 
