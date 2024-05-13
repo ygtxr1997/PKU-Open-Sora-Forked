@@ -62,7 +62,8 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
             webvid_dataset = split_dataset_by_node(
                 webvid_dataset, rank=rank, world_size=world_size)
             if self.logger is not None:
-                self.logger.info(f"[WebVidHFWebDataset] distributed split by rank: {rank}/{world_size}")
+                self.logger.info(f"[WebVidHFWebDataset] distributed split by rank: {rank}/{world_size}",
+                                 main_process_only=False)
 
         def webvid_map(example):
             if example['txt'][-1] in ['\n', '.', ',', ' ']:

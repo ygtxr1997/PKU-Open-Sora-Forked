@@ -234,6 +234,7 @@ def main(args):
             conda_mask = batch["conda_mask"] if "conda_mask" in batch.keys() else None
         else:
             raise TypeError(f"Batch type {type(batch)} not supported!")
+
         if global_step < initial_global_step:
             progress_bar.update(1)
             global_step += 1
@@ -241,14 +242,12 @@ def main(args):
             continue
 
         # Sample noise that we'll add to the latents
-        print("[DEBUG] x.device", x.device)
         x = x.to(accelerator.device)  # B C T+num_images H W, 16 + 4
 
         with torch.no_grad():
             # Map input images to latent space + normalize latents
             if args.use_image_num == 0:
                 x = ae.encode(x)  # B C T H W
-                # cond = text_enc(input_ids, cond_mask)  # B L -> B L D
             else:
                 videos, images = x[:, :, :-args.use_image_num], x[:, :, -args.use_image_num:]
                 videos = ae.encode(videos)  # B C T H W
@@ -256,10 +255,6 @@ def main(args):
                 images = ae.encode(images)
                 images = rearrange(images, '(b t) c 1 h w -> b c t h w', t=args.use_image_num)
                 x = torch.cat([videos, images], dim=2)   #  b c 16+4, h, w
-
-                # use for loop to avoid OOM, because T5 is too huge...
-                # B, _, _ = input_ids.shape  # B T+num_images L  b 1+4, L
-                # cond = torch.stack([text_enc(input_ids[i], cond_mask[i]) for i in range(B)])  # B 1+num_images L D
 
             # Save latents
             b, c, t, h, w = x.shape
@@ -286,7 +281,8 @@ def main(args):
                 # 1. use all video frames, including padding frames
                 validation_latent = x[0, :, :video_length].unsqueeze(0)
                 logger.info(f"Running validation (1/2)... \n"
-                            f"Generating a video from the latent with caption: {validation_prompt}")
+                            f"Generating a video from the latent with caption: {validation_prompt}, "
+                            f"batched_length={video_length}")
                 val_output = ae.decode(validation_latent)
                 val_output = (ae_denorm[args.ae](val_output[0]) * 255).add_(0.5).clamp_(0, 255).to(
                     dtype=torch.uint8).cpu().contiguous()  # t c h w
@@ -296,7 +292,8 @@ def main(args):
                 useful_frames = video_n_frames[0]
                 validation_latent = x[0, :, :useful_frames].unsqueeze(0)
                 logger.info(f"Running validation (2/2)... \n"
-                            f"Generating a video from the latent with caption: {validation_prompt}")
+                            f"Generating a video from the latent with caption: {validation_prompt}, "
+                            f"useful_frames={useful_frames}")
                 val_output = ae.decode(validation_latent)
                 val_output = (ae_denorm[args.ae](val_output[0]) * 255).add_(0.5).clamp_(0, 255).to(
                     dtype=torch.uint8).cpu().contiguous()  # t c h w
