@@ -433,7 +433,7 @@ def main(args):
 
     for epoch in range(first_epoch, args.num_train_epochs):
         train_loss = 0.0
-        for step, (x, input_ids, cond_mask) in enumerate(train_dataloader):
+        for step, (video_ids, x, input_ids, cond_mask) in enumerate(train_dataloader):
             with accelerator.accumulate(model):
                 # Sample noise that we'll add to the latents
                 x = x.to(accelerator.device)  # B C T+num_images H W, 16 + 4
