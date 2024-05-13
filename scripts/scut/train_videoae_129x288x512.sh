@@ -81,7 +81,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --model LatteT2V-XL/122 \
   --text_encoder_name DeepFloyd/t5-v1_1-xxl \
   --cache_dir ${MODEL_CACHE_DIR}  \
-  --dataset webvid \
+  --dataset panda70m \
   --ae CausalVAEModel_4x8x8 \
   --ae_path CausalVAEModel_4x8x8 \
   --data_path ${DATA_PATH} \
@@ -89,7 +89,6 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --video_folder ${VIDEO_FOLDER} \
   --sample_rate 1 \
   --num_frames 129 \
-  --use_smaller_frames  \
   --max_image_size 512 \
   --wh_ratio "16:9" \
   --gradient_checkpointing \

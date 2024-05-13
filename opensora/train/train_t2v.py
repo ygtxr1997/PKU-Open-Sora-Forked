@@ -329,7 +329,7 @@ def main(args):
     train_dataset = getdataset(args, logger=logger)
     train_dataloader = torch.utils.data.DataLoader(
         train_dataset,
-        shuffle=True,
+        shuffle=True if args.dataset not in ("webvid",) else None,
         # collate_fn=Collate(args),  # TODO: do not enable dynamic mask in this point
         batch_size=args.train_batch_size,
         num_workers=args.dataloader_num_workers,
