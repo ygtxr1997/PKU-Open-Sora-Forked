@@ -445,7 +445,7 @@ def main(args):
 
                 with torch.no_grad():
                     # Map input images to latent space + normalize latents
-                    if args.use_image_num == 0:
+                    if args.use_image_num == 0:  # default
                         if not args.is_video_latent:  # default
                             x = ae.encode(x)  # B C T H W
                         else:
