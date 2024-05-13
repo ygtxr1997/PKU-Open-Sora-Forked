@@ -94,7 +94,8 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
         self.llm_max_length = llm_max_length
         self.proportion_empty_prompts = proportion_empty_prompts
         if self.logger is not None:
-            logger.info(f"[WebVidHFWebDataset] use_smaller_frames:{use_smaller_frames},")
+            logger.info(f"[WebVidHFWebDataset] use_smaller_frames:{use_smaller_frames}, "
+                        f"no_text:{tokenizer is None}, ")
 
         if transform is None:
             transform = transforms.Compose([
