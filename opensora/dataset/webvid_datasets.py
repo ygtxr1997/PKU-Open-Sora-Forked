@@ -39,6 +39,7 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
                  max_image_size: int = 512,
                  target_size: tuple = (512, 512),
                  num_frames: int = 16,
+                 use_smaller_frames: bool = False,
                  max_frame_stride: int = 8,
                  llm_max_length: int = 300,
                  proportion_empty_prompts: float = 0.,
@@ -87,6 +88,7 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
         self.max_frame_stride = max_frame_stride
         self.target_size = target_size
         self.num_frames = num_frames
+        self.use_smaller_frames = use_smaller_frames
         self.max_frame_stride = max_frame_stride
         self.llm_max_length = llm_max_length
         self.proportion_empty_prompts = proportion_empty_prompts
@@ -113,15 +115,13 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
         webvid_iterator = iter(self.webvid_dataset)
         for idx, sample in enumerate(webvid_iterator):
             if idx == 0:
-                print(f"[DEBUG] iterating {idx}: {sample['caption'][:20]}")
-            # if idx >= 15:
-            #     break
+                print(f"[DEBUG] iterating {idx}: {sample['caption'][:30]}")
             try:
                 mp4_data = sample["mp4"]
                 caption = sample["caption"]
                 video_id = int(sample["__key__"])
 
-                video = self.decord_read(mp4_data)  # (T,C,H,W)
+                video, video_n_frames = self.decord_read(mp4_data)  # (T,C,H,W)
                 video = self.transform(video)  # T C H W -> T C H W
                 video = video.transpose(0, 1)  # T C H W -> C T H W
                 assert (video.shape[1] == self.num_frames), f'{len(video.shape[1])} != video_length:{self.num_frames}'
@@ -142,10 +142,20 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
                     input_ids = text_tokens_and_mask['input_ids'].squeeze(0)
                     cond_mask = text_tokens_and_mask['attention_mask'].squeeze(0)
                     self.success_cnt += 1
-                    yield video_id, video, input_ids, cond_mask
+                    yield {
+                        "video_id": video_id,
+                        "video": video,
+                        "video_n_frames": video_n_frames,
+                        "text_ids": input_ids,
+                        "cond_mask": cond_mask,
+                    }
                 else:
                     self.success_cnt += 1
-                    yield video_id, video
+                    yield {
+                        "video_id": video_id,
+                        "video": video,
+                        "video_n_frames": video_n_frames,
+                    }
             except Exception as e:
                 self.process_error(idx, sample, e)
                 continue
@@ -191,22 +201,30 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
         decord_vr = VideoReader(io.BytesIO(byte_data), ctx=decord.cpu(0))
         total_frames = len(decord_vr)
 
+        if not self.use_smaller_frames:  # default
+            target_n_frames = self.num_frames
+        else:
+            target_n_frames = total_frames
+
         # If too short
-        if total_frames < self.num_frames:
+        if total_frames < target_n_frames:
             raise Warning("[WebVidHFWebDataset][Warning] frames not enough!")
 
         # Sample frames by stride
         frame_stride = random.randint(1, self.max_frame_stride)
         all_frames = list(range(0, total_frames, frame_stride))
-        if len(all_frames) < self.num_frames:  # if too sparse, reduce stride
-            frame_stride = total_frames // self.num_frames
+        if len(all_frames) < target_n_frames:  # if too sparse, reduce stride
+            frame_stride = total_frames // target_n_frames
             assert (frame_stride > 0)
             all_frames = list(range(0, total_frames, frame_stride))
 
         # Select a random clip
-        rand_idx = random.randint(0, len(all_frames) - self.num_frames)
-        frame_indice = all_frames[rand_idx:rand_idx + self.num_frames]
-        video_data = decord_vr.get_batch(frame_indice).asnumpy()  # (T,H,W,C)
+        rand_idx = random.randint(0, len(all_frames) - target_n_frames)
+        frame_indices = all_frames[rand_idx:rand_idx + target_n_frames]
+        if target_n_frames < self.num_frames:  # If existing frames < needed max frames:
+            frame_indices += [all_frames[-1]] * (self.num_frames - target_n_frames)  # repeat last frames as padding
+        assert len(frame_indices) == self.num_frames, "[WebVidHFWebDataset] num_frames no consistent!"
+        video_data = decord_vr.get_batch(frame_indices).asnumpy()  # (T,H,W,C)
 
         # If too small resolution
         if video_data.shape[1] < 288 and video_data.shape[2] < 512:
@@ -214,7 +232,8 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
 
         video_data = torch.from_numpy(video_data)
         video_data = video_data.permute(0, 3, 1, 2)  # (T,H,W,C) -> (T,C,H,W)
-        return video_data
+        video_n_frames = torch.LongTensor([target_n_frames])
+        return video_data, video_n_frames
 
 
 class WebVidLatentDataset(torch.utils.data.Dataset):

@@ -217,12 +217,19 @@ def main(args):
         (args.latent_cache_size, ae.vae.config.z_channels,
          video_length * 10 + args.use_image_num, latent_size[0], latent_size[1]),
         dtype=torch.float32, device=accelerator.device, requires_grad=False)
-    cache_tensor_tlens = [None] * args.latent_cache_size
+    cache_tensor_tlens = torch.zeros(args.latent_cache_size, dtype=torch.long, requires_grad=False)
     cache_ids = [None] * args.latent_cache_size
     cache_cnt = 0
     for step, batch in enumerate(extract_dataloader):
         if isinstance(batch, tuple) or isinstance(batch, list):
             video_ids, x, text_ids, conda_mask = batch
+            video_n_frames = None
+        elif isinstance(batch, dict):
+            video_ids = batch["video_id"]
+            x = batch["video"]
+            video_n_frames = batch["video_n_frames"]  # (B,)
+            text_ids = batch["text_ids"] if "text_ids" in batch.keys() else None
+            conda_mask = batch["conda_mask"] if "conda_mask" in batch.keys() else None
         else:
             raise TypeError(f"Batch type {type(batch)} not supported!")
         if global_step < initial_global_step:
@@ -257,7 +264,7 @@ def main(args):
                 save_latents(cache_tensors, cache_tensor_tlens, cache_ids, args.output_dir, max_cnt=cache_cnt)
                 cache_cnt = 0
             cache_tensors[cache_cnt: cache_cnt + b, :, :t] = x.detach()
-            cache_tensor_tlens[cache_cnt: cache_cnt + b] = [t] * b
+            cache_tensor_tlens[cache_cnt: cache_cnt + b] = video_n_frames.detach()
             if isinstance(video_ids, torch.Tensor):
                 cache_ids[cache_cnt: cache_cnt + b] = video_ids.detach()
             else:
@@ -265,17 +272,34 @@ def main(args):
             cache_cnt = cache_cnt + b
 
         # Validation and log
-        if accelerator.is_main_process and global_step % args.validation_steps == 0 and \
-                0 == int(os.environ["SLURM_PROCID"]):
+        if accelerator.is_main_process and global_step % args.validation_steps == 0:
+            videos = []
+            captions = []
             with torch.no_grad():
-                validation_prompt = tokenizer.decode(text_ids[0], skip_special_tokens=True)
-                validation_latent = x[0, :, :video_length].unsqueeze(0)  # crop former
-                logger.info(f"Running validation... \n"
+                if text_ids is not None:
+                    validation_prompt = tokenizer.decode(text_ids[0], skip_special_tokens=True)
+                else:
+                    validation_prompt = "(None Text)"
+                # 1. use all video frames, including padding frames
+                validation_latent = x[0, :, :video_length].unsqueeze(0)
+                logger.info(f"Running validation (1/2)... \n"
                             f"Generating a video from the latent with caption: {validation_prompt}")
                 val_output = ae.decode(validation_latent)
                 val_output = (ae_denorm[args.ae](val_output[0]) * 255).add_(0.5).clamp_(0, 255).to(
                     dtype=torch.uint8).cpu().contiguous()  # t c h w
-            videos = torch.stack([val_output]).numpy()
+                videos.append(val_output)
+                captions.append(f"{validation_prompt}. (frames:all={video_length}),")
+                # 2. use the first useful non-padding frames, no padding frames
+                useful_frames = video_n_frames[0]
+                validation_latent = x[0, :, :useful_frames].unsqueeze(0)
+                logger.info(f"Running validation (2/2)... \n"
+                            f"Generating a video from the latent with caption: {validation_prompt}")
+                val_output = ae.decode(validation_latent)
+                val_output = (ae_denorm[args.ae](val_output[0]) * 255).add_(0.5).clamp_(0, 255).to(
+                    dtype=torch.uint8).cpu().contiguous()  # t c h w
+                videos.append(val_output)
+                captions.append(f"{validation_prompt}. (frames:useful={useful_frames}),")
+            videos = torch.stack(videos).numpy()
             if args.enable_tracker:
                 for tracker in accelerator.trackers:
                     if tracker.name == "tensorboard":
@@ -286,8 +310,7 @@ def main(args):
                             {
                                 "validation": [
                                     wandb.Video(video,
-                                                caption=f"{i}: {validation_prompt}, "
-                                                        f"ori_len={t}, crop_len={video_length}",
+                                                caption=f"{i}: {captions[i]}",
                                                 fps=10)
                                     for i, video in enumerate(videos)
                                 ]
@@ -315,7 +338,7 @@ def main(args):
 
 
 def save_latents(latents: torch.Tensor,
-                 latent_tlens: list,
+                 latent_tlens: torch.Tensor,
                  vids: Union[torch.Tensor, list],
                  save_root: str, max_cnt: int = -1):
     b = latents.shape[0]  # (B,C,T,H,W)
@@ -329,9 +352,10 @@ def save_latents(latents: torch.Tensor,
     for i in range(b):
         if i >= max_cnt:
             break
-        latent = latents[i, :, latent_tlens[i]]
+        tlen = latent_tlens[i]
+        latent = latents[i, :, tlen]
         video_id = vids[i]
-        save_fn = os.path.join(save_root, f"{video_id}.npy")
+        save_fn = os.path.join(save_root, f"{video_id}_@t{tlen}.npy")
         np.save(save_fn, latent)
 
 
@@ -434,7 +458,10 @@ def parser_args():
 
     parser.add_argument("--cache_dir", type=str, default=None,
                         help="HuggingFace cache dir. Default is ~/.cache/huggingface/hub/")
-    parser.add_argument("--no_crop_time", action="store_true", help="if true, close time cropping for dataset")
+    parser.add_argument("--no_crop_time", action="store_true", help="If true, turn off time cropping for dataset")
+    parser.add_argument("--no_text", action="store_true", help="If true, turn off loading captions")
+    parser.add_argument("--use_smaller_frames", action="store_true",
+                        help="If true, also save video frames less than `num_frames`")
     parser.add_argument("--internvid_dir", type=str, default=None,
                         help="InternVid video root folder")
     parser.add_argument("--internvid_meta", type=str, default=None,

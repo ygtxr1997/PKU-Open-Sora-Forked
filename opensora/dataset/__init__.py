@@ -151,8 +151,11 @@ def getdataset(args, logger=None):
             RandomHorizontalFlipVideo(p=0.5),
             norm_fun
         ])
-        tokenizer = AutoTokenizer.from_pretrained(
-            args.text_encoder_name, cache_dir=args.cache_dir)
+        if not args.no_text:  # default
+            tokenizer = AutoTokenizer.from_pretrained(
+                args.text_encoder_name, cache_dir=args.cache_dir)
+        else:
+            tokenizer = None
         return WebVidHFWebDataset(
             args.webvid_dir,
             logger=logger,
@@ -160,6 +163,7 @@ def getdataset(args, logger=None):
             transform=transform,
             norm_fun=norm_fun,
             num_frames=args.num_frames,
+            use_smaller_frames=args.use_smaller_frames,
             max_frame_stride=args.sample_rate,
         )
     elif args.dataset == 'webvid_latent':
