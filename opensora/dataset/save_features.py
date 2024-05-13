@@ -295,20 +295,20 @@ def main(args):
                 val_output = ae.decode(validation_latent)
                 val_output = (ae_denorm[args.ae](val_output[0]) * 255).add_(0.5).clamp_(0, 255).to(
                     dtype=torch.uint8).cpu().contiguous()  # t c h w
-                videos.append(val_output)
+                videos.append(val_output.numpy())
                 captions.append(f"{validation_prompt}. (frames:all={args.num_frames}),")
                 # 2. use the first useful non-padding frames, no padding frames
                 useful_frames = latent_n_frames[0]
                 validation_latent = x[0, :, :useful_frames].unsqueeze(0)
                 logger.info(f"Running validation (2/2)... \n"
                             f"Generating a video from the latent with caption: {validation_prompt}, "
-                            f"useful_frames={useful_frames}")
+                            f"useful_frames={video_n_frames[0]}")
                 val_output = ae.decode(validation_latent)
                 val_output = (ae_denorm[args.ae](val_output[0]) * 255).add_(0.5).clamp_(0, 255).to(
                     dtype=torch.uint8).cpu().contiguous()  # t c h w
-                videos.append(val_output)
+                videos.append(val_output.numpy())
                 captions.append(f"{validation_prompt}. (frames:useful={useful_frames}),")
-            videos = torch.stack(videos).numpy()
+            # videos = torch.stack(videos).numpy()
             for tracker in accelerator.trackers:
                 if tracker.name == "tensorboard":
                     np_videos = np.stack([np.asarray(vid) for vid in videos])
