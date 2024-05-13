@@ -367,7 +367,7 @@ def save_latents(latents: torch.Tensor,
             break
         latent_tlen = latent_tlens[i]
         video_tlen = video_tlens[i]
-        latent = latents[i, :, latent_tlen]
+        latent = latents[i, :, :latent_tlen]
         video_id = vids[i]
         save_fn = os.path.join(save_root, f"{video_id}_@t{video_tlen}.npy")
         np.save(save_fn, latent)
