@@ -214,7 +214,7 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
         if not self.use_smaller_frames:  # default
             target_n_frames = self.num_frames
         else:
-            target_n_frames = total_frames
+            target_n_frames = min(total_frames, self.num_frames)
 
         # If too short
         if total_frames < target_n_frames:
