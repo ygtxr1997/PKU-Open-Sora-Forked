@@ -1,3 +1,8 @@
+"""
+"NUM_PIXELS": {NUM_FRAMES: (PROB_KEEP, BATCH_SIZE), ...}
+If BATCH_SIZE is None, go to the lower pixel-level.
+"""
+
 bucket_hpcai_stage1 = {  # 1s/it
     "144p": {1: (0.5, 48), 16: (1.0, 6), 32: (1.0, 3), 96: (1.0, 1)},
     "256": {1: (0.5, 24), 16: (0.5, 3), 48: (0.5, 1), 64: (0.0, None)},

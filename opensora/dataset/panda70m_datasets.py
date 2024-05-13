@@ -1,6 +1,7 @@
 import json
 import os, io, csv, math, random
 from typing import List, Dict
+import bisect
 import cv2
 import numpy as np
 import imageio as iio
@@ -21,6 +22,7 @@ from accelerate.logging import MultiProcessAdapter
 from .transform import ToTensorVideo, TemporalRandomCrop, RandomHorizontalFlipVideo, CenterCropResizeVideo
 from opensora.utils.dataset_utils import DecordInit
 from opensora.utils.utils import text_preprocessing
+from .aspect import ASPECT_RATIOS, get_closest_ratio
 
 
 class Panda70MPytorchDataset(Dataset):
@@ -98,7 +100,7 @@ class Panda70MPytorchDataset(Dataset):
             self.logger.info(f"[Panda70MPytorchDataset] loaded cnt={len(self.samples)}, "
                              f"time_crop={self.use_crop_time}")
 
-    def _split_samples_by_rank(self, samples):
+    def _split_samples_by_rank(self, samples):  # if using accelerator.prepare, usually not needed to split again
         if self.rank is None or self.world_size is None:
             return samples
         rank, world_size = self.rank, self.world_size
@@ -123,6 +125,235 @@ class Panda70MPytorchDataset(Dataset):
             video_path = os.path.join(self.dataset_dir, video_fn)
 
             # Read video from path
+            video = self.decord_read(video_path)  # (T,C,H,W)
+            video = self.transform(video)  # T C H W -> T C H W
+            video = video.transpose(0, 1)  # T C H W -> C T H W
+            if self.use_crop_time:
+                assert (video.shape[1] == self.num_frames), f'{video.shape[1]} != video_length:{self.num_frames}'
+
+            # Text
+            text = caption
+            text = text_preprocessing(text)
+            text_tokens_and_mask = self.tokenizer(
+                text,
+                max_length=self.llm_max_length,
+                padding='max_length',
+                truncation=True,
+                return_attention_mask=True,
+                add_special_tokens=True,
+                return_tensors='pt'
+            )
+            input_ids = text_tokens_and_mask['input_ids'].squeeze(0)
+            cond_mask = text_tokens_and_mask['attention_mask'].squeeze(0)
+
+            self.success_cnt += 1
+            return os.path.splitext(video_fn)[0], video, input_ids, cond_mask
+
+            fps_ori = video_reader.get_avg_fps()
+            fps_clip = fps_ori // frame_stride
+
+            if fps_max is not None and fps_clip > fps_max:
+                fps_clip = fps_max
+            if fps_min is not None and fps_clip < fps_min:
+                fps_clip = fps_min
+
+            fps = torch.from_numpy(np.array([float(fps_clip)]))
+
+            data = {
+                'video_data': frames,
+                'repeat_times': torch.from_numpy(np.array([1])),
+                'motion_free_mask': motion_free_mask,
+                'fps': fps,
+                **additional_info
+            }
+
+            return data
+        except Exception as e:
+            return self.process_error(index, e)
+
+    def process_error(self, index, error=None):
+        self.fail_cnt += 1
+        self.logger.warning(f'Catch {error}, {self.samples[index]}, get random item once again, '
+                            f'fail={self.fail_cnt}, success={self.success_cnt}')
+        return self.__getitem__(random.randint(0, self.__len__() - 1))
+
+    def decord_read(self, path):
+        if not os.path.exists(path):
+            raise Warning("[Panda70MPytorchDataset][Warning] file not existing!")
+
+        decord_vr = self.v_decoder(path)
+        total_frames = len(decord_vr)
+
+        # If too short
+        if total_frames < self.num_frames:
+            raise Warning("[Panda70MPytorchDataset][Warning] frames not enough!")
+
+        # Sample frames by stride
+        frame_stride = random.randint(1, self.max_frame_stride)
+        all_frames = list(range(0, total_frames, frame_stride))
+        if len(all_frames) < self.num_frames:  # if too sparse, reduce stride
+            frame_stride = total_frames // self.num_frames
+            assert (frame_stride > 0)
+            all_frames = list(range(0, total_frames, frame_stride))
+
+        # Select a random clip
+        if self.use_crop_time:
+            rand_idx = random.randint(0, len(all_frames) - self.num_frames)
+            crop_frames = self.num_frames
+        else:
+            rand_idx = 0
+            crop_frames = len(all_frames)
+        frame_indice = all_frames[rand_idx:rand_idx + crop_frames]
+        video_data = decord_vr.get_batch(frame_indice).asnumpy()  # (T,H,W,C)
+
+        # If too small resolution
+        if video_data.shape[1] < 720 and video_data.shape[2] < 1280:
+            raise Warning("[Panda70MPytorchDataset][Warning] resolution too small!")
+
+        video_data = torch.from_numpy(video_data)
+        video_data = video_data.permute(0, 3, 1, 2)  # (T,H,W,C) -> (T,C,H,W)
+        return video_data
+
+    def __len__(self):
+        return len(self.samples)
+
+
+class Panda70MBucketDataset(Dataset):
+    def __init__(self, dataset_meta: str,
+                 dataset_dir: str,
+                 tokenizer,
+                 bucket_config: dict,
+                 transform=None,
+                 norm_fun=None,
+                 logger: MultiProcessAdapter = None,
+                 max_frame_stride: int = 8,
+                 llm_max_length: int = 300,
+                 proportion_empty_prompts: float = 0.,
+                 rank: int = None,
+                 world_size: int = None,
+                 ):
+        self.dataset_meta = dataset_meta
+        self.dataset_dir = dataset_dir
+        self.logger = logger
+        self.rank = rank
+        self.world_size = world_size
+
+        ''' load meta '''
+        if self.logger is not None:
+            self.logger.info(f"[Panda70MPytorchDataset] loading csv: {dataset_meta}")
+        useless_columns = [
+            "url", "timestamp",
+        ]  # all: ['videoID', 'url', 'timestamp', 'caption', 'matching_score']
+        with open(dataset_meta, 'r') as fid:
+            reader = csv.reader(fid, delimiter=',')
+            data = [x for x in reader]
+        samples = []
+        for i in range(1, len(data)):  # skip 1st row
+            row = data[i]
+            video_id: str = row[0]
+            captions_str = row[3]
+            captions: list = captions_str.replace("\"", "\'")[2:-2].split("', '")
+            for clip_id, caption in enumerate(captions):
+                samples.append(
+                    {
+                        "video_id": str(video_id),
+                        "caption": str(caption),
+                        "clip_id": int(clip_id),
+                        "video_fn": f"{video_id}_{clip_id:03d}.mp4",
+                    }
+                )
+        self.samples: List[Dict] = self._split_samples_by_rank(samples)
+
+        self.tokenizer = tokenizer
+        self.max_frame_stride = max_frame_stride
+        self.bucket_config = bucket_config
+        self.aspect_ratios = {k: ASPECT_RATIOS[k] for k in bucket_config.keys()}  # small to big
+        self.pixels_bisect = [x[0] for x in self.aspect_ratios.values()]  # small to big
+
+        self.target_size = target_size
+        self.num_frames = num_frames
+        self.use_crop_time = use_crop_time
+        self.llm_max_length = llm_max_length
+        self.proportion_empty_prompts = proportion_empty_prompts
+
+        self.v_decoder = DecordInit()
+        if transform is None:
+            transform = transforms.Compose([
+                ToTensorVideo(),
+                CenterCropResizeVideo(max_image_size),
+                RandomHorizontalFlipVideo(p=0.5),
+                norm_fun
+            ])
+        self.transform = transform
+
+        self.mem_bad_indices = []
+        self.fail_cnt = 0
+        self.success_cnt = 0
+
+        if self.logger is not None:
+            self.logger.info(f"[Panda70MPytorchDataset] loaded cnt={len(self.samples)}, "
+                             f"time_crop={self.use_crop_time}")
+
+    def _put_sample_into_bucket(self, sample_tchw: torch.Size):
+        t, c, h, w = sample_tchw
+        sample_pixels = h * w
+        idx_max_pixels = bisect.bisect(self.pixels_bisect, sample_pixels)  # right insert position
+        if idx_max_pixels == 0:  # sample size is smaller than the smallest bucket size
+            raise Warning(f"[Panda70MPytorchDataset][Warning] input size too small! H:W={h}:{w}")
+
+        pixels_keys = list(self.bucket_config.keys())
+
+        # 1. Check NUM_PIXELS
+        for idx_pixels in reversed(range(idx_max_pixels)):  # iterate from big to small
+            str_pixels = pixels_keys[idx_pixels]
+            triplets: dict = self.bucket_config[str_pixels]
+
+            # 2. Check NUM_FRAMES
+            frames_bisect = list(triplets.keys())  # small to big, [1,16,32,64,128]
+            idx_max_frames = bisect.bisect(frames_bisect, t)  # right insert position
+            if idx_max_frames == 0:  # sample frames smaller than the smallest bucket frames
+                continue
+
+            # 3. Check PROB_KEEP and BATCH_SIZE
+            int_frames = frames_bisect[idx_max_frames]
+            prob_keep, batch_size = triplets[int_frames]
+            if batch_size is None or np.random.uniform(0., 1.) <= prob_keep:
+                continue
+
+            # 4. Bucket obtained, get closest ASPECT_RATIO (H:W)
+            str_ratios_to_hw = self.aspect_ratios[str_pixels][1]
+            str_ratio = get_closest_ratio(h, w, str_ratios_to_hw)
+            final_h, final_w = str_ratios_to_hw[str_ratio]
+            final_t = int_frames
+            return final_t, c, final_h, final_w
+
+
+
+    def _split_samples_by_rank(self, samples):  # if using accelerator.prepare, usually not needed to split again
+        if self.rank is None or self.world_size is None:
+            return samples
+        rank, world_size = self.rank, self.world_size
+        all_indices = np.arange(len(samples))
+        rank_indices = np.array_split(all_indices, world_size)[rank]
+        if self.logger is not None:
+            self.logger.info(f"[Panda70MPytorchDataset] split by rank=({self.rank}/{self.world_size}), "
+                             f"range:{rank_indices[0]}-{rank_indices[-1]}", main_process_only=False)
+        return [samples[i] for i in rank_indices]
+
+    def __getitem__(self, index):
+        if self.success_cnt == 0 and self.fail_cnt == 0 and os.environ.get("RANK") is not None:
+            global_gpus = int(os.environ["WORLD_SIZE"])
+            global_rank = int(os.environ["RANK"])
+            print(f"[DEBUG] rank({global_rank}/{global_gpus}) iterating {index}: {self.samples[index]['caption'][:40]}")
+        if index in self.mem_bad_indices:
+            return self.process_error(index, f"Skip bad index={index}")
+        try:
+            example = self.samples[index]
+            video_fn = example["video_fn"]
+            caption = example['caption']
+            video_path = os.path.join(self.dataset_dir, video_fn)
+
+            # Read video from path`
             video = self.decord_read(video_path)  # (T,C,H,W)
             video = self.transform(video)  # T C H W -> T C H W
             video = video.transpose(0, 1)  # T C H W -> C T H W
