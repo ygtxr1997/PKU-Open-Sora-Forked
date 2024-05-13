@@ -85,7 +85,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --data_path ${DATA_PATH} \
   --replace_root ${REPLACE_ROOT}  \
   --sample_rate 1 \
-  --num_frames 129 \
+  --num_frames 257 \
   --use_smaller_frames  \
   --max_image_size 512 \
   --wh_ratio "16:9" \
@@ -104,7 +104,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --tile_overlap_factor 0.25  \
   --enable_tracker  \
   --tracker_project_name scut_extract_latents \
-  --tracker_run_name panda70m  \
+  --tracker_run_name webvid  \
   --internvid_meta ${INTERNVID_META}  \
   --internvid_dir ${INTERNVID_DIR}  \
   --panda70m_meta ${PANDA70M_META}  \

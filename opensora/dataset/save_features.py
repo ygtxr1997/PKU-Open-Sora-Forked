@@ -289,7 +289,7 @@ def main(args):
                 val_output = (ae_denorm[args.ae](val_output[0]) * 255).add_(0.5).clamp_(0, 255).to(
                     dtype=torch.uint8).cpu().contiguous()  # t c h w
                 videos.append(val_output)
-                captions.append(f"{validation_prompt}. (frames:all={video_length}),")
+                captions.append(f"{validation_prompt}. (frames:all={args.num_frames}),")
                 # 2. use the first useful non-padding frames, no padding frames
                 useful_frames = video_n_frames[0]
                 validation_latent = x[0, :, :useful_frames].unsqueeze(0)
