@@ -166,44 +166,44 @@ def check_batch():
     #     max_frame_stride=args.sample_rate,
     # )
 
-    # 3. Panda70M Dataset
-    from opensora.dataset.panda70m_datasets import Panda70MPytorchDataset
-    PANDA70M_DIR = "/public/home/201810101923/datasets/panda70m/clips_0"
-    PANDA70M_META = "/public/home/201810101923/datasets/panda70m/panda70m_training_clips_0.csv"
-    tokenizer = AutoTokenizer.from_pretrained(
-            args.text_encoder_name, cache_dir=args.cache_dir)
-    train_dataset = Panda70MPytorchDataset(
-        PANDA70M_META, PANDA70M_DIR, logger=logger,
-        tokenizer=tokenizer,
-        norm_fun=ae_norm[args.ae],
-        num_frames=32,
-        max_frame_stride=args.sample_rate,
-        use_crop_time=False,
-    )
-    total_len = len(train_dataset)
-    print("len=", total_len)
-    print("[0]=")
-    print_batch(train_dataset[0])
-    print("[-1]=")
-    print_batch(train_dataset[total_len - 1])
-
-    # # 4. WebVid Dataset
-    # from opensora.dataset.webvid_datasets import WebVidHFWebDataset, WebVidLatentDataset
-    # from opensora.dataset.webvid_datasets import multi_worker_start, worker_extract_meta
-    # from opensora.dataset.webvid_datasets import merge_csv
-    # from datasets.distributed import split_dataset_by_node
-    # WEBVID_DIR = "/exthome/future-technology-college-data/202321063560/webvid_data/webvid_train_data"
-    # # WEBVID_DIR = "/public/home/201810101923/datasets/webvid/data_demo"
+    # # 3. Panda70M Dataset
+    # from opensora.dataset.panda70m_datasets import Panda70MPytorchDataset
+    # PANDA70M_DIR = "/public/home/201810101923/datasets/panda70m/clips_0"
+    # PANDA70M_META = "/public/home/201810101923/datasets/panda70m/panda70m_training_clips_0.csv"
     # tokenizer = AutoTokenizer.from_pretrained(
     #         args.text_encoder_name, cache_dir=args.cache_dir)
-    # # train_dataset = WebVidHFWebDataset(
-    # #     WEBVID_DIR, logger=logger,
-    # #     tokenizer=tokenizer,
-    # #     norm_fun=ae_norm[args.ae],
-    # #     num_frames=129,
-    # #     target_size=(512, 288),
-    # #     max_frame_stride=args.sample_rate,
-    # # )
+    # train_dataset = Panda70MPytorchDataset(
+    #     PANDA70M_META, PANDA70M_DIR, logger=logger,
+    #     tokenizer=tokenizer,
+    #     norm_fun=ae_norm[args.ae],
+    #     num_frames=32,
+    #     max_frame_stride=args.sample_rate,
+    #     use_crop_time=False,
+    # )
+    # total_len = len(train_dataset)
+    # print("len=", total_len)
+    # print("[0]=")
+    # print_batch(train_dataset[0])
+    # print("[-1]=")
+    # print_batch(train_dataset[total_len - 1])
+
+    # 4. WebVid Dataset
+    from opensora.dataset.webvid_datasets import WebVidHFWebDataset, WebVidLatentDataset
+    from opensora.dataset.webvid_datasets import multi_worker_start, worker_extract_meta
+    from opensora.dataset.webvid_datasets import merge_csv
+    from datasets.distributed import split_dataset_by_node
+    WEBVID_DIR = "/exthome/future-technology-college-data/202321063560/webvid_data/webvid_train_data"
+    # WEBVID_DIR = "/public/home/201810101923/datasets/webvid/data_demo"
+    tokenizer = AutoTokenizer.from_pretrained(
+            args.text_encoder_name, cache_dir=args.cache_dir)
+    train_dataset = WebVidHFWebDataset(
+        WEBVID_DIR, logger=logger,
+        tokenizer=tokenizer,
+        norm_fun=ae_norm[args.ae],
+        num_frames=129,
+        target_size=(512, 288),
+        max_frame_stride=args.sample_rate,
+    )
     # WEBVID_LATENT_META = "/public/home/201810101923/datasets/webvid/latents_129x288x512/latents_meta_all.csv"
     # WEBVID_LATENT_DIR = "/public/home/201810101923/datasets/webvid/latents"
     # train_dataset = WebVidLatentDataset(
@@ -239,7 +239,14 @@ def check_batch():
         num_workers=4,
         drop_last=True,
     )
+    if hasattr(train_dataset, "len"):
+        before_len = len(train_dataloader)
     train_dataloader = accelerator.prepare_data_loader(train_dataloader)
+    if hasattr(train_dataset, "len"):
+        after_len = len(train_dataloader)
+        logger.info(f"[DEBUG] before prepare: len={before_len}, after: len={after_len}")
+    else:
+        logger.info(f"[DEBUG] No dataset len. Maybe an IterableDataset.")
 
     for idx, batch in enumerate(tqdm(train_dataloader)):
         print_batch(batch)

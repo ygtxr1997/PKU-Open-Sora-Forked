@@ -32,7 +32,7 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
     def __init__(self,
                  dataset_dir: str,
                  tokenizer=None,
-                 dataset_meta: str = None,
+                 dataset_meta: str = None,  # not used
                  transform=None,
                  norm_fun=None,
                  logger: MultiProcessAdapter = None,

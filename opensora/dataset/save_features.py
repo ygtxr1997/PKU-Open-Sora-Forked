@@ -149,12 +149,16 @@ def main(args):
 
     # Prepare everything with our `accelerator`.
     # NO need to split again if already split in the dataset.
-    before_len = len(extract_dataloader)
+    if hasattr(extract_dataset, "len"):
+        before_len = len(extract_dataloader)
     extract_dataloader = accelerator.prepare(
         extract_dataloader,
     )
-    after_len = len(extract_dataloader)
-    logger.info(f"[DEBUG] before prepare: len={before_len}, after: len={after_len}")
+    if hasattr(extract_dataset, "len"):
+        after_len = len(extract_dataset)
+        logger.info(f"[DEBUG] before prepare: len={before_len}, after: len={after_len}")
+    else:
+        logger.info(f"[DEBUG] No dataset len. Maybe an IterableDataset.")
 
     # We need to initialize the trackers we use, and also store our configuration.
     # The trackers initialize automatically on the main process.
