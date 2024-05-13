@@ -258,11 +258,13 @@ def main(args):
 
             # Save latents
             b, c, t, h, w = x.shape
+            video_n_frames = video_n_frames.detach().squeeze()
+            latent_n_frames = video_n_frames // ae_stride_t + 1
             if cache_cnt + b > args.latent_cache_size:  # cache is full, save
                 save_latents(cache_tensors, cache_tensor_tlens, cache_ids, args.output_dir, max_cnt=cache_cnt)
                 cache_cnt = 0
             cache_tensors[cache_cnt: cache_cnt + b, :, :t] = x.detach()
-            cache_tensor_tlens[cache_cnt: cache_cnt + b] = video_n_frames.detach().squeeze()
+            cache_tensor_tlens[cache_cnt: cache_cnt + b] = latent_n_frames
             if isinstance(video_ids, torch.Tensor):
                 cache_ids[cache_cnt: cache_cnt + b] = video_ids.detach()
             else:
@@ -282,7 +284,7 @@ def main(args):
                 validation_latent = x[0, :, :video_length].unsqueeze(0)
                 logger.info(f"Running validation (1/2)... \n"
                             f"Generating a video from the latent with caption: {validation_prompt}, "
-                            f"batched_length={video_length}")
+                            f"batched_length={args.num_frames}")
                 val_output = ae.decode(validation_latent)
                 val_output = (ae_denorm[args.ae](val_output[0]) * 255).add_(0.5).clamp_(0, 255).to(
                     dtype=torch.uint8).cpu().contiguous()  # t c h w
