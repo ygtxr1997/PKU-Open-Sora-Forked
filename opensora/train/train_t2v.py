@@ -445,7 +445,7 @@ def main(args):
                 cond_mask = batch["conda_mask"] if "conda_mask" in batch.keys() else None
             else:
                 raise TypeError(f"Batch type {type(batch)} not supported!")
-            print("[DEBUG] x.dtype:", x.dtype, input_ids.dtype, cond_mask.dtype)
+            print("[DEBUG] x.dtype:", x.device, x.dtype, input_ids.dtype, cond_mask.dtype)
 
             with accelerator.accumulate(model):
                 # Sample noise that we'll add to the latents
