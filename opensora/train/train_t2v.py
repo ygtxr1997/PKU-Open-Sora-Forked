@@ -435,7 +435,7 @@ def main(args):
         train_loss = 0.0
         for step, batch in enumerate(train_dataloader):
             if isinstance(batch, tuple) or isinstance(batch, list):
-                video_ids, x, input_ids, conda_mask = batch
+                video_ids, x, input_ids, cond_mask = batch
                 video_n_frames = None
             elif isinstance(batch, dict):
                 video_ids = batch["video_id"]
