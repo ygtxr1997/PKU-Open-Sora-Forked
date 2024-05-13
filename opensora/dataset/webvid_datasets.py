@@ -92,6 +92,8 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
         self.max_frame_stride = max_frame_stride
         self.llm_max_length = llm_max_length
         self.proportion_empty_prompts = proportion_empty_prompts
+        if self.logger is not None:
+            logger.info(f"[WebVidHFWebDataset] use_smaller_frames:{use_smaller_frames},")
 
         if transform is None:
             transform = transforms.Compose([
@@ -201,6 +203,11 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
         return sample
 
     def decord_read(self, byte_data: bytes):
+        """
+        self.num_frames: required frames
+        total_frames: video having frames
+        target_n_frames: output useful non-padding frames
+        """
         decord_vr = VideoReader(io.BytesIO(byte_data), ctx=decord.cpu(0))
         total_frames = len(decord_vr)
 
@@ -224,9 +231,10 @@ class WebVidHFWebDataset(torch.utils.data.IterableDataset):
         # Select a random clip
         rand_idx = random.randint(0, len(all_frames) - target_n_frames)
         frame_indices = all_frames[rand_idx:rand_idx + target_n_frames]
-        if total_frames < self.num_frames:  # If existing frames < needed max frames:
-            frame_indices += [all_frames[-1]] * (self.num_frames - target_n_frames)  # repeat last frames as padding
-        assert len(frame_indices) == self.num_frames, "[WebVidHFWebDataset] num_frames no consistent!"
+        if len(frame_indices) < self.num_frames:  # If existing frames < needed max frames:
+            frame_indices += [all_frames[-1]] * (self.num_frames - len(frame_indices))  # repeat last frames as padding
+        assert len(frame_indices) == self.num_frames, f"[WebVidHFWebDataset] num_frames no consistent! " \
+                                                      f"{len(frame_indices)} != {self.num_frames} ."
         video_data = decord_vr.get_batch(frame_indices).asnumpy()  # (T,H,W,C)
 
         # If too small resolution
