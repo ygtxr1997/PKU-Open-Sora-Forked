@@ -134,6 +134,11 @@ def main(args):
     # The VAE is in float32 to avoid NaN losses.
     ae.to(accelerator.device, dtype=torch.float32)
 
+    # Enable TF32 for faster training on Ampere GPUs,
+    # cf https://pytorch.org/docs/stable/notes/cuda.html#tensorfloat-32-tf32-on-ampere-devices
+    if args.allow_tf32:
+        torch.backends.cuda.matmul.allow_tf32 = True
+
     # Setup data:
     extract_dataset = getdataset(args, logger=logger)
     extract_dataloader = torch.utils.data.DataLoader(
@@ -417,7 +422,14 @@ def parser_args():
         default=None,
         help=("Resume from which global step."),
     )
-
+    parser.add_argument(
+        "--allow_tf32",
+        action="store_true",
+        help=(
+            "Whether or not to allow TF32 on Ampere GPUs. Can be used to speed up training. For more information, see"
+            " https://pytorch.org/docs/stable/notes/cuda.html#tensorfloat-32-tf32-on-ampere-devices"
+        ),
+    )
     parser.add_argument(
         "--dataloader_num_workers",
         type=int,

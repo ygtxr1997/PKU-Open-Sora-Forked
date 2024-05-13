@@ -85,7 +85,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --data_path ${DATA_PATH} \
   --replace_root ${REPLACE_ROOT}  \
   --sample_rate 1 \
-  --num_frames 384 \
+  --num_frames 385 \
   --use_smaller_frames  \
   --max_image_size 512 \
   --wh_ratio "16:9" \
@@ -96,6 +96,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --report_to="wandb" \
   --validation_steps=1000000 \
   --output_dir=${OUTPUT_DIR} \
+  --allow_tf32 \
   --logging_dir="save_latents_log"  \
   --use_deepspeed \
   --model_max_length 300 \
