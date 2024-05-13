@@ -433,8 +433,20 @@ def main(args):
 
     for epoch in range(first_epoch, args.num_train_epochs):
         train_loss = 0.0
-        for step, (video_ids, x, input_ids, cond_mask) in enumerate(train_dataloader):
+        for step, batch in enumerate(train_dataloader):
+            if isinstance(batch, tuple) or isinstance(batch, list):
+                video_ids, x, input_ids, conda_mask = batch
+                video_n_frames = None
+            elif isinstance(batch, dict):
+                video_ids = batch["video_id"]
+                x = batch["video"]
+                video_n_frames = batch["video_n_frames"].squeeze()  # (B,)
+                input_ids = batch["text_ids"] if "text_ids" in batch.keys() else None
+                cond_mask = batch["conda_mask"] if "conda_mask" in batch.keys() else None
+            else:
+                raise TypeError(f"Batch type {type(batch)} not supported!")
             print("[DEBUG] x.dtype:", x.dtype, input_ids.dtype, cond_mask.dtype)
+
             with accelerator.accumulate(model):
                 # Sample noise that we'll add to the latents
                 x = x.to(accelerator.device)  # B C T+num_images H W, 16 + 4

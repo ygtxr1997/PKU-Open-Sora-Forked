@@ -229,14 +229,14 @@ def main(args):
     cache_cnt = 0
     for step, batch in enumerate(extract_dataloader):
         if isinstance(batch, tuple) or isinstance(batch, list):
-            video_ids, x, text_ids, conda_mask = batch
+            video_ids, x, text_ids, cond_mask = batch
             video_n_frames = None
         elif isinstance(batch, dict):
             video_ids = batch["video_id"]
             x = batch["video"]
             video_n_frames = batch["video_n_frames"].squeeze()  # (B,)
             text_ids = batch["text_ids"] if "text_ids" in batch.keys() else None
-            conda_mask = batch["conda_mask"] if "conda_mask" in batch.keys() else None
+            cond_mask = batch["cond_mask"] if "cond_mask" in batch.keys() else None
         else:
             raise TypeError(f"Batch type {type(batch)} not supported!")
 
