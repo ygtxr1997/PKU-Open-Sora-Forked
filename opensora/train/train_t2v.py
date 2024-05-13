@@ -873,6 +873,7 @@ def parser_args():
     parser.add_argument("--cache_dir", type=str, default=None,
                         help="HuggingFace cache dir. Default is ~/.cache/huggingface/hub/")
     parser.add_argument("--no_crop_time", action="store_true", help="if true, close time cropping for dataset")
+    parser.add_argument("--no_text", action="store_true", help="If true, turn off loading captions")
     parser.add_argument("--use_smaller_frames", action="store_true",
                         help="If true, also save video frames less than `num_frames`")
     parser.add_argument("--internvid_dir", type=str, default=None,
