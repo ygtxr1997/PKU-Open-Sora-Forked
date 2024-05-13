@@ -224,6 +224,7 @@ def main(args):
          video_length * 10 + args.use_image_num, latent_size[0], latent_size[1]),
         dtype=torch.float32, device=accelerator.device, requires_grad=False)
     cache_tensor_tlens = torch.zeros(args.latent_cache_size, dtype=torch.long, requires_grad=False)
+    cache_video_tlens = torch.zeros(args.latent_cache_size, dtype=torch.long, requires_grad=False)
     cache_ids = [None] * args.latent_cache_size
     cache_cnt = 0
     for step, batch in enumerate(extract_dataloader):
@@ -267,10 +268,12 @@ def main(args):
             video_n_frames = video_n_frames.detach()
             latent_n_frames = video_n_frames // ae_stride_t + 1
             if cache_cnt + b > args.latent_cache_size:  # cache is full, save
-                save_latents(cache_tensors, cache_tensor_tlens, cache_ids, args.output_dir, max_cnt=cache_cnt)
+                save_latents(cache_tensors, cache_tensor_tlens, cache_video_tlens,
+                             cache_ids, args.output_dir, max_cnt=cache_cnt)
                 cache_cnt = 0
             cache_tensors[cache_cnt: cache_cnt + b, :, :t] = x.detach()
             cache_tensor_tlens[cache_cnt: cache_cnt + b] = latent_n_frames
+            cache_video_tlens[cache_cnt: cache_cnt + b] = video_n_frames
             if isinstance(video_ids, torch.Tensor):
                 cache_ids[cache_cnt: cache_cnt + b] = video_ids.detach()
             else:
@@ -338,7 +341,8 @@ def main(args):
 
     # Save the rest latents
     if cache_cnt > 0:
-        save_latents(cache_tensors, cache_tensor_tlens, cache_ids, args.output_dir, max_cnt=cache_cnt)
+        save_latents(cache_tensors, cache_tensor_tlens, cache_video_tlens,
+                     cache_ids, args.output_dir, max_cnt=cache_cnt)
         cache_cnt = 0
 
     accelerator.wait_for_everyone()
@@ -347,6 +351,7 @@ def main(args):
 
 def save_latents(latents: torch.Tensor,
                  latent_tlens: torch.Tensor,
+                 video_tlens: torch.Tensor,
                  vids: Union[torch.Tensor, list],
                  save_root: str, max_cnt: int = -1):
     b = latents.shape[0]  # (B,C,T,H,W)
@@ -360,10 +365,11 @@ def save_latents(latents: torch.Tensor,
     for i in range(b):
         if i >= max_cnt:
             break
-        tlen = latent_tlens[i]
-        latent = latents[i, :, tlen]
+        latent_tlen = latent_tlens[i]
+        video_tlen = video_tlens[i]
+        latent = latents[i, :, latent_tlen]
         video_id = vids[i]
-        save_fn = os.path.join(save_root, f"{video_id}_@t{tlen}.npy")
+        save_fn = os.path.join(save_root, f"{video_id}_@t{video_tlen}.npy")
         np.save(save_fn, latent)
 
 

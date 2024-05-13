@@ -68,7 +68,7 @@ export INTERNVID_META="/exthome/future-technology-college-data/Internvid_dataset
 export PANDA70M_DIR="/public/home/201810101923/datasets/panda70m/clips_0"
 export PANDA70M_META="/public/home/201810101923/datasets/panda70m/panda70m_training_clips_0.csv"
 export WEBVID_DIR="/exthome/future-technology-college-data/202321063560/webvid_data/webvid_train_data"
-export OUTPUT_DIR="/public/home/201810101923/datasets/webavid/latents_v257x288x512/latents"
+export OUTPUT_DIR="/public/home/201810101923/datasets/webvid/latents_v257x288x512/latents"
 echo "num_gpus: $NUM_GPUS, slurm_nnodes: $SLURM_NNODES"
 srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --multi_gpu  \
