@@ -104,7 +104,6 @@ def main(args):
     if args.enable_tiling:
         ae.vae.enable_tiling()
         ae.vae.tile_overlap_factor = args.tile_overlap_factor
-    text_enc = get_text_enc(args).eval()
 
     ae_stride_t, ae_stride_h, ae_stride_w = ae_stride_config[args.ae]
     args.ae_stride_t, args.ae_stride_h, args.ae_stride_w = ae_stride_t, ae_stride_h, ae_stride_w
@@ -130,7 +129,6 @@ def main(args):
 
     # Freeze vae and text encoders.
     ae.requires_grad_(False)
-    text_enc.requires_grad_(False)
 
     # Move unet, vae and text_encoder to device and cast to weight_dtype
     # The VAE is in float32 to avoid NaN losses.
@@ -243,6 +241,7 @@ def main(args):
             continue
 
         # Sample noise that we'll add to the latents
+        print("[DEBUG] x.device", x.device)
         x = x.to(accelerator.device)  # B C T+num_images H W, 16 + 4
 
         with torch.no_grad():
