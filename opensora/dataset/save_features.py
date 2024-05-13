@@ -234,7 +234,7 @@ def main(args):
         elif isinstance(batch, dict):
             video_ids = batch["video_id"]
             x = batch["video"]
-            video_n_frames = batch["video_n_frames"]  # (B,1)
+            video_n_frames = batch["video_n_frames"].squeeze()  # (B,)
             text_ids = batch["text_ids"] if "text_ids" in batch.keys() else None
             conda_mask = batch["conda_mask"] if "conda_mask" in batch.keys() else None
         else:
@@ -248,6 +248,8 @@ def main(args):
 
         # Sample noise that we'll add to the latents
         x = x.to(accelerator.device)  # B C T+num_images H W, 16 + 4
+        batch_max_frames = video_n_frames.max()
+        x = x[:, :, batch_max_frames]  # use only first several frames
 
         with torch.no_grad():
             # Map input images to latent space + normalize latents
@@ -263,7 +265,7 @@ def main(args):
 
             # Save latents
             b, c, t, h, w = x.shape
-            video_n_frames = video_n_frames.detach().squeeze()
+            video_n_frames = video_n_frames.detach()
             latent_n_frames = video_n_frames // ae_stride_t + 1
             if cache_cnt + b > args.latent_cache_size:  # cache is full, save
                 save_latents(cache_tensors, cache_tensor_tlens, cache_ids, args.output_dir, max_cnt=cache_cnt)
