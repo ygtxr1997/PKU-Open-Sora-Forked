@@ -296,7 +296,7 @@ def main(args):
                 videos.append(val_output)
                 captions.append(f"{validation_prompt}. (frames:all={args.num_frames}),")
                 # 2. use the first useful non-padding frames, no padding frames
-                useful_frames = video_n_frames[0]
+                useful_frames = latent_n_frames[0]
                 validation_latent = x[0, :, :useful_frames].unsqueeze(0)
                 logger.info(f"Running validation (2/2)... \n"
                             f"Generating a video from the latent with caption: {validation_prompt}, "
