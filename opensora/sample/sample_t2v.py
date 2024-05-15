@@ -84,7 +84,11 @@ def main(args):
         ext = 'mp4'
 
     # set eval mode
+    transformer_model.train()
+    print("[DEBUG] train:", transformer_model.parameters())
     transformer_model.eval()
+    print("[DEBUG] eval:", transformer_model.parameters())
+    exit()
     vae.eval()
     text_encoder.eval()
 
