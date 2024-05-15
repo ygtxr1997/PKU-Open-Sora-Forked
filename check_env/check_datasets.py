@@ -211,6 +211,12 @@ def check_batch():
         WEBVID_LATENT_META, WEBVID_LATENT_DIR, logger=logger,
         tokenizer=tokenizer,
     )
+    total_len = len(train_dataset)
+    print("len=", total_len)
+    print("[0]=")
+    print_batch(train_dataset[0])
+    print("[-1]=")
+    print_batch(train_dataset[total_len - 1])
     # from opensora.models.ae import getae, getae_wrapper
     # from opensora.models.text_encoder import get_text_enc
     # import wandb

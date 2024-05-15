@@ -286,7 +286,7 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
         video_ids_sorted = set([int(x) for x in video_ids])
         for i in tqdm(range(len(latent_fns)), desc="Check latent files"):
             fn = latent_fns[i]
-            latent_fn_video_id = int(os.path.splitext(fn)[0])
+            latent_fn_video_id = int(os.path.splitext(fn)[0].split("_@t")[0])
             if latent_fn_video_id in video_ids_sorted:
                 good += 1
                 samples.append(
