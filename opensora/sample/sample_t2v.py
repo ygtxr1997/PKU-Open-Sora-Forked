@@ -85,9 +85,11 @@ def main(args):
 
     # set eval mode
     transformer_model.train()
-    print("[DEBUG] train:", transformer_model.parameters())
+    for name, param in transformer_model.named_parameters():
+        print("[DEBUG] train:", name)
     transformer_model.eval()
-    print("[DEBUG] eval:", transformer_model.parameters())
+    for name, param in transformer_model.named_parameters():
+        print("[DEBUG] eval:", name)
     exit()
     vae.eval()
     text_encoder.eval()
