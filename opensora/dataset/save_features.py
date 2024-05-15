@@ -152,6 +152,7 @@ def main(args):
 
     # Prepare everything with our `accelerator`.
     # NO need to split again if already split in the dataset.
+    # Warning: using accelerator.prepare will result in I/O stuck if dataset is a torch.IterableDataset
     if hasattr(extract_dataset, "len"):
         before_len = len(extract_dataloader)
         extract_dataloader = accelerator.prepare(
@@ -309,7 +310,7 @@ def main(args):
                 val_output = (ae_denorm[args.ae](val_output[0]) * 255).add_(0.5).clamp_(0, 255).to(
                     dtype=torch.uint8).cpu().contiguous()  # t c h w
                 videos.append(val_output.numpy())
-                captions.append(f"{validation_prompt}. (frames:useful={useful_frames}),")
+                captions.append(f"{validation_prompt}. (frames:useful={video_n_frames[0]}),")
             # videos = torch.stack(videos).numpy()
             for tracker in accelerator.trackers:
                 if tracker.name == "tensorboard":

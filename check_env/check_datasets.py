@@ -196,21 +196,21 @@ def check_batch():
     # WEBVID_DIR = "/public/home/201810101923/datasets/webvid/data_demo"
     tokenizer = AutoTokenizer.from_pretrained(
             args.text_encoder_name, cache_dir=args.cache_dir)
-    train_dataset = WebVidHFWebDataset(
-        WEBVID_DIR, logger=logger,
-        tokenizer=tokenizer,
-        norm_fun=ae_norm[args.ae],
-        num_frames=385,
-        target_size=(512, 288),
-        max_frame_stride=args.sample_rate,
-        use_smaller_frames=True,
-    )
-    # WEBVID_LATENT_META = "/public/home/201810101923/datasets/webvid/latents_129x288x512/latents_meta_all.csv"
-    # WEBVID_LATENT_DIR = "/public/home/201810101923/datasets/webvid/latents"
-    # train_dataset = WebVidLatentDataset(
-    #     WEBVID_LATENT_META, WEBVID_LATENT_DIR, logger=logger,
+    # train_dataset = WebVidHFWebDataset(
+    #     WEBVID_DIR, logger=logger,
     #     tokenizer=tokenizer,
+    #     norm_fun=ae_norm[args.ae],
+    #     num_frames=385,
+    #     target_size=(512, 288),
+    #     max_frame_stride=args.sample_rate,
+    #     use_smaller_frames=True,
     # )
+    WEBVID_LATENT_META = "/public/home/201810101923/datasets/webvid/latents_v257x288x512/latents_meta_all.csv"
+    WEBVID_LATENT_DIR = "/public/home/201810101923/datasets/webvid/latents_v257x288x512/latents"
+    train_dataset = WebVidLatentDataset(
+        WEBVID_LATENT_META, WEBVID_LATENT_DIR, logger=logger,
+        tokenizer=tokenizer,
+    )
     # from opensora.models.ae import getae, getae_wrapper
     # from opensora.models.text_encoder import get_text_enc
     # import wandb
