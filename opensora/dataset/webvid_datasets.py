@@ -283,10 +283,13 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
             self.logger.info(f"[WebVidLatentDataset] csv loaded data_len={len(video_ids)}")
         samples = []
         good, bad = 0, 0
+        video_frames_to_cnt = {}
         video_ids_sorted = set([int(x) for x in video_ids])
         for i in tqdm(range(len(latent_fns)), desc="Check latent files"):
-            fn = latent_fns[i]
-            latent_fn_video_id = int(os.path.splitext(fn)[0].split("_@t")[0])
+            fn = latent_fns[i]  # "xxxx_@t123.npy"
+            fn_base = os.path.splitext(fn)[0]  # "xxxx_@t123"
+            latent_fn_video_id = int(fn_base.split("_@t")[0])
+            latent_fn_video_frames = int(fn_base.split("_@t")[1])
             if latent_fn_video_id in video_ids_sorted:
                 good += 1
                 samples.append(
@@ -294,10 +297,17 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
                         "video_id": int(latent_fn_video_id),
                         "caption": str(video_id_to_caption[int(latent_fn_video_id)]),
                         "latent_fn": fn,
+                        "video_frames": latent_fn_video_frames,
                     }
                 )
+                if video_frames_to_cnt[latent_fn_video_frames] is None:
+                    video_frames_to_cnt[latent_fn_video_frames] = 0
+                else:
+                    video_frames_to_cnt[latent_fn_video_frames] += 1
             else:
                 bad += 1
+        for k, v in video_frames_to_cnt.items():
+            print(f"({k}):{v}")
         self.samples: List[Dict] = self._split_samples_by_rank(samples)
 
         self.tokenizer = tokenizer
@@ -359,6 +369,10 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
         self.logger.warning(f'Catch {error}, {self.samples[index]}, get random item once again, '
                             f'fail={self.fail_cnt}, success={self.success_cnt}')
         return self.__getitem__(random.randint(0, self.__len__() - 1))
+
+    @staticmethod
+    def collate_fn(sample: List[Dict]):
+        pass
 
     def __len__(self):
         return len(self.samples)

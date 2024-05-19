@@ -217,6 +217,7 @@ def check_batch():
     print_batch(train_dataset[0])
     print("[-1]=")
     print_batch(train_dataset[total_len - 1])
+    exit()
     from opensora.models.ae import getae, getae_wrapper
     from opensora.models.text_encoder import get_text_enc
     import wandb
