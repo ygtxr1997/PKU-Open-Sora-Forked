@@ -300,7 +300,7 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
                         "video_frames": latent_fn_video_frames,
                     }
                 )
-                if video_frames_to_cnt[latent_fn_video_frames] is None:
+                if video_frames_to_cnt.get(latent_fn_video_frames) is None:
                     video_frames_to_cnt[latent_fn_video_frames] = 0
                 else:
                     video_frames_to_cnt[latent_fn_video_frames] += 1
