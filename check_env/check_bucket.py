@@ -1,3 +1,4 @@
+import time
 import numpy as np
 
 import torch
@@ -16,7 +17,7 @@ def main():
 
     for i in range(len(num_frames)):
         t, h, w = num_frames[i], heights[i], widths[i]
-        bucket_id = bucket.get_bucket_id(t, h, w)
+        bucket_id = bucket.get_bucket_id(t, h, w, seed=time.time())
         print(f"({t}, {h}, {w}): {bucket_id}")
 
 
