@@ -18,7 +18,9 @@ def main():
     for i in range(len(num_frames)):
         t, h, w = num_frames[i], heights[i], widths[i]
         bucket_id = bucket.get_bucket_id(t, h, w, seed=int(time.time()))
-        print(f"({t}, {h}, {w}): {bucket_id}")
+        thw = bucket.get_thw(bucket_id)
+        bs = bucket.get_batch_size(bucket_id)
+        print(f"({t}, {h}, {w}): {bucket_id}, thw={thw}, bs={bs}")
 
 
 if __name__ == "__main__":
