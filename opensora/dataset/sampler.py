@@ -54,7 +54,7 @@ class VariableVideoBatchSampler(DistributedSampler):
 
         pandarallel.initialize(nb_workers=self.num_bucket_build_workers, progress_bar=False)
         bucket_ids = self.dataset.data.parallel_apply(
-            apply,
+            self.dataset.pandas_apply,
             axis=1,
             method=self.bucket.get_bucket_id,
             frame_interval=self.dataset.max_frame_stride,

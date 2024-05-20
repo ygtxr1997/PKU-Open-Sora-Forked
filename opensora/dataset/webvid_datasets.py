@@ -269,6 +269,10 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
         self.world_size = world_size
         self.max_frame_stride = max_frame_stride
 
+        # 'latents_v257x288x512' -> (288,512)
+        height, width = os.path.basename(os.path.dirname(dataset_dir)).split('_')[1].split('x')[1:]
+        self.video_h, self.video_w = int(height), int(width)
+
         ''' load meta '''
         if self.logger is not None:
             self.logger.info(f"[WebVidLatentDataset] loading csv: {dataset_meta}")
@@ -300,6 +304,8 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
                         "caption": str(video_id_to_caption[int(latent_fn_video_id)]),
                         "latent_fn": fn,
                         "video_frames": int(latent_fn_video_frames),
+                        "video_height": int(self.video_h),
+                        "video_width": int(self.video_w)
                     }
                 )
                 if video_frames_to_cnt.get(latent_fn_video_frames) is None:
@@ -310,6 +316,7 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
                 bad += 1
         self.samples: List[Dict] = self._split_samples_by_rank(samples)
         self.data = pd.DataFrame(self.samples)
+        self.data["index"] = np.arange(len(self.data))
 
         self.tokenizer = tokenizer
         self.llm_max_length = llm_max_length
@@ -370,6 +377,19 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
         self.logger.warning(f'Catch {error}, {self.samples[index]}, get random item once again, '
                             f'fail={self.fail_cnt}, success={self.success_cnt}')
         return self.__getitem__(random.randint(0, self.__len__() - 1))
+
+    @staticmethod
+    def pandas_apply(data, bucket_method=None, frame_interval=1, seed=None, num_bucket=None):
+        latent_t = data['video_frames'] // 4 + 1
+        latent_h = data['video_height'] // 8
+        latent_w = data['video_width'] // 8
+        return bucket_method(
+            latent_t,
+            latent_h,
+            latent_w,
+            frame_interval,
+            seed + data["index"] * num_bucket,
+        )
 
     @staticmethod
     def collate_fn(sample: List[Dict], bucket_config: dict, ):

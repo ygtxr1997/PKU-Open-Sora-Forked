@@ -51,7 +51,6 @@ def init_logger():
         init_kwargs={
             "wandb":
                 {
-                    "dir": "logs",
                     "entity": None,
                     "name": f"({now})check_bucket",
                 }
