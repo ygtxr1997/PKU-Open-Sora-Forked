@@ -45,6 +45,8 @@ from diffusers.training_utils import EMAModel, compute_snr
 from diffusers.utils import check_min_version, is_wandb_available
 
 from opensora.dataset import getdataset, ae_denorm
+from opensora.dataset.sampler import VariableVideoBatchSampler
+from opensora.dataset.bucket_configs import bucket_webvid_latent_v257x288x512
 from opensora.models.ae import getae, getae_wrapper
 from opensora.models.ae.videobase import CausalVQVAEModelWrapper, CausalVAEModelWrapper
 from opensora.models.diffusion.diffusion import create_diffusion_T as create_diffusion
@@ -327,15 +329,35 @@ def main(args):
 
     # Setup data:
     train_dataset = getdataset(args, logger=logger)
-    train_dataloader = torch.utils.data.DataLoader(
-        train_dataset,
-        shuffle=True if args.dataset not in ("webvid",) else None,
-        # collate_fn=Collate(args),  # TODO: do not enable dynamic mask in this point
-        batch_size=args.train_batch_size,
-        num_workers=args.dataloader_num_workers,
-        pin_memory=True,
-        drop_last=True,
-    )
+    if not args.is_video_latent:  # default
+        train_dataloader = torch.utils.data.DataLoader(
+            train_dataset,
+            shuffle=True if args.dataset not in ("webvid",) else None,
+            # collate_fn=Collate(args),  # TODO: do not enable dynamic mask in this point
+            batch_size=args.train_batch_size,
+            num_workers=args.dataloader_num_workers,
+            pin_memory=True,
+            drop_last=True,
+        )
+    else:
+        sampler = VariableVideoBatchSampler(
+            dataset=train_dataset,
+            bucket_config=bucket_webvid_latent_v257x288x512,
+            num_replicas=accelerator.num_processes,
+            rank=accelerator.process_index,
+            shuffle=True,
+            seed=args.seed,
+            drop_last=True,
+            verbose=True,
+            num_bucket_build_workers=args.dataloader_num_workers,
+            logger=logger,
+        )
+        train_dataloader = torch.utils.data.DataLoader(
+            train_dataset,
+            num_workers=args.dataloader_num_workers,
+            batch_sampler=sampler,  # NOT sampler=xxx,
+            pin_memory=True,
+        )
 
     # Scheduler and math around the number of training steps.
     overrode_max_train_steps = False
