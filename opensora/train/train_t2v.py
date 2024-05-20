@@ -346,7 +346,7 @@ def main(args):
             num_replicas=accelerator.num_processes,
             rank=accelerator.process_index,
             shuffle=True,
-            seed=args.seed,
+            seed=42,
             drop_last=True,
             verbose=True,
             num_bucket_build_workers=args.dataloader_num_workers,
@@ -380,7 +380,8 @@ def main(args):
             model, optimizer, train_dataloader, lr_scheduler
         )
         after_len = len(train_dataloader)
-        logger.info(f"[DEBUG] before prepare: len={before_len}, after: len={after_len}")
+        logger.info(
+            f"[DEBUG] before prepare: len={before_len}, after: len={after_len}")
     else:
         # No need to split the dataloader, we split the data with the sampler instead
         model, optimizer, lr_scheduler = accelerator.prepare(
