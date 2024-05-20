@@ -415,7 +415,7 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
         elif isinstance(index, str):
             return self._getitem_by_str(index)
         else:
-            raise TypeError(f"[WebVidLatentDataset] Not supported index type: {type(index)}")
+            raise TypeError(f"[WebVidLatentDataset] Not supported index type: {type(index)}, {index}")
 
     def process_error(self, index, error=None):
         self.fail_cnt += 1
