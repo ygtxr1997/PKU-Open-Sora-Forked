@@ -260,12 +260,14 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
                  llm_max_length: int = 300,
                  rank: int = None,
                  world_size: int = None,
+                 max_frame_stride: int = 1,
                  ):
         self.dataset_meta = dataset_meta
         self.dataset_dir = dataset_dir
         self.logger = logger
         self.rank = rank
         self.world_size = world_size
+        self.max_frame_stride = max_frame_stride
 
         ''' load meta '''
         if self.logger is not None:
@@ -297,7 +299,7 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
                         "video_id": int(latent_fn_video_id),
                         "caption": str(video_id_to_caption[int(latent_fn_video_id)]),
                         "latent_fn": fn,
-                        "video_frames": latent_fn_video_frames,
+                        "video_frames": int(latent_fn_video_frames),
                     }
                 )
                 if video_frames_to_cnt.get(latent_fn_video_frames) is None:
@@ -306,9 +308,8 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
                     video_frames_to_cnt[latent_fn_video_frames] += 1
             else:
                 bad += 1
-        for k, v in video_frames_to_cnt.items():
-            print(f"({k}):{v}")
         self.samples: List[Dict] = self._split_samples_by_rank(samples)
+        self.data = pd.DataFrame(self.samples)
 
         self.tokenizer = tokenizer
         self.llm_max_length = llm_max_length
@@ -371,7 +372,7 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
         return self.__getitem__(random.randint(0, self.__len__() - 1))
 
     @staticmethod
-    def collate_fn(sample: List[Dict]):
+    def collate_fn(sample: List[Dict], bucket_config: dict, ):
         pass
 
     def __len__(self):
