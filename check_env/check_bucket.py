@@ -97,7 +97,7 @@ def check_sampler():
     train_dataloader = torch.utils.data.DataLoader(
         train_dataset,
         num_workers=4,
-        sampler=sampler,
+        batch_sampler=sampler,  # NOT sampler=xxx,
         pin_memory=True,
     )
 
