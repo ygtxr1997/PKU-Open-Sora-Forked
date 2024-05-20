@@ -1011,7 +1011,9 @@ class LatteT2V(ModelMixin, ConfigMixin):
 
                     else:
                         if i == 0:
-                            hidden_states = hidden_states + self.temp_pos_embed
+                            f_size = hidden_states.shape[1]
+                            hidden_states = hidden_states + self.temp_pos_embed[:, :f_size]
+                            print(f"[DEBUG] hidden_states: {hidden_states.shape}, temp_pos_embed: {self.temp_pos_embed.shape}")
 
                         hidden_states = torch.utils.checkpoint.checkpoint(
                             temp_block,
@@ -1062,7 +1064,10 @@ class LatteT2V(ModelMixin, ConfigMixin):
 
                     else:
                         if i == 0:
-                            hidden_states = hidden_states + self.temp_pos_embed
+                            f_size = hidden_states.shape[1]
+                            hidden_states = hidden_states + self.temp_pos_embed[:, :f_size]
+                            print(
+                                f"[DEBUG] hidden_states: {hidden_states.shape}, temp_pos_embed: {self.temp_pos_embed.shape}")
 
                         hidden_states = temp_block(
                             hidden_states,
