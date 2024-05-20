@@ -34,6 +34,7 @@ class VariableVideoBatchSampler(DistributedSampler):
         drop_last: bool = False,
         verbose: bool = False,
         num_bucket_build_workers: int = 1,
+        logger=None,
     ) -> None:
         super().__init__(
             dataset=dataset, num_replicas=num_replicas, rank=rank, shuffle=shuffle, seed=seed, drop_last=drop_last
@@ -47,10 +48,14 @@ class VariableVideoBatchSampler(DistributedSampler):
         self._get_num_batch_cached_bucket_sample_dict = None
         self.num_bucket_build_workers = num_bucket_build_workers
 
+        self.logger = logger
+
     def group_by_bucket(self) -> dict:
         """ Group the dataset by bucket_id, called at the beginning of each epoch. """
         bucket_sample_dict = OrderedDict()
 
+        if self.logger is not None:
+            self.logger.info("[VariableVideoBatchSampler] Grouping and calculating buckets...")
         pandarallel.initialize(nb_workers=self.num_bucket_build_workers, progress_bar=False)
         bucket_ids = self.dataset.data.parallel_apply(
             self.dataset.pandas_apply,
@@ -97,7 +102,7 @@ class VariableVideoBatchSampler(DistributedSampler):
         bucket_last_consumed = OrderedDict()        # {BUCKET_ID_TUPLE: LAST_CONSUMED_INDEX, ...}
 
         # Preparing: process the samples
-        for bucket_id, data_list in bucket_sample_dict.items():
+        for bucket_id, data_list in bucket_sample_dict.items():  # {BUCKET_ID_TUPLE:[DATASET_INDEX, ...], ...}
             # handle drop_last
             bs_per_gpu = self.bucket.get_batch_size(bucket_id)
             remainder = len(data_list) % bs_per_gpu
@@ -177,7 +182,7 @@ class VariableVideoBatchSampler(DistributedSampler):
                 else:
                     bucket_last_consumed[bucket_id] = bucket_bs
 
-            # compute the range of data accessed by each GPU
+            # compute the range of data accessed by each GPU, split data to ranks
             bucket_id = bucket_access_list[self.rank]
             boundary = bucket_access_boundaries[self.rank]
             cur_micro_batch = bucket_sample_dict[bucket_id][boundary[0]: boundary[1]]

@@ -340,7 +340,8 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
                              f"range:{rank_indices[0]}-{rank_indices[-1]}", main_process_only=False)
         return [samples[i] for i in rank_indices]
 
-    def __getitem__(self, index):
+    def _getitem_by_int(self, int_index: int):
+        index = int_index
         if index in self.mem_bad_indices:
             return self.process_error(index, f"Skip bad index={index}")
         try:
@@ -371,6 +372,50 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
             return latent, input_ids, cond_mask
         except Exception as e:
             return self.process_error(index, e)
+
+    def _getitem_by_str(self, str_index: str):
+        """ {idx}-{real_t}-{real_h}-{real_w} """
+        index, latent_t, latent_h, latent_w = str_index.split('-')
+        index = int(index)
+        if index in self.mem_bad_indices:
+            return self.process_error(index, f"Skip bad index={index}")
+        try:
+            example = self.samples[index]
+            latent_fn = example["latent_fn"]
+            caption = example['caption']
+            latent_path = os.path.join(self.dataset_dir, latent_fn)
+
+            # Read latent from path
+            latent = np.load(latent_path)  # (C,T,H,W)
+            latent = latent[:, :latent_t]
+
+            # Text
+            text = f"{caption}, random flipped watermark: SHUTTERSTOCK"
+            text = text_preprocessing(text)
+            text_tokens_and_mask = self.tokenizer(
+                text,
+                max_length=self.llm_max_length,
+                padding='max_length',
+                truncation=True,
+                return_attention_mask=True,
+                add_special_tokens=True,
+                return_tensors='pt'
+            )
+            input_ids = text_tokens_and_mask['input_ids'].squeeze(0)
+            cond_mask = text_tokens_and_mask['attention_mask'].squeeze(0)
+
+            self.success_cnt += 1
+            return latent, input_ids, cond_mask
+        except Exception as e:
+            return self.process_error(index, e)
+
+    def __getitem__(self, index):
+        if isinstance(index, int):
+            return self._getitem_by_int(index)
+        elif isinstance(index, str):
+            return self._getitem_by_str(index)
+        else:
+            raise TypeError(f"[WebVidLatentDataset] Not supported index type: {type(index)}")
 
     def process_error(self, index, error=None):
         self.fail_cnt += 1

@@ -1,5 +1,6 @@
 import time
 import numpy as np
+from tqdm import tqdm
 
 import torch
 import torch.utils.data
@@ -63,6 +64,7 @@ def check_sampler():
     from transformers import AutoTokenizer
     from opensora.dataset.webvid_datasets import WebVidHFWebDataset, WebVidLatentDataset
     from opensora.dataset.sampler import VariableVideoBatchSampler
+    from .check_datasets import print_batch
 
     accelerator, logger = init_logger()
     tokenizer = AutoTokenizer.from_pretrained(
@@ -93,11 +95,16 @@ def check_sampler():
 
     train_dataloader = torch.utils.data.DataLoader(
         train_dataset,
-        shuffle=False,
-        batch_size=2,
+        shuffle=True,
+        batch_size=2,  # variable?
         num_workers=4,
         drop_last=True,
+        sampler=sampler,
+        pin_memory=True,
     )
+
+    for idx, batch in enumerate(tqdm(train_dataloader)):
+        print_batch(batch)
 
 
 if __name__ == "__main__":
