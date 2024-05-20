@@ -406,7 +406,7 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
             cond_mask = text_tokens_and_mask['attention_mask'].squeeze(0)
 
             self.success_cnt += 1
-            return latent, input_ids, cond_mask
+            return index, latent, input_ids, cond_mask
         except Exception as e:
             return self.process_error(index, e)
 
