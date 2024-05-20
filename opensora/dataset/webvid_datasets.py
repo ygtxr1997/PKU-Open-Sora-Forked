@@ -377,6 +377,7 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
         """ {idx}-{real_t}-{real_h}-{real_w} """
         index, latent_t, latent_h, latent_w = str_index.split('-')
         index = int(index)
+        latent_t = int(latent_t)
         if index in self.mem_bad_indices:
             return self.process_error(index, f"Skip bad index={index}")
         try:
