@@ -4,7 +4,6 @@ from pprint import pprint
 from typing import Iterator, List, Optional
 
 import torch
-import torch.distributed as dist
 from pandarallel import pandarallel
 from torch.utils.data import DistributedSampler, Dataset
 
@@ -216,7 +215,7 @@ class VariableVideoBatchSampler(DistributedSampler):
             num_aspect_dict[k[-1]] += size
             num_hwt_dict[k[:-1]] += size
             num_batch += size // self.bucket.get_batch_size(k[:-1])
-        if dist.get_rank() == 0 and verbose:
+        if self.rank == 0 and verbose:
             print(f"Total training samples: {total_samples}, num buckets: {len(num_dict)}")
             print("Bucket samples:")
             pprint(num_dict)
