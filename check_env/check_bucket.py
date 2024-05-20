@@ -89,16 +89,14 @@ def check_sampler():
         drop_last=True,
         verbose=True,
         num_bucket_build_workers=6,
+        logger=logger,
     )
     num_steps_per_epoch = sampler.get_num_batch() // world_size
     print("[DEBUG] num_steps_per_epoch:", num_steps_per_epoch)
 
     train_dataloader = torch.utils.data.DataLoader(
         train_dataset,
-        shuffle=True,
-        batch_size=2,  # variable?
         num_workers=4,
-        drop_last=True,
         sampler=sampler,
         pin_memory=True,
     )
