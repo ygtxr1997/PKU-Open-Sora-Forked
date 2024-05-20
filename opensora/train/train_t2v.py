@@ -346,7 +346,7 @@ def main(args):
             num_replicas=accelerator.num_processes,
             rank=accelerator.process_index,
             shuffle=True,
-            seed=42,
+            seed=int(time.time()),
             drop_last=True,
             verbose=True,
             num_bucket_build_workers=args.dataloader_num_workers,

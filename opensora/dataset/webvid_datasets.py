@@ -369,7 +369,7 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
             cond_mask = text_tokens_and_mask['attention_mask'].squeeze(0)
 
             self.success_cnt += 1
-            return latent, input_ids, cond_mask
+            return int_index, latent, input_ids, cond_mask
         except Exception as e:
             return self.process_error(index, e)
 
@@ -378,6 +378,11 @@ class WebVidLatentDataset(torch.utils.data.Dataset):
         index, latent_t, latent_h, latent_w = str_index.split('-')
         index = int(index)
         latent_t = int(latent_t)
+        if self.success_cnt == 0 and self.fail_cnt == 0 and os.environ.get("RANK") is not None:
+            global_gpus = int(os.environ["WORLD_SIZE"])
+            global_rank = int(os.environ["RANK"])
+            print(f"[DEBUG] rank({global_rank}/{global_gpus}) "
+                  f"iterating {index}: {self.samples[index]['caption'][:40]}")
         if index in self.mem_bad_indices:
             return self.process_error(index, f"Skip bad index={index}")
         try:
