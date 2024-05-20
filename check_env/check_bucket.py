@@ -64,7 +64,7 @@ def check_sampler():
     from transformers import AutoTokenizer
     from opensora.dataset.webvid_datasets import WebVidHFWebDataset, WebVidLatentDataset
     from opensora.dataset.sampler import VariableVideoBatchSampler
-    from .check_datasets import print_batch
+    from check_env.check_datasets import print_batch
 
     accelerator, logger = init_logger()
     tokenizer = AutoTokenizer.from_pretrained(
