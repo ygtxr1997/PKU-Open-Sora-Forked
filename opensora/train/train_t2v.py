@@ -340,6 +340,8 @@ def main(args):
             drop_last=True,
         )
     else:
+        if accelerator.is_main_process:
+            print("[DEBUG] bucket_webvid_latent_v257x288x512:", bucket_webvid_latent_v257x288x512)
         sampler = VariableVideoBatchSampler(
             dataset=train_dataset,
             bucket_config=bucket_webvid_latent_v257x288x512,
