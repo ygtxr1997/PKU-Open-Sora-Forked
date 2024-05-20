@@ -56,7 +56,7 @@ class VariableVideoBatchSampler(DistributedSampler):
         bucket_ids = self.dataset.data.parallel_apply(
             self.dataset.pandas_apply,
             axis=1,
-            method=self.bucket.get_bucket_id,
+            bucket_method=self.bucket.get_bucket_id,
             frame_interval=self.dataset.max_frame_stride,
             seed=self.seed + self.epoch,
             num_bucket=self.bucket.num_bucket,
