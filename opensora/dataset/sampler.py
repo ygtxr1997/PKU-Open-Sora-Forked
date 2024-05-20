@@ -235,9 +235,11 @@ class VariableVideoBatchSampler(DistributedSampler):
         super().set_epoch(epoch)
 
     def __len__(self) -> int:
-        warnings.warn(
-            "The length of VariableVideoBatchSampler is dynamic and may not be accurate. Return the max value."
-        )
+        if self.logger is not None:
+            self.logger.info(
+                "[Warning] The length of VariableVideoBatchSampler is dynamic and may not be accurate. "
+                "Return the max value."
+            )
         min_batch_size = None
         for v in self.bucket.bucket_bs.values():
             for bs in v.values():
