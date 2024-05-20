@@ -321,13 +321,20 @@ ASPECT_RATIO_256 = {
 }
 
 
-def get_closest_ratio(height: float, width: float, ratios: dict):
+# S = 2304
+ASPECT_RATIO_LATENT_36x64 = {
+    "0.56": (36, 64),  # base
+}
+
+
+def get_closest_ratio(height: float, width: float, ratios: dict) -> str:
     aspect_ratio = height / width
     closest_ratio = min(ratios.keys(), key=lambda ratio: abs(float(ratio) - aspect_ratio))
     return closest_ratio
 
 
 ASPECT_RATIOS = {
+    "latent_26x64": (2304, ASPECT_RATIO_LATENT_36x64),
     "144p": (36864, ASPECT_RATIO_144P),
     "256": (65536, ASPECT_RATIO_256),
     "240p": (102240, ASPECT_RATIO_240P),

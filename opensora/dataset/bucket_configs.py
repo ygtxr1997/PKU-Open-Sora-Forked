@@ -1,5 +1,5 @@
 """
-"NUM_PIXELS": {NUM_FRAMES: (PROB_KEEP, BATCH_SIZE), ...}
+"ID_PIXELS": {NUM_FRAMES: (PROB_KEEP_PIXELS, BATCH_SIZE, Optional[PROB_KEEP_FRAMES]), ...}
 If BATCH_SIZE is None, go to the lower pixel-level.
 """
 
@@ -31,4 +31,8 @@ bucket_hpcai_stage3 = {  # 13s/it
     "480p": {1: (0.4, 80), 16: (0.6, 6), 32: (0.6, 3), 64: (0.6, 1), 128: (0.0, None)},
     "720p": {1: (0.4, 40), 16: (0.6, 3), 32: (0.6, 1), 96: (0.0, None)},
     "1024": {1: (0.3, 40)},
+}
+
+bucket_webvid_latent_v257x288x512 = {  # max_c:33
+    "latent_36x64": {1: (1.0, 200, 1.0), 3: (1.0, 24, 0.5), 5: (1.0, 12, 0.5), 9: (1.0, 8, 0.5), 17: (1.0, 4, 0.5), 33: (1.0, 2, 0.5)},
 }
