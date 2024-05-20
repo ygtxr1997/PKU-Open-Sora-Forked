@@ -334,7 +334,7 @@ def get_closest_ratio(height: float, width: float, ratios: dict) -> str:
 
 
 ASPECT_RATIOS = {
-    "latent_26x64": (2304, ASPECT_RATIO_LATENT_36x64),
+    "latent_36x64": (2304, ASPECT_RATIO_LATENT_36x64),
     "144p": (36864, ASPECT_RATIO_144P),
     "256": (65536, ASPECT_RATIO_256),
     "240p": (102240, ASPECT_RATIO_240P),
