@@ -62,7 +62,7 @@ export PYTHONPATH=${PWD}
 export DATA_PATH="/public/home/201810101923/datasets/opensora/dataset_v1.0.0_tmptest_sorted/sharegpt4v_path_cap_64x512x512.json"
 export REPLACE_ROOT="/public/home/201810101923/datasets/opensora/dataset_v1.0.0_tmptest_sorted"
 export MODEL_CACHE_DIR="/public/home/201810101923/models/opensora/v1.0.0"
-export PRETRAINED_MODEL_PT="/public/home/201810101923/models/opensora/v1.0.0_sorted/out_webvidlatent_129x288x512/checkpoint-10000/model/diffusion_pytorch_model.safetensors"
+export PRETRAINED_MODEL_PT="/public/home/201810101923/models/opensora/v1.0.0_sorted/out_panda70m_129x288x512/checkpoint-36000/model/diffusion_pytorch_model.safetensors"
 export INTERNVID_DIR="/exthome/future-technology-college-data/Internvid_dataset/InternVid-10M-FLT-clip"
 export INTERNVID_META="/exthome/future-technology-college-data/Internvid_dataset/InternVid-10M-flt-clips1.jsonl"
 export PANDA70M_DIR="/public/home/201810101923/datasets/panda70m/clips_0"
@@ -103,7 +103,7 @@ srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --lr_warmup_steps=0 \
   --mixed_precision="bf16" \
   --report_to="wandb" \
-  --checkpointing_steps=200 \
+  --checkpointing_steps=100 \
   --output_dir ${OUTPUT_DIR} \
   --allow_tf32 \
   --pretrained ${PRETRAINED_MODEL_PT} \
