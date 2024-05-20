@@ -109,7 +109,7 @@ class Bucket:
             t_fail = True
             for t_id, prob_keep_pixels in t_criteria.items():  # NUM_FRAMES: big to small
                 ''' 2. Check num_frames '''
-                if (T > t_id * frame_interval and t_id != 1) or not t_fail:  # enough frames or already founded
+                if (T > t_id * frame_interval) or not t_fail:  # enough frames or already founded
                     t_fail = False  # enough frames, but still need to check frames drop rate
                     ''' 3. Check frames_drop_rate '''
                     rng = np.random.default_rng(seed + self.bucket_index[hw_id][1])
