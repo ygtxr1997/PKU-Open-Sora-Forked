@@ -6,6 +6,7 @@ import torch
 import argparse
 import torchvision
 
+from accelerate import Accelerator
 from diffusers.schedulers import (DDIMScheduler, DDPMScheduler, PNDMScheduler,
                                   EulerDiscreteScheduler, DPMSolverMultistepScheduler,
                                   HeunDiscreteScheduler, EulerAncestralDiscreteScheduler,
@@ -34,9 +35,11 @@ import imageio
 
 @torch.no_grad()
 def main(args):
+    accelerator = Accelerator()
+
     # torch.manual_seed(args.seed)
     torch.set_grad_enabled(False)
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = accelerator.device
 
     vae = getae_wrapper(args.ae)(args.model_path, subfolder="vae", cache_dir=args.cache_dir, is_training=False).to(device, dtype=torch.float16)
     if args.enable_tiling:
@@ -126,6 +129,7 @@ def main(args):
     if len(args.text_prompt) == 1 and args.text_prompt[0].endswith('txt'):
         text_prompt = open(args.text_prompt[0], 'r').readlines()
         args.text_prompt = [i.strip() for i in text_prompt]
+    args.text_prompt = args.text_prompt[accelerator.process_index::accelerator.num_processes]
     for prompt in args.text_prompt:
         print('Processing the ({}) prompt'.format(prompt))
         videos = videogen_pipeline(prompt,
@@ -160,7 +164,7 @@ def main(args):
 
     # torchvision.io.write_video(args.save_img_path + '_%04d' % args.run_time + '-.mp4', video_grids, fps=6)
     if args.force_images:
-        save_image(video_grids / 255.0, os.path.join(args.save_img_path, f'{args.sample_method}_gs{args.guidance_scale}_s{args.num_sampling_steps}.{ext}'),
+        save_image(video_grids / 255.0, os.path.join(args.save_img_path, f'{args.sample_method}_gs{args.guidance_scale}_s{args.num_sampling_steps}_rank{accelerator.process_index}.{ext}'),
                    nrow=math.ceil(math.sqrt(len(video_grids))), normalize=True, value_range=(0, 1))
     else:
         video_grids = save_video_grid(video_grids)

@@ -5,7 +5,7 @@
 #SBATCH --exclude=gpu[1]
 #SBATCH --ntasks-per-node=1          # crucial - only 1 task per dist per node!
 #SBATCH --cpus-per-task=64           # number of cores per tasks
-#SBATCH --gres=gpu:1               # number of gpus
+#SBATCH --gres=gpu:8               # number of gpus
 #SBATCH --mem=500000MB                # memory
 #SBATCH --output=outputs/%x-%j.out   # output file name
 #SBATCH --time=30-00:00:00          # max time
@@ -13,7 +13,7 @@
 set -x -e
 
 # Set to equal gres=gpu:#
-export NUM_GPUS=1
+export NUM_GPUS=8
 
 export OMP_NUM_THREADS=4
 
