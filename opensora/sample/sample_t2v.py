@@ -168,7 +168,7 @@ def main(args):
                    nrow=math.ceil(math.sqrt(len(video_grids))), normalize=True, value_range=(0, 1))
     else:
         video_grids = save_video_grid(video_grids)
-        imageio.mimwrite(os.path.join(args.save_img_path, f'{args.sample_method}_gs{args.guidance_scale}_s{args.num_sampling_steps}.{ext}'), video_grids, fps=args.fps, quality=9)
+        imageio.mimwrite(os.path.join(args.save_img_path, f'{args.sample_method}_gs{args.guidance_scale}_s{args.num_sampling_steps}_rank{accelerator.process_index}.{ext}'), video_grids, fps=args.fps, quality=9)
 
     print('save path {}'.format(args.save_img_path))
 
