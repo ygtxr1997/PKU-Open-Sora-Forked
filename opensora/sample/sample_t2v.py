@@ -121,7 +121,7 @@ def main(args):
     # videogen_pipeline.enable_xformers_memory_efficient_attention()
 
     if not os.path.exists(args.save_img_path):
-        os.makedirs(args.save_img_path)
+        os.makedirs(args.save_img_path, exist_ok=True)
 
     video_grids = []
     if not isinstance(args.text_prompt, list):
