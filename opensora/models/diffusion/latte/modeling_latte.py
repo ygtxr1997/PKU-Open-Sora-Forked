@@ -1064,13 +1064,14 @@ class LatteT2V(ModelMixin, ConfigMixin):
                     else:
                         if i == 0:
                             bt_size, f_size, d_size = hidden_states.shape
-                            if f_size <= self.temp_pos_embed.shape[1]:
+                            self_temp_f_size = self.temp_pos_embed.shape[1]
+                            if f_size <= self_temp_f_size:
                                 hidden_states = hidden_states + self.temp_pos_embed[:, :f_size]
                             else:  # inference may use longer video times (frames)
                                 temp_pos_embed = get_1d_sincos_pos_embed(
-                                    d_size, f_size, interpolation_scale=1)  # 1152 hidden size
-                                self.temp_pos_embed = torch.from_numpy(temp_pos_embed).unsqueeze(0).to(hidden_states.device, dtype=hidden_states.dtype)
-                                hidden_states = hidden_states + self.temp_pos_embed
+                                    d_size, f_size - self_temp_f_size, interpolation_scale=1)  # 1152 hidden size
+                                extra_pos_embed = torch.from_numpy(temp_pos_embed).unsqueeze(0).to(hidden_states.device, dtype=hidden_states.dtype)
+                                hidden_states = hidden_states + torch.cat([self.temp_pos_embed, extra_pos_embed], dim=1)
 
                         hidden_states = temp_block(
                             hidden_states,
