@@ -75,6 +75,7 @@ def main(args):
     video_length = transformer_model.config.video_length
     sample_size: str = args.version if args.sample_size is None else args.sample_size
     train_frames, image_size_h, image_size_w = [int(x) for x in sample_size.split('x')]  # e.g. 65x512x512
+    video_length = train_frames
     latent_size = (image_size_h // ae_stride_config[args.ae][1], image_size_w // ae_stride_config[args.ae][2])
     vae.latent_size = latent_size
     if args.force_images:
