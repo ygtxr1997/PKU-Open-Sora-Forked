@@ -10,6 +10,8 @@
 import numpy as np
 import torch
 
+from .rotary_embedding_torch import RotaryEmbedding
+
 
 def get_2d_sincos_pos_embed(
         embed_dim, grid_size, cls_token=False, extra_tokens=0, interpolation_scale=1.0, base_size=16
