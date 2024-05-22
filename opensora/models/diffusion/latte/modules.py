@@ -36,6 +36,7 @@ from dataclasses import dataclass
 from torch import nn
 
 from opensora.models.diffusion.utils.pos_embed import get_2d_sincos_pos_embed
+from opensora.models.diffusion.latte.nus_blocks import LlamaRMSNorm
 
 if is_xformers_available():
     import xformers
@@ -160,6 +161,7 @@ class Attention(nn.Module):
         processor (`AttnProcessor`, *optional*, defaults to `None`):
             The attention processor to use. If `None`, defaults to `AttnProcessor2_0` if `torch 2.x` is used and
             `AttnProcessor` otherwise.
+        qk_norm: use qk norm?
     """
 
     def __init__(
@@ -170,6 +172,8 @@ class Attention(nn.Module):
         dim_head: int = 64,
         dropout: float = 0.0,
         bias: bool = False,
+        qk_norm: bool = False,
+        qk_norm_layer: nn.Module = LlamaRMSNorm,
         upcast_attention: bool = False,
         upcast_softmax: bool = False,
         cross_attention_norm: Optional[str] = None,
@@ -202,6 +206,8 @@ class Attention(nn.Module):
 
         self.scale_qk = scale_qk
         self.scale = dim_head**-0.5 if self.scale_qk else 1.0
+        self.q_norm = qk_norm_layer(dim_head) if qk_norm else nn.Identity()
+        self.k_norm = qk_norm_layer(dim_head) if qk_norm else nn.Identity()
 
         self.heads = heads
         # for slice_size > 0 the attention score computation
@@ -826,10 +832,12 @@ class AttnProcessor2_0:
         inner_dim = key.shape[-1]
         head_dim = inner_dim // attn.heads
 
-        query = query.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
-
+        query = query.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)  # -> (B, #heads, N, #dim)
         key = key.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
         value = value.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
+
+        query = attn.q_norm(query)
+        key = attn.k_norm(key)
 
         # the output of sdp = (batch, num_heads, seq_len, head_dim)
         # TODO: add support for attn.scale when we move to Torch 2.1
@@ -1066,7 +1074,8 @@ class BasicTransformerBlock_(nn.Module):
             bias=attention_bias,
             cross_attention_dim=cross_attention_dim if only_cross_attention else None,
             upcast_attention=upcast_attention,
-            attention_mode=attention_mode
+            attention_mode=attention_mode,
+            qk_norm=True,
         )
 
         # # 2. Cross-Attn
@@ -1342,7 +1351,8 @@ class BasicTransformerBlock(nn.Module):
             bias=attention_bias,
             cross_attention_dim=cross_attention_dim if only_cross_attention else None,
             upcast_attention=upcast_attention,
-            attention_mode=attention_mode
+            attention_mode=attention_mode,
+            qk_norm=True,
         )
 
         # 2. Cross-Attn
