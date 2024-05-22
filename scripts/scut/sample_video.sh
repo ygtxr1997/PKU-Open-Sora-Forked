@@ -63,8 +63,8 @@ export PROMPT_LIST="examples/demo.txt"
 export TRAIN_SIZE="v257x288x512"
 export SAMPLE_SIZE="257x288x512"
 export TRAIN_STEPS="100"
-export CKPT_PATH="/public/home/201810101923/code/PKU-Open-Sora-Forked/out_webvidlatent_${TRAIN_SIZE}/checkpoint-${TRAIN_STEPS}/model/diffusion_pytorch_model.safetensors"
-export OUTPUT_DIR="./sample_videos/demo_webvidlatent${TRAIN_SIZE}_${TRAIN_STEPS}_${SAMPLE_SIZE}_qknorm"
+export CKPT_PATH="/public/home/201810101923/code/PKU-Open-Sora-Forked/out_webvidlatent_${TRAIN_SIZE}_qknorm/checkpoint-${TRAIN_STEPS}/model/diffusion_pytorch_model.safetensors"
+export OUTPUT_DIR="./sample_videos/demo_webvidlatent${TRAIN_SIZE}_qknorm_${TRAIN_STEPS}_${SAMPLE_SIZE}"
 srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --config_file check_env/check_deepspeed_config.yaml \
   --num_processes $(($NUM_GPUS * $SLURM_NNODES)) --num_machines $SLURM_NNODES --machine_rank $SLURM_PROCID \
