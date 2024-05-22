@@ -70,7 +70,7 @@ export PANDA70M_META="/public/home/201810101923/datasets/panda70m/panda70m_train
 export WEBVID_DIR="/exthome/future-technology-college-data/202321063560/webvid_data/webvid_train_data"
 export WEBVID_LATENT_DIR="/public/home/201810101923/datasets/webvid/latents_v257x288x512/latents"
 export WEBVID_LATENT_META="/public/home/201810101923/datasets/webvid/latents_v257x288x512/latents_meta_all.csv"
-export OUTPUT_DIR="out_webvidlatent_v257x288x512"
+export OUTPUT_DIR="out_webvidlatent_v257x288x512_qknorm"
 export VIDEO_FOLDER="/remote-home1/dataset/data_split_tt"  # not used
 srun --jobid $SLURM_JOBID bash -c 'accelerate launch \
   --multi_gpu \
