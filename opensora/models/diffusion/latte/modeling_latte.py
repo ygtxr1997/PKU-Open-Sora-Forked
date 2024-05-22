@@ -18,7 +18,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
-from opensora.models.diffusion.utils.pos_embed import get_1d_sincos_pos_embed
+from opensora.models.diffusion.utils.pos_embed import get_1d_sincos_pos_embed, RotaryEmbedding
 from .modules import PatchEmbed, BasicTransformerBlock, BasicTransformerBlock_, AdaLayerNormSingle, Transformer3DModelOutput
 
 
@@ -655,7 +655,9 @@ class LatteT2V(ModelMixin, ConfigMixin):
             attention_type: str = "default",
             caption_channels: int = None,
             video_length: int = 16,
-            attention_mode: str = 'flash'
+            attention_mode: str = 'flash',
+            qk_norm: bool = False,
+            temporal_pos_embed_type: str = 'sinusoidal',  # 'sinusoidal', 'rope', 'xpos'
     ):
         super().__init__()
         self.use_linear_projection = use_linear_projection
@@ -671,7 +673,7 @@ class LatteT2V(ModelMixin, ConfigMixin):
         # Define whether input is continuous or discrete depending on configuration
         self.is_input_continuous = (in_channels is not None) and (patch_size is None)
         self.is_input_vectorized = num_vector_embeds is not None
-        self.is_input_patches = in_channels is not None and patch_size is not None
+        self.is_input_patches = in_channels is not None and patch_size is not None  # default
 
         if norm_type == "layer_norm" and num_embeds_ada_norm is not None:
             deprecation_message = (
@@ -757,6 +759,7 @@ class LatteT2V(ModelMixin, ConfigMixin):
                     norm_type=norm_type,
                     norm_elementwise_affine=norm_elementwise_affine,
                     norm_eps=norm_eps,
+                    qk_norm=qk_norm,
                     attention_type=attention_type,
                     attention_mode=attention_mode
                 )
@@ -765,6 +768,22 @@ class LatteT2V(ModelMixin, ConfigMixin):
         )
 
         # Define temporal transformers blocks
+        self.temporal_pos_embed_type = temporal_pos_embed_type
+        self.temp_rope_func = None
+        if self.temporal_pos_embed_type == 'sinusoidal':
+            interpolation_scale = self.config.video_length // 5  # => 5 (= 5 our causalvideovae) has interpolation scale 1
+            interpolation_scale = max(interpolation_scale, 1)
+            temp_pos_embed = get_1d_sincos_pos_embed(inner_dim, video_length, interpolation_scale=interpolation_scale)  # 1152 hidden size
+            self.register_buffer("temp_pos_embed", torch.from_numpy(temp_pos_embed).float().unsqueeze(0), persistent=False)
+        elif self.temporal_pos_embed_type == 'rope':
+            self.temp_rope = RotaryEmbedding(dim=attention_head_dim)
+            self.temp_rope_func = self.temp_rope.rotate_queries_or_keys
+        elif self.temporal_pos_embed_type == 'xpos':  # mostly used in autoregressive transformer, not text-to-video
+            self.temp_rope = RotaryEmbedding(dim=attention_head_dim, use_xpos=True, xpos_scale_base=video_length)
+            self.temp_rope_func = self.temp_rope.rotate_queries_and_keys
+        else:
+            raise TypeError(f"[LatteT2V] temporal_pos_embed_type: {temporal_pos_embed_type} not supported yet!")
+
         self.temporal_transformer_blocks = nn.ModuleList(
             [
                 BasicTransformerBlock_(  # one attention
@@ -782,6 +801,8 @@ class LatteT2V(ModelMixin, ConfigMixin):
                     norm_type=norm_type,
                     norm_elementwise_affine=norm_elementwise_affine,
                     norm_eps=norm_eps,
+                    qk_norm=qk_norm,
+                    rope_func=self.temp_rope_func,
                     attention_type=attention_type,
                     attention_mode=attention_mode
                 )
@@ -826,11 +847,6 @@ class LatteT2V(ModelMixin, ConfigMixin):
 
         # define temporal positional embedding
         # temp_pos_embed = self.get_1d_sincos_temp_embed(inner_dim, video_length)  # 1152 hidden size
-
-        interpolation_scale = self.config.video_length // 5  # => 5 (= 5 our causalvideovae) has interpolation scale 1
-        interpolation_scale = max(interpolation_scale, 1)
-        temp_pos_embed = get_1d_sincos_pos_embed(inner_dim, video_length, interpolation_scale=interpolation_scale)  # 1152 hidden size
-        self.register_buffer("temp_pos_embed", torch.from_numpy(temp_pos_embed).float().unsqueeze(0), persistent=False)
 
     def _set_gradient_checkpointing(self, module, value=False):
         self.gradient_checkpointing = value
@@ -990,7 +1006,7 @@ class LatteT2V(ModelMixin, ConfigMixin):
                         hidden_states_video = hidden_states[:, :frame, ...]
                         hidden_states_image = hidden_states[:, frame:, ...]
 
-                        if i == 0:
+                        if i == 0 and self.temporal_pos_embed_type == 'sinusoidal':
                             hidden_states_video = hidden_states_video + self.temp_pos_embed
 
                         hidden_states_video = torch.utils.checkpoint.checkpoint(
@@ -1010,7 +1026,7 @@ class LatteT2V(ModelMixin, ConfigMixin):
                                                   b=input_batch_size).contiguous()
 
                     else:
-                        if i == 0:
+                        if i == 0 and self.temporal_pos_embed_type == 'sinusoidal':
                             f_size = hidden_states.shape[1]
                             hidden_states = hidden_states + self.temp_pos_embed[:, :f_size]
 
@@ -1047,6 +1063,9 @@ class LatteT2V(ModelMixin, ConfigMixin):
                         hidden_states_video = hidden_states[:, :frame, ...]
                         hidden_states_image = hidden_states[:, frame:, ...]
 
+                        if i == 0 and self.temporal_pos_embed_type == 'sinusoidal':
+                            hidden_states_video = hidden_states_video + self.temp_pos_embed
+
                         hidden_states_video = temp_block(
                             hidden_states_video,
                             None,  # attention_mask
@@ -1062,16 +1081,10 @@ class LatteT2V(ModelMixin, ConfigMixin):
                                                   b=input_batch_size).contiguous()
 
                     else:
-                        if i == 0:
+                        if i == 0 and self.temporal_pos_embed_type == 'sinusoidal':
                             bt_size, f_size, d_size = hidden_states.shape
                             self_temp_f_size = self.temp_pos_embed.shape[1]
-                            if f_size <= self_temp_f_size:
-                                hidden_states = hidden_states + self.temp_pos_embed[:, :f_size]
-                            else:  # TODO: inference may use longer video times (frames), temp_pos_embedding principles?
-                                temp_pos_embed = get_1d_sincos_pos_embed(
-                                    d_size, f_size - self_temp_f_size, interpolation_scale=1)  # 1152 hidden size
-                                extra_pos_embed = torch.from_numpy(temp_pos_embed).unsqueeze(0).to(hidden_states.device, dtype=hidden_states.dtype)
-                                hidden_states = hidden_states + torch.cat([self.temp_pos_embed, extra_pos_embed], dim=1)
+                            hidden_states = hidden_states + self.temp_pos_embed[:, :f_size]
 
                         hidden_states = temp_block(
                             hidden_states,

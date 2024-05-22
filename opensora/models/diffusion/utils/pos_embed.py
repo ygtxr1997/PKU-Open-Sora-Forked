@@ -7,6 +7,8 @@
 # Position embedding utils
 # --------------------------------------------------------
 
+import functools
+from typing import Optional
 import numpy as np
 import torch
 
@@ -135,3 +137,56 @@ except ImportError:
             x = self.apply_rope1d(x, positions[:, :, 1], cos, sin)
             tokens = torch.cat((y, x), dim=-1)
             return tokens
+
+
+# Copied from: https://github.com/hpcaitech/Open-Sora/blob/main/opensora/models/layers/blocks.py
+class PositionEmbedding2D(torch.nn.Module):
+    def __init__(self, dim: int) -> None:
+        super().__init__()
+        self.dim = dim
+        assert dim % 4 == 0, "dim must be divisible by 4"
+        half_dim = dim // 2
+        inv_freq = 1.0 / (10000 ** (torch.arange(0, half_dim, 2).float() / half_dim))
+        self.register_buffer("inv_freq", inv_freq, persistent=False)
+
+    def _get_sin_cos_emb(self, t: torch.Tensor):
+        out = torch.einsum("i,d->id", t, self.inv_freq)
+        emb_cos = torch.cos(out)
+        emb_sin = torch.sin(out)
+        return torch.cat((emb_sin, emb_cos), dim=-1)
+
+    @functools.lru_cache(maxsize=512)
+    def _get_cached_emb(
+        self,
+        device: torch.device,
+        dtype: torch.dtype,
+        h: int,
+        w: int,
+        scale: float = 1.0,
+        base_size: Optional[int] = None,
+    ):
+        grid_h = torch.arange(h, device=device) / scale
+        grid_w = torch.arange(w, device=device) / scale
+        if base_size is not None:
+            grid_h *= base_size / h
+            grid_w *= base_size / w
+        grid_h, grid_w = torch.meshgrid(
+            grid_w,
+            grid_h,
+            indexing="ij",
+        )  # here w goes first
+        grid_h = grid_h.t().reshape(-1)
+        grid_w = grid_w.t().reshape(-1)
+        emb_h = self._get_sin_cos_emb(grid_h)
+        emb_w = self._get_sin_cos_emb(grid_w)
+        return torch.concat([emb_h, emb_w], dim=-1).unsqueeze(0).to(dtype)
+
+    def forward(
+        self,
+        x: torch.Tensor,
+        h: int,
+        w: int,
+        scale: Optional[float] = 1.0,
+        base_size: Optional[int] = None,
+    ) -> torch.Tensor:
+        return self._get_cached_emb(x.device, x.dtype, h, w, scale, base_size)

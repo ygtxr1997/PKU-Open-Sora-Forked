@@ -174,6 +174,7 @@ class Attention(nn.Module):
         bias: bool = False,
         qk_norm: bool = False,
         qk_norm_layer: nn.Module = LlamaRMSNorm,
+        rope_func: Callable = None,
         upcast_attention: bool = False,
         upcast_softmax: bool = False,
         cross_attention_norm: Optional[str] = None,
@@ -208,6 +209,7 @@ class Attention(nn.Module):
         self.scale = dim_head**-0.5 if self.scale_qk else 1.0
         self.q_norm = qk_norm_layer(dim_head) if qk_norm else nn.Identity()
         self.k_norm = qk_norm_layer(dim_head) if qk_norm else nn.Identity()
+        self.rope_func = rope_func
 
         self.heads = heads
         # for slice_size > 0 the attention score computation
@@ -836,8 +838,15 @@ class AttnProcessor2_0:
         key = key.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
         value = value.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
 
+        # NOTE: Like LLaMA, RoPE should be placed after RMSNorm and before dot-product and softmax
+        # RMSNorm
         query = attn.q_norm(query)
         key = attn.k_norm(key)
+
+        # RoPE
+        if attn.rope_func is not None:
+            query = attn.rope_func(query)
+            key = attn.rope_func(key)
 
         # the output of sdp = (batch, num_heads, seq_len, head_dim)
         # TODO: add support for attn.scale when we move to Torch 2.1
@@ -1027,6 +1036,8 @@ class BasicTransformerBlock_(nn.Module):
             norm_elementwise_affine: bool = True,
             norm_type: str = "layer_norm",  # 'layer_norm', 'ada_norm', 'ada_norm_zero', 'ada_norm_single'
             norm_eps: float = 1e-5,
+            qk_norm: bool = False,
+            rope_func: Callable = None,
             final_dropout: bool = False,
             attention_type: str = "default",
             positional_embeddings: Optional[str] = None,
@@ -1075,7 +1086,8 @@ class BasicTransformerBlock_(nn.Module):
             cross_attention_dim=cross_attention_dim if only_cross_attention else None,
             upcast_attention=upcast_attention,
             attention_mode=attention_mode,
-            qk_norm=True,
+            qk_norm=qk_norm,
+            rope_func=rope_func,
         )
 
         # # 2. Cross-Attn
@@ -1304,6 +1316,7 @@ class BasicTransformerBlock(nn.Module):
         norm_elementwise_affine: bool = True,
         norm_type: str = "layer_norm",  # 'layer_norm', 'ada_norm', 'ada_norm_zero', 'ada_norm_single'
         norm_eps: float = 1e-5,
+        qk_norm: bool = False,
         final_dropout: bool = False,
         attention_type: str = "default",
         positional_embeddings: Optional[str] = None,
@@ -1352,7 +1365,7 @@ class BasicTransformerBlock(nn.Module):
             cross_attention_dim=cross_attention_dim if only_cross_attention else None,
             upcast_attention=upcast_attention,
             attention_mode=attention_mode,
-            qk_norm=True,
+            qk_norm=qk_norm,
         )
 
         # 2. Cross-Attn

@@ -201,7 +201,9 @@ def main(args):
         attention_type='default',
         video_length=video_length,
         attention_mode=args.attention_mode,
-        # compress_kv=args.compress_kv
+        # compress_kv=args.compress_kv,
+        qk_norm=True,
+        temporal_pos_embed_type='rope',
     )
     model.gradient_checkpointing = args.gradient_checkpointing
 
