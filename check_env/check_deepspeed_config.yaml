@@ -15,7 +15,6 @@ fsdp_config: {}
 machine_rank: 0  # will be covered
 main_training_function: main
 megatron_lm_config: {}
-mixed_precision: fp16
 num_machines: 4  # will be covered
 num_processes: 32  # will be covered
 tpu_env: []
