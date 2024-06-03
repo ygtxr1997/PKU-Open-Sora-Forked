@@ -2,6 +2,7 @@ from ..modeling_videobase import VideoBaseAE_PL
 from ..modules import Normalize
 from ..modules.ops import nonlinearity
 from typing import List, Tuple
+import numpy as np
 import torch.nn as nn
 from ..utils.module_utils import resolve_str_to_obj, Module
 from ..utils.distrib_utils import DiagonalGaussianDistribution
@@ -315,16 +316,18 @@ class CausalVAEModel(VideoBaseAE_PL):
     ) -> None:
         super().__init__()
         self.tile_sample_min_size = 128
-        self.tile_sample_min_size_t = 65
+        self.tile_sample_min_size_t = 129
         self.tile_latent_min_size = int(self.tile_sample_min_size / (2 ** (len(hidden_size_mult) - 1)))
-        # self.tile_latent_min_size_t = int((self.tile_sample_min_size_t-1) / (2 ** self.time_compress)) + 1
+        t_down_ratio = [i for i in encoder_temporal_downsample if len(i) > 0]
+        self.tile_latent_min_size_t = int((self.tile_sample_min_size_t - 1) / (2 ** len(t_down_ratio))) + 1
         self.tile_overlap_factor = 0.25
         self.use_tiling = False
 
         self.learning_rate = lr
         self.lr_g_factor = 1.0
 
-        print(f"[CausalVAEModel] is_training:{is_training}")
+        print(f"[CausalVAEModel] is_training:{is_training}, tile_latent_min_size:{self.tile_latent_min_size},"
+              f" self.tile_latent_min_size_t:{self.tile_latent_min_size_t}")
         if is_training:
             self.loss = resolve_str_to_obj(loss_type, append=False)(
                 **loss_params
@@ -375,10 +378,11 @@ class CausalVAEModel(VideoBaseAE_PL):
 
     def encode(self, x):
         if self.use_tiling and (
-            x.shape[-1] > self.tile_sample_min_size
-            or x.shape[-2] > self.tile_sample_min_size
+                x.shape[-1] > self.tile_sample_min_size
+                or x.shape[-2] > self.tile_sample_min_size
+                or x.shape[-3] > self.tile_sample_min_size_t
         ):
-            return self.tiled_encode2d(x)
+            return self.tiled_encode(x)
         h = self.encoder(x)
         moments = self.quant_conv(h)
         posterior = DiagonalGaussianDistribution(moments)
@@ -386,10 +390,11 @@ class CausalVAEModel(VideoBaseAE_PL):
 
     def decode(self, z):
         if self.use_tiling and (
-            z.shape[-1] > self.tile_latent_min_size
-            or z.shape[-2] > self.tile_latent_min_size
+                z.shape[-1] > self.tile_latent_min_size
+                or z.shape[-2] > self.tile_latent_min_size
+                or z.shape[-3] > self.tile_latent_min_size_t
         ):
-            return self.tiled_decode2d(z)
+            return self.tiled_decode(z)
         z = self.post_quant_conv(z)
         dec = self.decoder(z)
         return dec
@@ -442,7 +447,7 @@ class CausalVAEModel(VideoBaseAE_PL):
         inputs = self.get_input(batch, "video")
         reconstructions, posterior = self(inputs)
         opt1, opt2 = self.optimizers()
-        
+
         # ---- AE Loss ----
         aeloss, log_dict_ae = self.loss(
             inputs,
@@ -515,8 +520,8 @@ class CausalVAEModel(VideoBaseAE_PL):
         optimizers = []
         opt_ae = torch.optim.Adam(
             [
-                {"params": params_with_time, "lr": 0.0001},
-                {"params": params_without_time, "lr": 0.00001},
+                {"params": params_with_time, "lr": lr},
+                {"params": params_without_time, "lr": lr},
             ],
             lr=lr,
             betas=(0.5, 0.9),
@@ -538,26 +543,75 @@ class CausalVAEModel(VideoBaseAE_PL):
             return self.decoder.conv_out.weight
 
     def blend_v(
-        self, a: torch.Tensor, b: torch.Tensor, blend_extent: int
+            self, a: torch.Tensor, b: torch.Tensor, blend_extent: int
     ) -> torch.Tensor:
         blend_extent = min(a.shape[3], b.shape[3], blend_extent)
         for y in range(blend_extent):
             b[:, :, :, y, :] = a[:, :, :, -blend_extent + y, :] * (
-                1 - y / blend_extent
+                    1 - y / blend_extent
             ) + b[:, :, :, y, :] * (y / blend_extent)
         return b
 
     def blend_h(
-        self, a: torch.Tensor, b: torch.Tensor, blend_extent: int
+            self, a: torch.Tensor, b: torch.Tensor, blend_extent: int
     ) -> torch.Tensor:
         blend_extent = min(a.shape[4], b.shape[4], blend_extent)
         for x in range(blend_extent):
             b[:, :, :, :, x] = a[:, :, :, :, -blend_extent + x] * (
-                1 - x / blend_extent
+                    1 - x / blend_extent
             ) + b[:, :, :, :, x] * (x / blend_extent)
         return b
 
-    def tiled_encode2d(self, x):
+    def tiled_encode(self, x):
+        """ Add temporal split onto encode2d """
+        t = x.shape[2]
+        t_chunk_idx = [i for i in range(0, t, self.tile_sample_min_size_t - 1)]
+        if len(t_chunk_idx) == 1 and t_chunk_idx[0] == 0:
+            t_chunk_start_end = [[0, t]]
+        else:
+            t_chunk_start_end = [[t_chunk_idx[i], t_chunk_idx[i + 1] + 1] for i in range(len(t_chunk_idx) - 1)]
+            if t_chunk_start_end[-1][-1] > t:
+                t_chunk_start_end[-1][-1] = t
+            elif t_chunk_start_end[-1][-1] < t:
+                last_start_end = [t_chunk_idx[-1], t]
+                t_chunk_start_end.append(last_start_end)
+        moments = []
+        for idx, (start, end) in enumerate(t_chunk_start_end):
+            chunk_x = x[:, :, start: end]
+            if idx != 0:
+                moment = self.tiled_encode2d(chunk_x, return_moments=True)[:, :, 1:]  # skip 1st frame of non-head clips
+            else:
+                moment = self.tiled_encode2d(chunk_x, return_moments=True)
+            moments.append(moment)
+        moments = torch.cat(moments, dim=2)
+        posterior = DiagonalGaussianDistribution(moments)
+        return posterior
+
+    def tiled_decode(self, x):
+        """ Add temporal split onto decode2d """
+        t = x.shape[2]
+        t_chunk_idx = [i for i in range(0, t, self.tile_latent_min_size_t - 1)]
+        if len(t_chunk_idx) == 1 and t_chunk_idx[0] == 0:
+            t_chunk_start_end = [[0, t]]
+        else:
+            t_chunk_start_end = [[t_chunk_idx[i], t_chunk_idx[i + 1] + 1] for i in range(len(t_chunk_idx) - 1)]
+            if t_chunk_start_end[-1][-1] > t:
+                t_chunk_start_end[-1][-1] = t
+            elif t_chunk_start_end[-1][-1] < t:
+                last_start_end = [t_chunk_idx[-1], t]
+                t_chunk_start_end.append(last_start_end)
+        dec_ = []
+        for idx, (start, end) in enumerate(t_chunk_start_end):
+            chunk_x = x[:, :, start: end]
+            if idx != 0:
+                dec = self.tiled_decode2d(chunk_x)[:, :, 1:]  # skip 1st frame for non-head clips
+            else:
+                dec = self.tiled_decode2d(chunk_x)
+            dec_.append(dec)
+        dec_ = torch.cat(dec_, dim=2)
+        return dec_
+
+    def tiled_encode2d(self, x, return_moments=False):
         overlap_size = int(self.tile_sample_min_size * (1 - self.tile_overlap_factor))
         blend_extent = int(self.tile_latent_min_size * self.tile_overlap_factor)
         row_limit = self.tile_latent_min_size - blend_extent
@@ -568,12 +622,12 @@ class CausalVAEModel(VideoBaseAE_PL):
             row = []
             for j in range(0, x.shape[4], overlap_size):
                 tile = x[
-                    :,
-                    :,
-                    :,
-                    i : i + self.tile_sample_min_size,
-                    j : j + self.tile_sample_min_size,
-                ]
+                       :,
+                       :,
+                       :,
+                       i: i + self.tile_sample_min_size,
+                       j: j + self.tile_sample_min_size,
+                       ]
                 tile = self.encoder(tile)
                 tile = self.quant_conv(tile)
                 row.append(tile)
@@ -593,7 +647,8 @@ class CausalVAEModel(VideoBaseAE_PL):
 
         moments = torch.cat(result_rows, dim=3)
         posterior = DiagonalGaussianDistribution(moments)
-
+        if return_moments:
+            return moments
         return posterior
 
     def tiled_decode2d(self, z):
@@ -614,13 +669,12 @@ class CausalVAEModel(VideoBaseAE_PL):
             row = []
             for j in range(0, z.shape[4], overlap_size):
                 tile = z[
-                    :,
-                    :,
-                    :,
-                    i : i + self.tile_latent_min_size,
-                    j : j + self.tile_latent_min_size,
-                ]
-                # print("[DEBUG] tile:", tile.shape)
+                       :,
+                       :,
+                       :,
+                       i: i + self.tile_latent_min_size,
+                       j: j + self.tile_latent_min_size,
+                       ]
                 tile = self.post_quant_conv(tile)
                 decoded = self.decoder(tile)
                 row.append(decoded)
@@ -649,6 +703,7 @@ class CausalVAEModel(VideoBaseAE_PL):
 
     def init_from_ckpt(self, path, ignore_keys=list(), remove_loss=True):
         sd = torch.load(path, map_location="cpu")
+        print("init from " + path)
         if "state_dict" in sd:
             sd = sd["state_dict"]
         keys = list(sd.keys())
@@ -660,3 +715,20 @@ class CausalVAEModel(VideoBaseAE_PL):
             if remove_loss and "loss" in k:
                 del sd[k]
         self.load_state_dict(sd, strict=False)
+
+    def validation_step(self, batch, batch_idx):
+
+        def tensor_to_video(x):
+            x = x.detach().cpu()
+            x = torch.clamp(x, -1, 1)
+            x = (x + 1) / 2
+            x = x.permute(1, 0, 2, 3).float().numpy() # c t h w ->
+            x = (255 * x).astype(np.uint8)
+            return x
+
+        inputs = self.get_input(batch, 'video')
+        latents = self.encode(inputs).sample()
+        video_recon = self.decode(latents)
+        for idx in range(len(video_recon)):
+            self.logger.log_video(f"recon {batch_idx} {idx}", [tensor_to_video(video_recon[idx])], fps=[10])
+
