@@ -21,7 +21,7 @@ class CausalVAEModelWrapper(nn.Module):
         return x
 
     def dtype(self):
-        return self.vae.dtype
+        return self.parameters().__next__().dtype
     #
     # def device(self):
     #     return self.vae.device

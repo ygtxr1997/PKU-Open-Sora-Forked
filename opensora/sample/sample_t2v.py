@@ -25,6 +25,7 @@ from opensora.models.ae import ae_stride_config, getae, getae_wrapper
 from opensora.models.ae.videobase import CausalVQVAEModelWrapper, CausalVAEModelWrapper
 from opensora.models.diffusion.latte.modeling_latte import LatteT2V
 from opensora.models.text_encoder import get_text_enc
+from opensora.models.diffusion.schedulers import PNDMT2DScheduler
 from opensora.utils.utils import save_video_grid
 
 sys.path.append(os.path.split(sys.path[0])[0])
@@ -102,8 +103,10 @@ def main(args):
         scheduler = DPMSolverMultistepScheduler()
     elif args.sample_method == 'DPMSolverSinglestep':
         scheduler = DPMSolverSinglestepScheduler()
-    elif args.sample_method == 'PNDM':
+    elif args.sample_method == 'PNDM':  # default
         scheduler = PNDMScheduler()
+    elif args.sample_method == 'PNDMT2D':  # add F-dim on timesteps
+        scheduler = PNDMT2DScheduler(append_frame_dim=True, frames=video_length)
     elif args.sample_method == 'HeunDiscrete':  ########
         scheduler = HeunDiscreteScheduler()
     elif args.sample_method == 'EulerAncestralDiscrete':

@@ -649,7 +649,7 @@ class LatteT2V(ModelMixin, ConfigMixin):
             only_cross_attention: bool = False,
             double_self_attention: bool = False,
             upcast_attention: bool = False,
-            norm_type: str = "layer_norm",
+            norm_type: str = "layer_norm",  # default: "ada_norm_single"
             norm_elementwise_affine: bool = True,
             norm_eps: float = 1e-5,
             attention_type: str = "default",
@@ -791,7 +791,7 @@ class LatteT2V(ModelMixin, ConfigMixin):
                     num_attention_heads,  # num_attention_heads
                     attention_head_dim,  # attention_head_dim 72
                     dropout=dropout,
-                    cross_attention_dim=None,
+                    cross_attention_dim=None,  # no cross-attention
                     activation_fn=activation_fn,
                     num_embeds_ada_norm=num_embeds_ada_norm,
                     attention_bias=attention_bias,
@@ -825,7 +825,7 @@ class LatteT2V(ModelMixin, ConfigMixin):
             self.norm_out = nn.LayerNorm(inner_dim, elementwise_affine=False, eps=1e-6)
             self.proj_out_1 = nn.Linear(inner_dim, 2 * inner_dim)
             self.proj_out_2 = nn.Linear(inner_dim, patch_size * patch_size * self.out_channels)
-        elif self.is_input_patches and norm_type == "ada_norm_single":
+        elif self.is_input_patches and norm_type == "ada_norm_single":  # default
             self.norm_out = nn.LayerNorm(inner_dim, elementwise_affine=False, eps=1e-6)
             self.scale_shift_table = nn.Parameter(torch.randn(2, inner_dim) / inner_dim ** 0.5)
             self.proj_out = nn.Linear(inner_dim, patch_size * patch_size * self.out_channels)
@@ -854,11 +854,11 @@ class LatteT2V(ModelMixin, ConfigMixin):
     def forward(
             self,
             hidden_states: torch.Tensor,
-            timestep: Optional[torch.LongTensor] = None,
+            timestep: Optional[torch.LongTensor] = None,  # old:(B,), new:(B,F)
             encoder_hidden_states: Optional[torch.Tensor] = None,
             added_cond_kwargs: Dict[str, torch.Tensor] = None,
             class_labels: Optional[torch.LongTensor] = None,
-            cross_attention_kwargs: Dict[str, Any] = None,
+            cross_attention_kwargs: Dict[str, Any] = None,  # default: None
             attention_mask: Optional[torch.Tensor] = None,
             encoder_attention_mask: Optional[torch.Tensor] = None,
             use_image_num: int = 0,
@@ -876,6 +876,7 @@ class LatteT2V(ModelMixin, ConfigMixin):
                 self-attention.
             timestep ( `torch.LongTensor`, *optional*):
                 Used to indicate denoising step. Optional timestep to be applied as an embedding in `AdaLayerNorm`.
+                Old:(B,), New:(B,F)
             class_labels ( `torch.LongTensor` of shape `(batch size, num classes)`, *optional*):
                 Used to indicate class labels conditioning. Optional class labels to be applied as an embedding in
                 `AdaLayerZeroNorm`.
@@ -920,6 +921,7 @@ class LatteT2V(ModelMixin, ConfigMixin):
         # this helps to broadcast it as a bias over attention scores, which will be in one of the following shapes:
         #   [batch,  heads, query_tokens, key_tokens] (e.g. torch sdp attn)
         #   [batch * heads, query_tokens, key_tokens] (e.g. xformers or classic attn)
+        use_diff_noise_across_frames = False if timestep.ndim == 1 else True
         if attention_mask is not None and attention_mask.ndim == 2:
             # assume that mask is expressed as:
             #   (1 = keep,      0 = discard)
@@ -953,18 +955,35 @@ class LatteT2V(ModelMixin, ConfigMixin):
             height, width = hidden_states.shape[-2] // self.patch_size, hidden_states.shape[-1] // self.patch_size
             num_patches = height * width
 
-            hidden_states = self.pos_embed(hidden_states.to(self.dtype))  # alrady add positional embeddings
+            hidden_states = self.pos_embed(hidden_states.to(self.dtype))  # already add pos embeddings
+            # (B*F,C,H,W) -> (B*F,P,D), P=H/p*W/p, D=1152
 
-            if self.adaln_single is not None:
+            if self.adaln_single is not None:  # default
                 if self.use_additional_conditions and added_cond_kwargs is None:
                     raise ValueError(
                         "`added_cond_kwargs` cannot be None when using additional conditions for `adaln_single`."
                     )
                 # batch_size = hidden_states.shape[0]
                 batch_size = input_batch_size
+                batch_size_scale = 1
+                if use_diff_noise_across_frames:  # new
+                    timestep = repeat(timestep, 'b f -> (b f)').contiguous()  # (B*F,)
+                    batch_size_scale = frame + use_image_num
                 timestep, embedded_timestep = self.adaln_single(
-                    timestep, added_cond_kwargs, batch_size=batch_size, hidden_dtype=hidden_states.dtype
+                    timestep, added_cond_kwargs, batch_size=batch_size * batch_size_scale,
+                    hidden_dtype=hidden_states.dtype
                 )
+                # old:(B*1,) ->  (B*1,6*D),(B*1,D)
+                # new:(B*F,) ->  (B*F,6*D),(B*F,D)
+                timestep = rearrange(timestep, '(b f) d -> b f d', f=batch_size_scale).contiguous()
+                # old:(B,1,6*D)
+                # new:(B,F,6*D)
+                if not use_diff_noise_across_frames:
+                    embedded_timestep = repeat(embedded_timestep, 'b d -> (b f) d',
+                                               f=batch_size_scale).contiguous()  # repeat on F-dim, (B,D)->(B*F,D)
+                else:
+                    embedded_timestep = embedded_timestep.contiguous()  # not repeat on F-dim, (B*F,D)
+                # old or new:(B*F,D)
 
         # 2. Blocks
         if self.caption_projection is not None:
@@ -981,8 +1000,15 @@ class LatteT2V(ModelMixin, ConfigMixin):
                 encoder_hidden_states_spatial = repeat(encoder_hidden_states, 'b t d -> (b f) t d', f=frame).contiguous()
 
         # prepare timesteps for spatial and temporal block
-        timestep_spatial = repeat(timestep, 'b d -> (b f) d', f=frame + use_image_num).contiguous()
-        timestep_temp = repeat(timestep, 'b d -> (b p) d', p=num_patches).contiguous()
+        if not use_diff_noise_across_frames:  # (B,1,6*D)
+            timestep = timestep[:, 0, :]  # (B,1,6*D) -> (B,6*D)
+            timestep_spatial = repeat(timestep, 'b d -> (b f) d', f=frame + use_image_num).contiguous()
+            timestep_temp = repeat(timestep, 'b d -> (b p) d', p=num_patches).contiguous()
+        else:  # (B,F,6*D)
+            timestep_spatial = rearrange(timestep, 'b f d -> (b f) d').contiguous()  # no repeat
+            timestep_temp = repeat(timestep, 'b f d -> (b p f) d', p=num_patches).contiguous()  # only repeat on P-dim
+        # old: spatial:(B*F,6*D) B*F spatial attn matrices;   temporal:(B*P,6*D) B*P temporal attn matrices.
+        # new: spatial:(B*F,6*D) t is different across F-dim; temporal:(B*P*F,6*D) t is different across F-dim.
 
         for i, (spatial_block, temp_block) in enumerate(zip(self.transformer_blocks, self.temporal_transformer_blocks)):
 
@@ -1053,11 +1079,12 @@ class LatteT2V(ModelMixin, ConfigMixin):
                     timestep_spatial,
                     cross_attention_kwargs,
                     class_labels,
-                )
+                )  # (B*F,P,D)
 
                 if enable_temporal_attentions:
                     # b c f h w, f = 16 + 4
-                    hidden_states = rearrange(hidden_states, '(b f) t d -> (b t) f d', b=input_batch_size).contiguous()
+                    hidden_states = rearrange(hidden_states, '(b f) t d -> (b t) f d',
+                                              b=input_batch_size).contiguous()  # (B*P,F,D)
 
                     if use_image_num != 0 and self.training:
                         hidden_states_video = hidden_states[:, :frame, ...]
@@ -1091,13 +1118,13 @@ class LatteT2V(ModelMixin, ConfigMixin):
                             None,  # attention_mask
                             None,  # encoder_hidden_states
                             None,  # encoder_attention_mask
-                            timestep_temp,
+                            timestep_temp,  # old:(B*P,6*D), new:(B*P*F,6*D)
                             cross_attention_kwargs,
                             class_labels,
                         )
 
                         hidden_states = rearrange(hidden_states, '(b t) f d -> (b f) t d',
-                                                  b=input_batch_size).contiguous()
+                                                  b=input_batch_size).contiguous()  # (B*F,P,D)
 
         if self.is_input_patches:
             if self.config.norm_type != "ada_norm_single":
@@ -1107,16 +1134,16 @@ class LatteT2V(ModelMixin, ConfigMixin):
                 shift, scale = self.proj_out_1(F.silu(conditioning)).chunk(2, dim=1)
                 hidden_states = self.norm_out(hidden_states) * (1 + scale[:, None]) + shift[:, None]
                 hidden_states = self.proj_out_2(hidden_states)
-            elif self.config.norm_type == "ada_norm_single":
-                embedded_timestep = repeat(embedded_timestep, 'b d -> (b f) d', f=frame + use_image_num).contiguous()
+            elif self.config.norm_type == "ada_norm_single":  # default
                 shift, scale = (self.scale_shift_table[None] + embedded_timestep[:, None]).chunk(2, dim=1)
-                hidden_states = self.norm_out(hidden_states)
+                # (1,2,D)+(B*F,1,D)->2*(B*F,1,D)
+                hidden_states = self.norm_out(hidden_states)  # (B*F,P,D)
                 # Modulation
                 hidden_states = hidden_states * (1 + scale) + shift
-                hidden_states = self.proj_out(hidden_states)
+                hidden_states = self.proj_out(hidden_states)  # (B*F,P,p*p*out_dim)
 
             # unpatchify
-            if self.adaln_single is None:
+            if self.adaln_single is None:  # not used
                 height = width = int(hidden_states.shape[1] ** 0.5)
             hidden_states = hidden_states.reshape(
                 shape=(-1, height, width, self.patch_size, self.patch_size, self.out_channels)
@@ -1127,7 +1154,7 @@ class LatteT2V(ModelMixin, ConfigMixin):
             )
             output = rearrange(output, '(b f) c h w -> b c f h w', b=input_batch_size).contiguous()
 
-        if not return_dict:
+        if not return_dict:  # default
             return (output,)
 
         return Transformer3DModelOutput(sample=output)

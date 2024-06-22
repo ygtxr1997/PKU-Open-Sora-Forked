@@ -183,7 +183,7 @@ def main(args):
         video_length = args.num_frames // ae_stride_t
     model = Diffusion_models[args.model](
         in_channels=ae_channel_config[args.ae],
-        out_channels=ae_channel_config[args.ae] * 2,
+        out_channels=ae_channel_config[args.ae] * 2,  # due to gaussian_diffusion_t2v:ModelVarType.LEARNED_RANGE
         # caption_channels=4096,
         # cross_attention_dim=1152,
         attention_bias=True,
@@ -513,8 +513,10 @@ def main(args):
                         cond = torch.stack([text_enc(input_ids[i], cond_mask[i]) for i in range(B)])  # B 1+num_images L D
                 model_kwargs = dict(encoder_hidden_states=cond, attention_mask=attn_mask,
                                     encoder_attention_mask=cond_mask, use_image_num=args.use_image_num)
+                # old:(B,)
+                # new:(B,F), how to sample?
                 t = torch.randint(0, diffusion.num_timesteps, (x.shape[0],), device=accelerator.device)
-                loss_dict = diffusion.training_losses(model, x, t, model_kwargs)
+                loss_dict = diffusion.training_losses(model, x, t, model_kwargs)  # 'loss':(B,)
                 loss = loss_dict["loss"].mean()
 
                 # Gather the losses across all processes for logging (if we use distributed training).

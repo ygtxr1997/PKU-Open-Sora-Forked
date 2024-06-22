@@ -7,6 +7,7 @@
 import math
 
 import numpy as np
+import torch
 import torch as th
 import enum
 
@@ -35,6 +36,7 @@ class ModelVarType(enum.Enum):
     What is used as the model's output variance.
     The LEARNED_RANGE option has been added to allow the model to predict
     values between FIXED_SMALL and FIXED_LARGE, making its job easier.
+    May refer to: https://zhuanlan.zhihu.com/p/648276158
     """
 
     LEARNED = enum.auto()
@@ -154,14 +156,14 @@ class GaussianDiffusion_T:
         self,
         *,
         betas,
-        model_mean_type,
-        model_var_type,
-        loss_type
+        model_mean_type: ModelMeanType,
+        model_var_type: ModelVarType,
+        loss_type: LossType,
     ):
 
-        self.model_mean_type = model_mean_type
-        self.model_var_type = model_var_type
-        self.loss_type = loss_type
+        self.model_mean_type = model_mean_type  # default: gd.ModelMeanType.EPSILON
+        self.model_var_type = model_var_type  # default: gd.ModelVarType.LEARNED_RANGE
+        self.loss_type = loss_type  # default: gd.LossType.MSE
 
         # Use float64 for accuracy.
         betas = np.array(betas, dtype=np.float64)
@@ -216,10 +218,10 @@ class GaussianDiffusion_T:
         """
         Diffuse the data for a given number of diffusion steps.
         In other words, sample from q(x_t | x_0).
-        :param x_start: the initial data batch.
-        :param t: the number of diffusion steps (minus 1). Here, 0 means one step.
+        :param x_start: the initial data batch. (B,C,F,H,W)
+        :param t: the number of diffusion steps (minus 1). Here, 0 means one step. old:(B,), new:(B,F).
         :param noise: if specified, the split-out normal noise.
-        :return: A noisy version of x_start.
+        :return: x_t, a noisy version of x_start. (B,C,F,H,W), noise level t can be different among B and F
         """
         if noise is None:
             noise = th.randn_like(x_start)
@@ -258,7 +260,7 @@ class GaussianDiffusion_T:
         :param model: the model, which takes a signal and a batch of timesteps
                       as input.
         :param x: the [N x C x ...] tensor at time t.
-        :param t: a 1-D Tensor of timesteps.
+        :param t: a 1-D Tensor of timesteps. old:(B,), new:(B,F)
         :param clip_denoised: if True, clip the denoised signal into [-1, 1].
         :param denoised_fn: if not None, a function which applies to the
             x_start prediction before it is used to sample. Applies before
@@ -289,10 +291,10 @@ class GaussianDiffusion_T:
         #     model_output = model(x, t, **model_kwargs)
         if isinstance(model_output, tuple):
             model_output, extra = model_output
-        else:
+        else:  # default
             extra = None
 
-        if self.model_var_type in [ModelVarType.LEARNED, ModelVarType.LEARNED_RANGE]:
+        if self.model_var_type in [ModelVarType.LEARNED, ModelVarType.LEARNED_RANGE]:  # default
             #assert model_output.shape == (B, F, C * 2, *x.shape[3:])
             #model_output, model_var_values = th.split(model_output, C, dim=2)
             #the output shape of uncondition or class condition latte is not the same as the latte_t2v
@@ -330,7 +332,7 @@ class GaussianDiffusion_T:
 
         if self.model_mean_type == ModelMeanType.START_X:
             pred_xstart = process_xstart(model_output)
-        else:
+        else:  # default
             pred_xstart = process_xstart(
                 self._predict_xstart_from_eps(x_t=x, t=t, eps=model_output)
             )
@@ -700,20 +702,21 @@ class GaussianDiffusion_T:
         Get a term for the variational lower-bound.
         The resulting units are bits (rather than nats, as one might expect).
         This allows for comparison to other papers.
+        :param t: old:(B,), new:(B,F)
         :return: a dict with the following keys:
                  - 'output': a shape [N] tensor of NLLs or KLs.
                  - 'pred_xstart': the x_0 predictions.
         """
         true_mean, _, true_log_variance_clipped = self.q_posterior_mean_variance(
             x_start=x_start, x_t=x_t, t=t
-        )
+        )  # (B,C,F,H,W)
         out = self.p_mean_variance(
             model, x_t, t, clip_denoised=clip_denoised, model_kwargs=model_kwargs
-        )
+        )  # both (B,C,F,H,W)
         kl = normal_kl(
             true_mean, true_log_variance_clipped, out["mean"], out["log_variance"]
         )
-        kl = mean_flat(kl) / np.log(2.0)
+        kl = mean_flat(kl) / np.log(2.0)  # (B,C,F,H,W)->(B,)
 
         decoder_nll = -discretized_gaussian_log_likelihood(
             x_start, means=out["mean"], log_scales=0.5 * out["log_variance"]
@@ -726,12 +729,12 @@ class GaussianDiffusion_T:
         output = th.where((t == 0), decoder_nll, kl)
         return {"output": output, "pred_xstart": out["pred_xstart"]}
 
-    def training_losses(self, model, x_start, t, model_kwargs=None, noise=None):
+    def training_losses(self, model, x_start, timestep, model_kwargs=None, noise=None):
         """
         Compute training losses for a single timestep.
         :param model: the model to evaluate loss on.
-        :param x_start: the [N x C x ...] tensor of inputs.
-        :param t: a batch of timestep indices.
+        :param x_start: the [N x C x ...] tensor of inputs, e.g. (B,C,F,H,W)
+        :param timestep: old: (B,) a batch of timestep indices; new: (B,F) 2d timestep indices.
         :param model_kwargs: if not None, a dict of extra keyword arguments to
             pass to the model. This can be used for conditioning.
         :param noise: if specified, the specific Gaussian noise to try to remove.
@@ -742,7 +745,7 @@ class GaussianDiffusion_T:
             model_kwargs = {}
         if noise is None:
             noise = th.randn_like(x_start)
-        x_t = self.q_sample(x_start, t, noise=noise)
+        x_t = self.q_sample(x_start, timestep, noise=noise)
 
         terms = {}
 
@@ -751,14 +754,15 @@ class GaussianDiffusion_T:
                 model=model,
                 x_start=x_start,
                 x_t=x_t,
-                t=t,
+                t=timestep,
                 clip_denoised=False,
                 model_kwargs=model_kwargs,
             )["output"]
             if self.loss_type == LossType.RESCALED_KL:
                 terms["loss"] *= self.num_timesteps
-        elif self.loss_type == LossType.MSE or self.loss_type == LossType.RESCALED_MSE:
-            model_output = model(x_t, t, **model_kwargs)
+        elif self.loss_type == LossType.MSE or self.loss_type == LossType.RESCALED_MSE:  # default
+            model_output = model(x_t, timestep, **model_kwargs)  # (B,2*C,F,H,W)
+            print(f"[DEBUG] model_output type: {type(model_output)}")
             # try:
             #     model_output = model(x_t, t, **model_kwargs).sample # for tav unet
             # except:
@@ -766,14 +770,14 @@ class GaussianDiffusion_T:
 
             if self.model_var_type in [
                 ModelVarType.LEARNED,
-                ModelVarType.LEARNED_RANGE,
+                ModelVarType.LEARNED_RANGE,  # default
             ]:
                 #B, F, C = x_t.shape[:3]
                 #assert model_output.shape == (B, F, C * 2, *x_t.shape[3:])
                 #the output shape of uncondition or class condition latte is not the same as the latte_t2v
                 #BFCHW vs BCFHW 
                 B, C, F = x_t.shape[:3]
-                assert model_output[0].shape == (B, C * 2, F, *x_t.shape[3:])
+                assert model_output[0].shape == (B, C * 2, F, *x_t.shape[3:]), "Learnable variance must have 2x C-dim"
                 #model_output, model_var_values = th.split(model_output, C, dim=2)
                 model_output, model_var_values = th.split(model_output[0], C, dim=1)
                 
@@ -785,7 +789,7 @@ class GaussianDiffusion_T:
                     model=lambda *args, r=frozen_out: r,
                     x_start=x_start,
                     x_t=x_t,
-                    t=t,
+                    t=timestep,
                     clip_denoised=False,
                 )["output"]
                 if self.loss_type == LossType.RESCALED_MSE:
@@ -795,15 +799,15 @@ class GaussianDiffusion_T:
 
             target = {
                 ModelMeanType.PREVIOUS_X: self.q_posterior_mean_variance(
-                    x_start=x_start, x_t=x_t, t=t
+                    x_start=x_start, x_t=x_t, t=timestep
                 )[0],
                 ModelMeanType.START_X: x_start,
-                ModelMeanType.EPSILON: noise,
+                ModelMeanType.EPSILON: noise,  # default
             }[self.model_mean_type]
             assert model_output.shape == target.shape == x_start.shape
-            terms["mse"] = mean_flat((target - model_output) ** 2)
+            terms["mse"] = mean_flat((target - model_output) ** 2)  # (B,C,F,H,W)->(B,)
             if "vb" in terms:
-                terms["loss"] = terms["mse"] + terms["vb"]
+                terms["loss"] = terms["mse"] + terms["vb"]  # (B,)
             else:
                 terms["loss"] = terms["mse"]
         else:
@@ -883,16 +887,20 @@ class GaussianDiffusion_T:
         }
 
 
-def _extract_into_tensor(arr, timesteps, broadcast_shape):
+def _extract_into_tensor(arr, timesteps: torch.Tensor, broadcast_shape):
     """
     Extract values from a 1-D numpy array for a batch of indices.
     :param arr: the 1-D numpy array.
-    :param timesteps: a tensor of indices into the array to extract.
+    :param timesteps: a tensor of indices into the array to extract. old:(B,), new:(B,F)
     :param broadcast_shape: a larger shape of K dimensions with the batch
-                            dimension equal to the length of timesteps.
-    :return: a tensor of shape [batch_size, 1, ...] where the shape has K dims.
+                            dimension equal to the length of timesteps, e.g. (B,C,F,H,W)
+    :return: a tensor of shape [batch_size, ...] where the shape has K dims.
     """
-    res = th.from_numpy(arr).to(device=timesteps.device)[timesteps].float()
+    if timesteps.ndim == 1:  # old:(B,)
+        timesteps = timesteps[:, None, None]  # (B,1,1)
+    elif timesteps.ndim == 2:  # new:(B,F)
+        timesteps = timesteps[:, None, :]  # (B,1,F)
+    res = th.from_numpy(arr).to(device=timesteps.device)[timesteps].float()  # old:(B,1,1), new:(B,1,F)
     while len(res.shape) < len(broadcast_shape):
-        res = res[..., None]
-    return res + th.zeros(broadcast_shape, device=timesteps.device)
+        res = res[..., None]  # append new dims
+    return res + th.zeros(broadcast_shape, device=timesteps.device)  # (B,C,F,H,W)

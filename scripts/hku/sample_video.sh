@@ -6,7 +6,7 @@ set -x -e
 export SLURM_NNODES=1
 export SLURM_PROCID=0
 
-export NUM_GPUS=8
+export NUM_GPUS=4
 
 export OMP_NUM_THREADS=4
 
@@ -30,7 +30,7 @@ export PYTHONPATH=${PWD}
 export CACHE_DIR="/home/geyuan/pretrained/opensora/v1.0.0"
 export PROMPT_LIST="examples/demo.txt"
 export TRAIN_SIZE="v257x288x512"
-export SAMPLE_SIZE="385x288x512"
+export SAMPLE_SIZE="65x256x480"
 export TRAIN_STEPS="58700"
 export CKPT_PATH="/home/geyuan/pretrained/opensora/out_webvidlatent_${TRAIN_SIZE}_qknorm_rope/checkpoint-${TRAIN_STEPS}/model/diffusion_pytorch_model.safetensors"
 export OUTPUT_DIR="./sample_videos/demo_webvidlatent${TRAIN_SIZE}_qknorm_rope_${TRAIN_STEPS}_${SAMPLE_SIZE}"
@@ -38,6 +38,7 @@ bash -c 'accelerate launch \
   --config_file scripts/accelerate_configs/deepspeed_zero2_config.yaml \
   --num_processes $(($NUM_GPUS * $SLURM_NNODES)) --num_machines $SLURM_NNODES --machine_rank $SLURM_PROCID \
   --main_process_ip $MASTER_ADDR --main_process_port $MASTER_PORT \
+  --gpu_ids "6,7,8,9" \
   opensora/sample/sample_t2v.py \
   --model_path LanguageBind/Open-Sora-Plan-v1.0.0 \
   --ckpt_path ${CKPT_PATH}  \
@@ -51,7 +52,8 @@ bash -c 'accelerate launch \
   --fps 24 \
   --guidance_scale 7.5 \
   --num_sampling_steps 250 \
-  --enable_tiling
+  --enable_tiling  \
+  --sample_method PNDMT2D
   '
 
 echo "DONE"

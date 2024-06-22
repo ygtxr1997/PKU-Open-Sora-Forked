@@ -128,6 +128,8 @@ class PNDMT2DScheduler(SchedulerMixin, ConfigMixin):
         prediction_type: str = "epsilon",
         timestep_spacing: str = "leading",
         steps_offset: int = 0,
+        append_frame_dim: bool = False,
+        frames: int = 1,
     ):
         if trained_betas is not None:
             self.betas = torch.tensor(trained_betas, dtype=torch.float32)
@@ -164,20 +166,32 @@ class PNDMT2DScheduler(SchedulerMixin, ConfigMixin):
         # setable values
         self.num_inference_steps = None
         self._timesteps = np.arange(0, num_train_timesteps)[::-1].copy()
-        self.prk_timesteps = None
-        self.plms_timesteps = None
+        self.prk_timesteps = None  # (12,F)
+        self.plms_timesteps = None  # (S-3,F)
         self.timesteps = None
 
-    def set_timesteps(self, num_inference_steps: int, device: Union[str, torch.device] = None):
+        # 2D timesteps values
+        self.append_frame_dim = append_frame_dim
+        self.frames = frames
+
+    def set_timesteps(self, num_inference_steps: int, device: Union[str, torch.device] = None,
+                      append_frame_dim: bool = None, frames: int = None,
+                      ):
         """
         Sets the discrete timesteps used for the diffusion chain (to be run before inference).
 
         Args:
             num_inference_steps (`int`):
-                The number of diffusion steps used when generating samples with a pre-trained model.
+                The number of diffusion steps used when generating samples with a pre-trained model, denoted as S.
             device (`str` or `torch.device`, *optional*):
                 The device to which the timesteps should be moved to. If `None`, the timesteps are not moved.
+            append_frame_dim (`bool`, *optional*):
+                If False, the shape of timesteps is 1D (S,). Else, the shape is 2D (S,F).
+            frames (`int`, *optional*):
+                Only works when append_frame_dim is True. Defines the size of F-dim.
         """
+        append_frame_dim = self.append_frame_dim if append_frame_dim is None else append_frame_dim
+        frames = self.frames if frames is None else frames
 
         self.num_inference_steps = num_inference_steps
         # "linspace", "leading", "trailing" corresponds to annotation of Table 2. of https://arxiv.org/abs/2305.08891
@@ -185,7 +199,7 @@ class PNDMT2DScheduler(SchedulerMixin, ConfigMixin):
             self._timesteps = (
                 np.linspace(0, self.config.num_train_timesteps - 1, num_inference_steps).round().astype(np.int64)
             )
-        elif self.config.timestep_spacing == "leading":
+        elif self.config.timestep_spacing == "leading":  # default
             step_ratio = self.config.num_train_timesteps // self.num_inference_steps
             # creates integer timesteps by multiplying by ratio
             # casting to int to avoid issues when num_inference_step is power of 3
@@ -204,6 +218,10 @@ class PNDMT2DScheduler(SchedulerMixin, ConfigMixin):
                 f"{self.config.timestep_spacing} is not supported. Please make sure to choose one of 'linspace', 'leading' or 'trailing'."
             )
 
+        # Append F-dim
+        if append_frame_dim:
+            self._timesteps = np.tile(self._timesteps[:, None], (1, frames))  # small to large, (S,)->(S,F)
+
         if self.config.skip_prk_steps:
             # for some models like stable diffusion the prk steps can/should be skipped to
             # produce better results. When using PNDM with `self.config.skip_prk_steps` the implementation
@@ -212,17 +230,24 @@ class PNDMT2DScheduler(SchedulerMixin, ConfigMixin):
             self.plms_timesteps = np.concatenate([self._timesteps[:-1], self._timesteps[-2:-1], self._timesteps[-1:]])[
                 ::-1
             ].copy()
-        else:
-            prk_timesteps = np.array(self._timesteps[-self.pndm_order :]).repeat(2) + np.tile(
+        else:  # default
+            prk_1st_part = np.array(self._timesteps[-self.pndm_order :]).repeat(2, axis=0)  # (4*2,) or (4*2,F)
+            prk_2nd_part = np.tile(
                 np.array([0, self.config.num_train_timesteps // num_inference_steps // 2]), self.pndm_order
-            )
-            self.prk_timesteps = (prk_timesteps[:-1].repeat(2)[1:-1])[::-1].copy()
+            )  # (4*2,)
+            while prk_2nd_part.ndim < prk_1st_part.ndim:
+                prk_2nd_part = prk_2nd_part[..., np.newaxis]  # append dim one by one
+            prk_timesteps = prk_1st_part + prk_2nd_part  # (4*2,F)+(4*2,1)->(4*2,F), fixed length, eg. 800,825,850,875,900,925,950,975
+            self.prk_timesteps = (prk_timesteps[:-1].repeat(2, axis=0)[1:-1])[::-1].copy()  # (((4*2-1)*2-2),F)=(12,F)
             self.plms_timesteps = self._timesteps[:-3][
                 ::-1
             ].copy()  # we copy to avoid having negative strides which are not supported by torch.from_numpy
+            # (S-3,F)
 
-        timesteps = np.concatenate([self.prk_timesteps, self.plms_timesteps]).astype(np.int64)
+        timesteps = np.concatenate([self.prk_timesteps, self.plms_timesteps], axis=0).astype(np.int64)  # (S+9,F)
         self.timesteps = torch.from_numpy(timesteps).to(device)
+        self.prk_timesteps = torch.from_numpy(self.prk_timesteps).to(device)  # (12,F)
+        self.plms_timesteps = torch.from_numpy(self.plms_timesteps).to(device)  # (S-3,F)
 
         self.ets = []
         self.counter = 0
@@ -231,7 +256,7 @@ class PNDMT2DScheduler(SchedulerMixin, ConfigMixin):
     def step(
         self,
         model_output: torch.FloatTensor,
-        timestep: int,
+        timestep: Union[int, torch.LongTensor],
         sample: torch.FloatTensor,
         return_dict: bool = True,
     ) -> Union[SchedulerOutput, Tuple]:
@@ -243,8 +268,8 @@ class PNDMT2DScheduler(SchedulerMixin, ConfigMixin):
         Args:
             model_output (`torch.FloatTensor`):
                 The direct output from learned diffusion model.
-            timestep (`int`):
-                The current discrete timestep in the diffusion chain.
+            timestep (`int` or `torch.LongTensor`):
+                The current discrete timestep in the diffusion chain. old: (,); new: (F,).
             sample (`torch.FloatTensor`):
                 A current instance of a sample created by the diffusion process.
             return_dict (`bool`):
@@ -257,14 +282,16 @@ class PNDMT2DScheduler(SchedulerMixin, ConfigMixin):
 
         """
         if self.counter < len(self.prk_timesteps) and not self.config.skip_prk_steps:
+            print("[DEBUG] prk:", model_output.dtype, timestep.dtype, sample.dtype)
             return self.step_prk(model_output=model_output, timestep=timestep, sample=sample, return_dict=return_dict)
         else:
+            print("[DEBUG] plms:", model_output.dtype, timestep.dtype, sample.dtype)
             return self.step_plms(model_output=model_output, timestep=timestep, sample=sample, return_dict=return_dict)
 
     def step_prk(
         self,
         model_output: torch.FloatTensor,
-        timestep: int,
+        timestep: Union[int, torch.LongTensor],
         sample: torch.FloatTensor,
         return_dict: bool = True,
     ) -> Union[SchedulerOutput, Tuple]:
@@ -275,9 +302,9 @@ class PNDMT2DScheduler(SchedulerMixin, ConfigMixin):
 
         Args:
             model_output (`torch.FloatTensor`):
-                The direct output from learned diffusion model.
-            timestep (`int`):
-                The current discrete timestep in the diffusion chain.
+                The direct output from learned diffusion model. eg. (B,C,F,H,W)
+            timestep (`int` or `torch.LongTensor`):
+                The current discrete timestep in the diffusion chain. (,) or (F,)
             sample (`torch.FloatTensor`):
                 A current instance of a sample created by the diffusion process.
             return_dict (`bool`):
@@ -293,10 +320,9 @@ class PNDMT2DScheduler(SchedulerMixin, ConfigMixin):
             raise ValueError(
                 "Number of inference steps is 'None', you need to run 'set_timesteps' after creating the scheduler"
             )
-
         diff_to_prev = 0 if self.counter % 2 else self.config.num_train_timesteps // self.num_inference_steps // 2
-        prev_timestep = timestep - diff_to_prev
-        timestep = self.prk_timesteps[self.counter // 4 * 4]
+        prev_timestep = timestep - diff_to_prev  # （,) or (F,)
+        timestep = self.prk_timesteps[self.counter // 4 * 4]  # (,) or (F,)
 
         if self.counter % 4 == 0:
             self.cur_model_output += 1 / 6 * model_output
@@ -324,7 +350,7 @@ class PNDMT2DScheduler(SchedulerMixin, ConfigMixin):
     def step_plms(
         self,
         model_output: torch.FloatTensor,
-        timestep: int,
+        timestep: Union[int, torch.LongTensor],
         sample: torch.FloatTensor,
         return_dict: bool = True,
     ) -> Union[SchedulerOutput, Tuple]:
@@ -335,8 +361,8 @@ class PNDMT2DScheduler(SchedulerMixin, ConfigMixin):
         Args:
             model_output (`torch.FloatTensor`):
                 The direct output from learned diffusion model.
-            timestep (`int`):
-                The current discrete timestep in the diffusion chain.
+            timestep (`int` or `torch.LongTensor`):
+                The current discrete timestep in the diffusion chain. (,) or (F,)
             sample (`torch.FloatTensor`):
                 A current instance of a sample created by the diffusion process.
             return_dict (`bool`):
@@ -408,6 +434,23 @@ class PNDMT2DScheduler(SchedulerMixin, ConfigMixin):
         return sample
 
     def _get_prev_sample(self, sample, timestep, prev_timestep, model_output):
+        """
+
+        Args:
+            sample: (B,C,F,H,W)
+            timestep: old:(,); new:(F,)
+            prev_timestep: old:(,); new:(F,)
+            model_output: (B,C,F,H,W)
+
+        Returns:
+
+        """
+        dtype = model_output.dtype
+        if isinstance(timestep, torch.Tensor):
+            print("[DEBUG] _get_prev:", sample.dtype, timestep.dtype, prev_timestep.dtype, model_output.dtype)
+            self.alphas_cumprod = self.alphas_cumprod.to(timestep.device)
+            self.final_alpha_cumprod = self.final_alpha_cumprod.to(timestep.device)
+
         # See formula (9) of PNDM paper https://arxiv.org/pdf/2202.09778.pdf
         # this function computes x_(t−δ) using the formula of (9)
         # Note that x_t needs to be added to both sides of the equation
@@ -420,13 +463,18 @@ class PNDMT2DScheduler(SchedulerMixin, ConfigMixin):
         # sample -> x_t
         # model_output -> e_θ(x_t, t)
         # prev_sample -> x_(t−δ)
+        # All shapes: (,) or (F,)
         alpha_prod_t = self.alphas_cumprod[timestep]
-        alpha_prod_t_prev = self.alphas_cumprod[prev_timestep] if prev_timestep >= 0 else self.final_alpha_cumprod
+        # alpha_prod_t_prev = self.alphas_cumprod[prev_timestep] if prev_timestep >= 0 else self.final_alpha_cumprod
+        alpha_prod_t_prev = torch.where(prev_timestep >= 0,
+                                        self.alphas_cumprod[prev_timestep],
+                                        self.final_alpha_cumprod)
         beta_prod_t = 1 - alpha_prod_t
         beta_prod_t_prev = 1 - alpha_prod_t_prev
 
         if self.config.prediction_type == "v_prediction":
-            model_output = (alpha_prod_t**0.5) * model_output + (beta_prod_t**0.5) * sample
+            model_output = (alpha_prod_t[None, None]**0.5) * model_output + (beta_prod_t[None, None]**0.5) * sample
+            # ((1,1) or (1,1,F)) * (B,C,F,H,W)
         elif self.config.prediction_type != "epsilon":
             raise ValueError(
                 f"prediction_type given as {self.config.prediction_type} must be one of `epsilon` or `v_prediction`"
@@ -445,12 +493,15 @@ class PNDMT2DScheduler(SchedulerMixin, ConfigMixin):
 
         # full formula (9)
         prev_sample = (
-            sample_coeff * sample - (alpha_prod_t_prev - alpha_prod_t) * model_output / model_output_denom_coeff
+            sample_coeff[None, None, ..., None, None] * sample
+            - (alpha_prod_t_prev - alpha_prod_t)[None, None, ..., None, None] * model_output
+            / model_output_denom_coeff[None, None, ..., None, None]
         )
 
-        return prev_sample
+        return prev_sample.to(dtype)
 
     # Copied from diffusers.schedulers.scheduling_ddpm.DDPMScheduler.add_noise
+    # Not used
     def add_noise(
         self,
         original_samples: torch.FloatTensor,

@@ -160,6 +160,7 @@ class SpacedDiffusion_T(GaussianDiffusion_T):
         return super().p_mean_variance(self._wrap_model(model), *args, **kwargs)
 
     # @torch.compile
+    # called by training scripts
     def training_losses(
         self, model, *args, **kwargs
     ):  # pylint: disable=signature-differs

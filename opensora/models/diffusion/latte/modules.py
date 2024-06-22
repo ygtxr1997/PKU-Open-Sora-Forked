@@ -1074,7 +1074,7 @@ class BasicTransformerBlock_(nn.Module):
             self.norm1 = AdaLayerNorm(dim, num_embeds_ada_norm)
         elif self.use_ada_layer_norm_zero:
             self.norm1 = AdaLayerNormZero(dim, num_embeds_ada_norm)
-        else:
+        else:  # default
             self.norm1 = nn.LayerNorm(dim, elementwise_affine=norm_elementwise_affine, eps=norm_eps)
 
         self.attn1 = Attention(
@@ -1139,17 +1139,18 @@ class BasicTransformerBlock_(nn.Module):
 
     def forward(
             self,
-            hidden_states: torch.FloatTensor,
+            hidden_states: torch.FloatTensor,  # (B*P,F,D)
             attention_mask: Optional[torch.FloatTensor] = None,
             encoder_hidden_states: Optional[torch.FloatTensor] = None,
             encoder_attention_mask: Optional[torch.FloatTensor] = None,
-            timestep: Optional[torch.LongTensor] = None,
+            timestep: Optional[torch.LongTensor] = None,  # old:(B*P,D*6), new:(B*P*F,6*D)
             cross_attention_kwargs: Dict[str, Any] = None,
             class_labels: Optional[torch.LongTensor] = None,
     ) -> torch.FloatTensor:
         # Notice that normalization is always applied before the real computation in the following blocks.
         # 0. Self-Attention
         batch_size = hidden_states.shape[0]
+        frame = hidden_states.shape[1]
 
         if self.use_ada_layer_norm:
             norm_hidden_states = self.norm1(hidden_states, timestep)
@@ -1159,11 +1160,15 @@ class BasicTransformerBlock_(nn.Module):
             )
         elif self.use_layer_norm:
             norm_hidden_states = self.norm1(hidden_states)
-        elif self.use_ada_layer_norm_single:
+        elif self.use_ada_layer_norm_single:  # default
+            timestep = rearrange(timestep, '(b f) (m d) -> b f m d', b=batch_size, m=6)  # b is B*P, (B*P,F,6,D)
+            # shift_msa, scale_msa, gate_msa, shift_mlp, scale_mlp, gate_mlp = (
+            #         self.scale_shift_table[None][None] + timestep.reshape(batch_size, 6, -1)
+            # ).chunk(6, dim=1)
             shift_msa, scale_msa, gate_msa, shift_mlp, scale_mlp, gate_mlp = (
-                    self.scale_shift_table[None] + timestep.reshape(batch_size, 6, -1)
-            ).chunk(6, dim=1)
-            norm_hidden_states = self.norm1(hidden_states)
+                    self.scale_shift_table[None][None] + timestep
+            ).unbind(dim=-2)  # (1,1,6,D)+(B*P,F,6,D)->6*(B*P,1 or F,D), unbind instead of chunk to erase dimension
+            norm_hidden_states = self.norm1(hidden_states)  # (B*P,F,D)
             norm_hidden_states = norm_hidden_states * (1 + scale_msa) + shift_msa
             norm_hidden_states = norm_hidden_states.squeeze(1)
         else:
@@ -1187,7 +1192,7 @@ class BasicTransformerBlock_(nn.Module):
         )
         if self.use_ada_layer_norm_zero:
             attn_output = gate_msa.unsqueeze(1) * attn_output
-        elif self.use_ada_layer_norm_single:
+        elif self.use_ada_layer_norm_single:  # default
             attn_output = gate_msa * attn_output
 
         hidden_states = attn_output + hidden_states
@@ -1229,7 +1234,7 @@ class BasicTransformerBlock_(nn.Module):
         if self.use_ada_layer_norm_zero:
             norm_hidden_states = norm_hidden_states * (1 + scale_mlp[:, None]) + shift_mlp[:, None]
 
-        if self.use_ada_layer_norm_single:
+        if self.use_ada_layer_norm_single:  # default
             # norm_hidden_states = self.norm2(hidden_states)
             norm_hidden_states = self.norm3(hidden_states)
             norm_hidden_states = norm_hidden_states * (1 + scale_mlp) + shift_mlp
@@ -1254,7 +1259,7 @@ class BasicTransformerBlock_(nn.Module):
 
         if self.use_ada_layer_norm_zero:
             ff_output = gate_mlp.unsqueeze(1) * ff_output
-        elif self.use_ada_layer_norm_single:
+        elif self.use_ada_layer_norm_single:  # default
             ff_output = gate_mlp * ff_output
 
         hidden_states = ff_output + hidden_states
@@ -1314,7 +1319,7 @@ class BasicTransformerBlock(nn.Module):
         double_self_attention: bool = False,
         upcast_attention: bool = False,
         norm_elementwise_affine: bool = True,
-        norm_type: str = "layer_norm",  # 'layer_norm', 'ada_norm', 'ada_norm_zero', 'ada_norm_single'
+        norm_type: str = "layer_norm",  # 'layer_norm', 'ada_norm', 'ada_norm_zero', 'ada_norm_single'(default)
         norm_eps: float = 1e-5,
         qk_norm: bool = False,
         final_dropout: bool = False,
@@ -1353,7 +1358,7 @@ class BasicTransformerBlock(nn.Module):
             self.norm1 = AdaLayerNorm(dim, num_embeds_ada_norm)
         elif self.use_ada_layer_norm_zero:
             self.norm1 = AdaLayerNormZero(dim, num_embeds_ada_norm)
-        else:
+        else:  # default
             self.norm1 = nn.LayerNorm(dim, elementwise_affine=norm_elementwise_affine, eps=norm_eps)
 
         self.attn1 = Attention(
@@ -1408,7 +1413,7 @@ class BasicTransformerBlock(nn.Module):
             self.fuser = GatedSelfAttentionDense(dim, cross_attention_dim, num_attention_heads, attention_head_dim)
 
         # 5. Scale-shift for PixArt-Alpha.
-        if self.use_ada_layer_norm_single:
+        if self.use_ada_layer_norm_single:  # default
             self.scale_shift_table = nn.Parameter(torch.randn(6, dim) / dim**0.5)
 
         # let chunk size default to None
@@ -1426,13 +1431,13 @@ class BasicTransformerBlock(nn.Module):
         attention_mask: Optional[torch.FloatTensor] = None,
         encoder_hidden_states: Optional[torch.FloatTensor] = None,
         encoder_attention_mask: Optional[torch.FloatTensor] = None,
-        timestep: Optional[torch.LongTensor] = None,
+        timestep: Optional[torch.LongTensor] = None,  # old and new:(B*F,dim*6)
         cross_attention_kwargs: Dict[str, Any] = None,
         class_labels: Optional[torch.LongTensor] = None,
     ) -> torch.FloatTensor:
         # Notice that normalization is always applied before the real computation in the following blocks.
         # 0. Self-Attention
-        batch_size = hidden_states.shape[0]
+        batch_size = hidden_states.shape[0]  # (B*F,N,dim), N indicates HxW spatial
 
         if self.use_ada_layer_norm:
             norm_hidden_states = self.norm1(hidden_states, timestep)
@@ -1442,11 +1447,11 @@ class BasicTransformerBlock(nn.Module):
             )
         elif self.use_layer_norm:
             norm_hidden_states = self.norm1(hidden_states)
-        elif self.use_ada_layer_norm_single:
+        elif self.use_ada_layer_norm_single:  # default
             shift_msa, scale_msa, gate_msa, shift_mlp, scale_mlp, gate_mlp = (
                 self.scale_shift_table[None] + timestep.reshape(batch_size, 6, -1)
-            ).chunk(6, dim=1)
-            norm_hidden_states = self.norm1(hidden_states)
+            ).chunk(6, dim=1)  # (1,6,dim)+(B*F,6,dim)->6*(B*F,1,dim)
+            norm_hidden_states = self.norm1(hidden_states)  # (B*F,N,dim) equals (B*F,P,D)
             norm_hidden_states = norm_hidden_states * (1 + scale_msa) + shift_msa
             norm_hidden_states = norm_hidden_states.squeeze(1)
         else:
@@ -1467,10 +1472,10 @@ class BasicTransformerBlock(nn.Module):
             encoder_hidden_states=encoder_hidden_states if self.only_cross_attention else None,
             attention_mask=attention_mask,
             **cross_attention_kwargs,
-        )
+        )  # (B*F,N,dim)
         if self.use_ada_layer_norm_zero:
             attn_output = gate_msa.unsqueeze(1) * attn_output
-        elif self.use_ada_layer_norm_single:
+        elif self.use_ada_layer_norm_single:  # default
             attn_output = gate_msa * attn_output
 
         hidden_states = attn_output + hidden_states
@@ -1487,7 +1492,7 @@ class BasicTransformerBlock(nn.Module):
                 norm_hidden_states = self.norm2(hidden_states, timestep)
             elif self.use_ada_layer_norm_zero or self.use_layer_norm:
                 norm_hidden_states = self.norm2(hidden_states)
-            elif self.use_ada_layer_norm_single:
+            elif self.use_ada_layer_norm_single:  # default
                 # For PixArt norm2 isn't applied here:
                 # https://github.com/PixArt-alpha/PixArt-alpha/blob/0f55e922376d8b797edd44d25d0e7464b260dcab/diffusion/model/nets/PixArtMS.py#L70C1-L76C103
                 norm_hidden_states = hidden_states
@@ -1512,7 +1517,7 @@ class BasicTransformerBlock(nn.Module):
         if self.use_ada_layer_norm_zero:
             norm_hidden_states = norm_hidden_states * (1 + scale_mlp[:, None]) + shift_mlp[:, None]
 
-        if self.use_ada_layer_norm_single:
+        if self.use_ada_layer_norm_single:  # default
             norm_hidden_states = self.norm2(hidden_states)
             norm_hidden_states = norm_hidden_states * (1 + scale_mlp) + shift_mlp
 
@@ -1526,7 +1531,7 @@ class BasicTransformerBlock(nn.Module):
 
         if self.use_ada_layer_norm_zero:
             ff_output = gate_mlp.unsqueeze(1) * ff_output
-        elif self.use_ada_layer_norm_single:
+        elif self.use_ada_layer_norm_single:  # default
             ff_output = gate_mlp * ff_output
 
         hidden_states = ff_output + hidden_states
@@ -1551,7 +1556,7 @@ class AdaLayerNormSingle(nn.Module):
 
         self.emb = CombinedTimestepSizeEmbeddings(
             embedding_dim, size_emb_dim=embedding_dim // 3, use_additional_conditions=use_additional_conditions
-        )
+        )  # size_emb_dim: for additional_conditions
 
         self.silu = nn.SiLU()
         self.linear = nn.Linear(embedding_dim, 6 * embedding_dim, bias=True)
@@ -1565,7 +1570,7 @@ class AdaLayerNormSingle(nn.Module):
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         # No modulation happening here.
         embedded_timestep = self.emb(timestep, batch_size=batch_size, hidden_dtype=hidden_dtype, resolution=None,
-                                     aspect_ratio=None)
+                                     aspect_ratio=None)  # (B,)->(B,embedding_dim)
         return self.linear(self.silu(embedded_timestep)), embedded_timestep
 
 

@@ -654,7 +654,7 @@ class VideoGenPipeline(DiffusionPipeline):
 
         # 4. Prepare timesteps
         self.scheduler.set_timesteps(num_inference_steps, device=device)
-        timesteps = self.scheduler.timesteps
+        timesteps = self.scheduler.timesteps  # (S,) or (S,F)
 
         # 5. Prepare latents.
         latent_channels = self.transformer.config.in_channels
@@ -691,7 +691,7 @@ class VideoGenPipeline(DiffusionPipeline):
                 latent_model_input = torch.cat([latents] * 2) if do_classifier_free_guidance else latents
                 latent_model_input = self.scheduler.scale_model_input(latent_model_input, t)
 
-                current_timestep = t
+                current_timestep = t  # old:(,); new:(F,)
                 if not torch.is_tensor(current_timestep):
                     # TODO: this requires sync between CPU and GPU. So try to pass timesteps as tensors if you can
                     # This would be a good case for the `match` statement (Python 3.10+)
@@ -701,10 +701,11 @@ class VideoGenPipeline(DiffusionPipeline):
                     else:
                         dtype = torch.int32 if is_mps else torch.int64
                     current_timestep = torch.tensor([current_timestep], dtype=dtype, device=latent_model_input.device)
-                elif len(current_timestep.shape) == 0:
-                    current_timestep = current_timestep[None].to(latent_model_input.device)
+                elif len(current_timestep.shape) <= 1:  # original or with F-dim
+                    current_timestep = current_timestep[None].to(latent_model_input.device)  # (1,) or (1,F)
                 # broadcast to batch dimension in a way that's compatible with ONNX/Core ML
-                current_timestep = current_timestep.expand(latent_model_input.shape[0])
+                # current_timestep = current_timestep.expand(latent_model_input.shape[0])
+                current_timestep = torch.cat(([current_timestep] * latent_model_input.shape[0]), dim=0)  # (2B,) or (2B,F)
 
                 # predict noise model_output
                 # print("latent_model_input:", latent_model_input.shape)
@@ -713,7 +714,7 @@ class VideoGenPipeline(DiffusionPipeline):
                 # print("added_cond_kwargs:", added_cond_kwargs)
                 # print("enable_temporal_attentions:", enable_temporal_attentions)
                 noise_pred = self.transformer(
-                    latent_model_input,
+                    latent_model_input,  # (2*B,C,F,H,W)
                     encoder_hidden_states=prompt_embeds,
                     timestep=current_timestep,
                     added_cond_kwargs=added_cond_kwargs,
@@ -762,7 +763,7 @@ class VideoGenPipeline(DiffusionPipeline):
         print("decode_latents", latents.shape, latents.dtype)
         # latents = torch.randn((1, 4, 32, 36, 64), dtype=latents.dtype, device=latents.device)
         self.vae.vae.encoder.to("cpu")
-        video = self.vae.decode(latents)
+        video = self.vae.decode(latents.to(self.vae.dtype()))
         # video = self.vae.decode(latents / 0.18215)
         # video = rearrange(video, 'b c t h w -> b t c h w').contiguous()
         video = ((video / 2.0 + 0.5).clamp(0, 1) * 255).to(dtype=torch.uint8).cpu().permute(0, 1, 3, 4, 2).contiguous()
