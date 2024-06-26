@@ -124,7 +124,7 @@ def getdataset(args, logger=None):
         transform = transforms.Compose([
             ToTensorVideo(),
             CenterCropResizeVideo(target_hw, h_ratio=h_ratio, w_ratio=w_ratio),
-            RandomHorizontalFlipVideo(p=0.5),
+            # RandomHorizontalFlipVideo(p=0.5),
             norm_fun
         ])
         tokenizer = AutoTokenizer.from_pretrained(
@@ -148,7 +148,7 @@ def getdataset(args, logger=None):
         transform = transforms.Compose([
             ToTensorVideo(),
             CenterCropResizeVideo(target_hw, h_ratio=h_ratio, w_ratio=w_ratio),
-            RandomHorizontalFlipVideo(p=0.5),
+            # RandomHorizontalFlipVideo(p=0.5),
             norm_fun
         ])
         if not args.no_text:  # default

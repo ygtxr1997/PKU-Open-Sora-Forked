@@ -10,7 +10,8 @@ from accelerate import Accelerator
 from diffusers.schedulers import (DDIMScheduler, DDPMScheduler, PNDMScheduler,
                                   EulerDiscreteScheduler, DPMSolverMultistepScheduler,
                                   HeunDiscreteScheduler, EulerAncestralDiscreteScheduler,
-                                  DEISMultistepScheduler, KDPM2AncestralDiscreteScheduler)
+                                  DEISMultistepScheduler, KDPM2AncestralDiscreteScheduler,
+                                  DDIMInverseScheduler,)
 from diffusers.schedulers.scheduling_dpmsolver_singlestep import DPMSolverSinglestepScheduler
 from diffusers.models import AutoencoderKL, AutoencoderKLTemporalDecoder
 from diffusers.configuration_utils import ConfigMixin
@@ -29,7 +30,7 @@ from opensora.models.diffusion.schedulers import PNDMT2DScheduler
 from opensora.utils.utils import save_video_grid
 
 sys.path.append(os.path.split(sys.path[0])[0])
-from pipeline_videogen import VideoGenPipeline
+from pipeline_videogen import VideoGenPipeline, VideoInversePipeline
 
 import imageio
 
@@ -78,8 +79,8 @@ def main(args):
 
     video_length = transformer_model.config.video_length
     sample_size: str = args.version if args.sample_size is None else args.sample_size
-    train_frames, image_size_h, image_size_w = [int(x) for x in sample_size.split('x')]  # e.g. 65x512x512
-    video_length = train_frames // ae_stride_config[args.ae][0] + 1
+    sample_frames, image_size_h, image_size_w = [int(x) for x in sample_size.split('x')]  # e.g. 65x512x512
+    video_length = sample_frames // ae_stride_config[args.ae][0] + 1
     latent_size = (image_size_h // ae_stride_config[args.ae][1], image_size_w // ae_stride_config[args.ae][2])
     vae.latent_size = latent_size
     if args.force_images:
@@ -94,7 +95,10 @@ def main(args):
     text_encoder.eval()
 
     if args.sample_method == 'DDIM':  #########
-        scheduler = DDIMScheduler()
+        scheduler = DDIMScheduler(
+            clip_sample=False,
+            set_alpha_to_one=False,
+        )
     elif args.sample_method == 'EulerDiscrete':
         scheduler = EulerDiscreteScheduler()
     elif args.sample_method == 'DDPM':  #############
@@ -123,6 +127,34 @@ def main(args):
                                          transformer=transformer_model).to(device=device)
     # videogen_pipeline.enable_xformers_memory_efficient_attention()
 
+    ''' DDIM Inversion '''
+    use_inversion = False
+    timestep_drop_ratio = 0.
+    cond_latent_frames_cnt = None
+    gaussian_blur_drop_ori_prob = None
+    if args.inverse_method is not None and os.path.exists(args.inverse_target_path):
+        use_inversion = True
+        cond_frames_cnt = 32
+        cond_latent_frames_cnt = cond_frames_cnt // 4 + 1
+        if args.inverse_method == 'DDIM':
+            inverse_scheduler = DDIMInverseScheduler(clip_sample=False, set_alpha_to_one=False)
+        elif args.inverse_method == 'DDPM':
+            inverse_scheduler = DDIMScheduler(clip_sample=False, set_alpha_to_one=False)  # add_noise like DDPM
+            timestep_drop_ratio = 0.4
+            gaussian_blur_drop_ori_prob = 0.
+        else:
+            raise TypeError(f"args.inverse_method {args.inverse_method} is not supported yet!")
+        videoinvserse_pipeline = VideoInversePipeline(
+            vae=vae,
+            text_encoder=text_encoder,
+            tokenizer=tokenizer,
+            scheduler=inverse_scheduler,
+            transformer=transformer_model,
+            timestep_drop_ratio=timestep_drop_ratio,
+            cond_frames_cnt=cond_frames_cnt,
+            target_frames_cnt=sample_frames,
+        ).to(device=device)
+
     if not os.path.exists(args.save_img_path):
         os.makedirs(args.save_img_path, exist_ok=True)
 
@@ -135,6 +167,29 @@ def main(args):
     args.text_prompt = args.text_prompt[accelerator.process_index::accelerator.num_processes]
     for prompt in args.text_prompt:
         print('Processing the ({}) prompt'.format(prompt))
+        inverted_latents = None
+        inverted_all_latents = None
+        if use_inversion:
+            print("Inversion before generation...")
+            inverted_results = videoinvserse_pipeline(
+                prompt,
+                video_length=sample_frames,
+                height=image_size_h,
+                width=image_size_w,
+                num_inference_steps=args.num_sampling_steps,
+                guidance_scale=args.guidance_scale,
+                enable_temporal_attentions=not args.force_images,
+                num_images_per_prompt=1,
+                mask_feature=True,
+                inverse_target_path=args.inverse_target_path,
+                output_type='latents',
+                gaussian_blur_drop_ori_prob=gaussian_blur_drop_ori_prob,
+            )
+            inverted_latents = inverted_results.video
+            print("[DEBUG] inverted_latents:", inverted_latents.shape)
+            if hasattr(inverted_results, 'all_latents') and inverted_results.all_latents is not None:
+                inverted_all_latents = inverted_results.all_latents[::-1]
+
         videos = videogen_pipeline(prompt,
                                    video_length=video_length,
                                    height=image_size_h,
@@ -144,6 +199,9 @@ def main(args):
                                    enable_temporal_attentions=not args.force_images,
                                    num_images_per_prompt=1,
                                    mask_feature=True,
+                                   latents=inverted_latents,
+                                   timestep_drop_ratio=timestep_drop_ratio,
+                                   cond_latent_frames_cnt=cond_latent_frames_cnt,
                                    ).video
         try:
             if args.force_images:
@@ -198,6 +256,8 @@ if __name__ == "__main__":
     parser.add_argument("--guidance_scale", type=float, default=7.5)
     parser.add_argument("--sample_method", type=str, default="PNDM")
     parser.add_argument("--num_sampling_steps", type=int, default=50)
+    parser.add_argument("--inverse_method", type=str, default=None)
+    parser.add_argument("--inverse_target_path", type=str, default=None)
     parser.add_argument("--fps", type=int, default=24)
     parser.add_argument("--run_time", type=int, default=0)
     parser.add_argument("--text_prompt", nargs='+')

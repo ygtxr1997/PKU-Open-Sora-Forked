@@ -980,7 +980,7 @@ class LatteT2V(ModelMixin, ConfigMixin):
                 # new:(B,F,6*D)
                 if not use_diff_noise_across_frames:
                     embedded_timestep = repeat(embedded_timestep, 'b d -> (b f) d',
-                                               f=batch_size_scale).contiguous()  # repeat on F-dim, (B,D)->(B*F,D)
+                                               f=(frame + use_image_num)).contiguous()  # repeat on F-dim, (B,D)->(B*F,D)
                 else:
                     embedded_timestep = embedded_timestep.contiguous()  # not repeat on F-dim, (B*F,D)
                 # old or new:(B*F,D)
