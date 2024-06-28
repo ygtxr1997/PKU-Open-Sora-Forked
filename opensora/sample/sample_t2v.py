@@ -30,7 +30,7 @@ from opensora.models.diffusion.schedulers import PNDMT2DScheduler
 from opensora.utils.utils import save_video_grid
 
 sys.path.append(os.path.split(sys.path[0])[0])
-from pipeline_videogen import VideoGenPipeline, VideoInversePipeline
+from pipeline_videogen import VideoGenPipeline, VideoInversePipeline, VideoAutoRegressivePipeline
 
 import imageio
 
